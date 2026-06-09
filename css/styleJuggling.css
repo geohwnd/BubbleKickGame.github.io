@@ -453,6 +453,178 @@ canvas {
   }
 }
 
+/* ───────────────── JUGGLING INTRO SCREEN ───────────────── */
+.juggling-intro-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(
+      ellipse at 72% 48%,
+      rgba(93, 240, 214, 0.28),
+      transparent 0 34%,
+      transparent 55%
+    ),
+    linear-gradient(
+      155deg,
+      rgba(29, 54, 243, 0.96),
+      rgba(15, 40, 150, 0.98)
+    );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.juggling-intro-screen.hidden {
+  display: none;
+}
+
+.juggling-intro-card {
+  width: auto;
+  max-width: min(560px, calc(100vw - 36px));
+  text-align: center;
+}
+
+.juggling-intro-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(430px, 100%);
+  min-height: 30px;
+  margin-bottom: 18px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3.2px;
+  text-transform: uppercase;
+}
+
+.juggling-intro-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(92px, 13vw, 138px);
+  line-height: 0.82;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow:
+    0 7px 28px rgba(0, 0, 0, 0.4),
+    5px 5px 0 rgba(0, 0, 40, 0.22);
+}
+
+.juggling-intro-logo span {
+  color: var(--bk-lime);
+  text-shadow:
+    0 0 28px rgba(185, 255, 34, 0.5),
+    0 8px 0 rgba(0, 0, 0, 0.22);
+}
+
+.juggling-intro-description {
+  max-width: 430px;
+  margin: 28px auto 32px;
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  line-height: 1.55;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.juggling-intro-play-btn {
+  min-width: min(320px, 100%);
+  color: #1332cc;
+  background: linear-gradient(
+    135deg,
+    #f7fbff 0%,
+    #95f4ff 58%,
+    var(--bk-lime) 100%
+  );
+  border: none;
+  border-radius: 999px;
+  padding: 14px 54px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.25),
+    0 0 34px rgba(185, 255, 34, 0.22);
+}
+
+.juggling-intro-steps {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 26px;
+}
+
+.juggling-intro-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.juggling-intro-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 21px;
+}
+
+.juggling-intro-label {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .juggling-intro-card {
+    max-width: min(92vw, 360px);
+  }
+
+  .juggling-intro-tag {
+    width: 100%;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding-inline: 10px;
+  }
+
+  .juggling-intro-logo {
+    font-size: clamp(78px, 22vw, 104px);
+  }
+
+  .juggling-intro-description {
+    margin: 22px auto 26px;
+    font-size: 12px;
+  }
+
+  .juggling-intro-play-btn {
+    min-width: min(290px, 100%);
+    padding: 13px 38px;
+    font-size: 28px;
+  }
+
+  .juggling-intro-steps {
+    gap: 16px;
+  }
+
+  .juggling-intro-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+}
+
 /* ───────────────── GAME OVER SCREEN ───────────────── */
 .game-over-screen {
   position: fixed;

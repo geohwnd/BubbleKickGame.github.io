@@ -8,7 +8,9 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 const canvas = document.getElementById("game-canvas");
 const countdownScreen = document.getElementById("countdown-screen");
 const countdownNumber = document.getElementById("countdown-number");
-let countdownActive = true;
+const jugglingIntroScreen = document.getElementById("juggling-intro");
+const startJugglingBtn = document.getElementById("start-juggling-btn");
+let countdownActive = false;
 let countdownTimeouts = [];
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -750,22 +752,7 @@ function loop() {
 }
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-function startGame() {
-  loadWrap.classList.add("show");
-  isPlaying = true;
-  bPos.set(0, 2.5, 0);
-  bVel.set(0, 0, 0);
-  charPos.set(0, 0, 1);
-  charTgt.set(0, 0, 1);
-
-  startCountdown();
-  setTimeout(prepareBallSpawn, 3400);
-  ANIM_MAP.forEach(({ file, key }) => tryLoadGLB(file, key));
-}
-
-startGame();
-
-playAgainBtn?.addEventListener("click", () => {
+function beginJugglingRun() {
   touches = 0;
   counterEl.textContent = "0";
 
@@ -779,13 +766,57 @@ playAgainBtn?.addEventListener("click", () => {
   charPos.set(0, 0, 1);
   charTgt.set(0, 0, 1);
 
+  if (character) {
+    character.position.copy(charPos);
+  }
+
   kickCooldown = 0;
   isKicking = false;
+  kickTimer = 0;
+
+  countdownTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+  countdownTimeouts = [];
 
   gameOverScreen?.classList.add("hidden");
+  jugglingIntroScreen?.classList.add("hidden");
   isPlaying = true;
+
   startCountdown();
   setTimeout(prepareBallSpawn, 3400);
+}
+
+function startGame() {
+  loadWrap.classList.add("show");
+  isPlaying = false;
+  ballReady = false;
+  ball.visible = false;
+  ballShadow.visible = false;
+  countdownActive = false;
+  countdownScreen?.classList.add("hidden");
+  document.body.classList.remove("is-counting-down");
+
+  bPos.set(0, 2.5, 0);
+  bVel.set(0, 0, 0);
+  charPos.set(0, 0, 1);
+  charTgt.set(0, 0, 1);
+
+  ANIM_MAP.forEach(({ file, key }) => tryLoadGLB(file, key));
+
+  if (jugglingIntroScreen && startJugglingBtn) {
+    jugglingIntroScreen.classList.remove("hidden");
+  } else {
+    beginJugglingRun();
+  }
+}
+
+startGame();
+
+startJugglingBtn?.addEventListener("click", () => {
+  beginJugglingRun();
+});
+
+playAgainBtn?.addEventListener("click", () => {
+  beginJugglingRun();
 });
 
 loop();
