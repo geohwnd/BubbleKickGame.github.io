@@ -348,9 +348,9 @@ updateInstructionText();
 // GAME CONSTANTS
 // =========================
 
-const RUSH_PLAYER_SPEED = 4.35;
-const RUSH_PLAYER_ACCEL = 0.22;
-const RUSH_DASH_SPEED = 13.5;
+const RUSH_PLAYER_SPEED = 5.0;
+const RUSH_PLAYER_ACCEL = 0.28;
+const RUSH_DASH_SPEED = 14.4;
 const RUSH_DASH_DURATION = 180;
 const RUSH_DASH_COOLDOWN = 720;
 const RUSH_STEAL_RADIUS = 1.22;
@@ -560,12 +560,43 @@ function getAIControlledBody() {
   return aiTeamBodies[gameState.aiCarrierIndex] || p2Body;
 }
 
+
 function setAIControlledBodyIndex(index) {
   gameState.aiCarrierIndex = THREE.MathUtils.clamp(
     index,
     0,
     aiTeamBodies.length - 1
   );
+}
+
+function canSwitchDefense() {
+  return (
+    gameState.gamePhase === GAME_PHASES.PLAYING &&
+    gameState.ballCarrier === TEAMS.P2
+  );
+}
+
+function switchControlledDefender() {
+  if (!canSwitchDefense()) return;
+
+  const currentBody = getControlledPlayerBody();
+  const candidates = playerOutfieldBodies.filter((body) => body !== currentBody);
+
+  if (!candidates.length) return;
+
+  const ballPosition = ballBody.pos;
+  const bestCandidate = candidates.reduce((best, body) => {
+    const dist = body.pos.distanceTo(ballPosition);
+    return dist < best.dist ? { body, dist } : best;
+  }, { body: candidates[0], dist: candidates[0].pos.distanceTo(ballPosition) }).body;
+
+  const nextIndex = playerOutfieldBodies.indexOf(bestCandidate);
+
+  if (nextIndex >= 0) {
+    gameState.controlledPlayerIndex = nextIndex;
+    resetDrag();
+    updateTurnUI(gameState, uiTeamOptions);
+  }
 }
 
 function getBodyByPlayer(playerNumber) {
@@ -719,6 +750,7 @@ function ensurePlayerPossessionIfNearBall() {
   return false;
 }
 
+
 function shootControlledPlayer() {
   if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
   if (!ensurePlayerPossessionIfNearBall()) return;
@@ -760,6 +792,63 @@ function shootControlledPlayer() {
   ballBody.vel.y = 0.85;
 
   playKickSound(0.72);
+  updateTurnUI(gameState, uiTeamOptions);
+}
+
+function passControlledPlayer() {
+  if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
+  if (!ensurePlayerPossessionIfNearBall()) return;
+
+  const body = getControlledPlayerBody();
+  const teammates = playerOutfieldBodies.filter((mate) => mate !== body);
+
+  if (!teammates.length) return;
+
+  const forwardDir = body.facing.clone().setY(0);
+
+  if (forwardDir.lengthSq() < 0.001) {
+    forwardDir.set(1, 0, 0);
+  }
+
+  forwardDir.normalize();
+
+  const bestMate = teammates.reduce((best, mate) => {
+    const toMate = new THREE.Vector3().subVectors(mate.pos, body.pos).setY(0);
+    const dist = Math.max(toMate.length(), 0.001);
+    const dirToMate = toMate.clone().normalize();
+    const forwardScore = dirToMate.dot(forwardDir);
+    const score = forwardScore * 2.2 - dist * 0.08;
+
+    return score > best.score ? { mate, score } : best;
+  }, { mate: teammates[0], score: -Infinity }).mate;
+
+  const passDir = new THREE.Vector3().subVectors(bestMate.pos, body.pos).setY(0);
+
+  if (passDir.lengthSq() < 0.001) {
+    passDir.copy(forwardDir);
+  }
+
+  passDir.normalize();
+
+  playStrikeForBody(body, "run");
+  setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+  clearBallCarrier();
+
+  gameState.kickChargingPlayer = null;
+  gameState.kickChargeStart = 0;
+  gameState.playerPickupBlockedUntil = performance.now() + 360;
+
+  hideStrengthBar();
+
+  ballBody.pos
+    .copy(body.pos)
+    .addScaledVector(passDir, body.r + ballBody.r + 0.42);
+
+  ballBody.pos.y = ballBody.r;
+  ballBody.vel.copy(passDir).multiplyScalar(12.8);
+  ballBody.vel.y = 0.42;
+
+  playKickSound(0.48);
   updateTurnUI(gameState, uiTeamOptions);
 }
 
@@ -1130,7 +1219,17 @@ setInputCallbacks({
     if (isRushPaused) return;
     shootControlledPlayer();
   },
-  
+
+  onSwitchDefense: () => {
+    if (isRushPaused) return;
+    switchControlledDefender();
+  },
+
+  onPass: () => {
+    if (isRushPaused) return;
+    passControlledPlayer();
+  },
+
   onRestart: () => {
     restartGame();
   },
@@ -1146,8 +1245,12 @@ setInputCallbacks({
 onRestartPressed(restartGame);
 onQuickRestartPressed(restartGame);
 
+
 const mobileShootButton = document.getElementById("mobile-shoot-btn");
 const mobileDashButton = document.getElementById("mobile-dash-btn");
+const mobileContextButton = document.getElementById("mobile-switch-defense-btn");
+const mobileContextIcon = document.getElementById("mobile-context-icon");
+const mobileContextLabel = document.getElementById("mobile-context-label");
 
 const pauseButton = document.getElementById("pause-btn");
 const pauseOverlay = document.getElementById("pause-overlay");
@@ -1174,7 +1277,7 @@ pauseButton?.addEventListener("click", toggleRushPause);
 resumeButton?.addEventListener("click", () => setRushPaused(false));
 
 function setMobileActionButtonsVisible(isVisible) {
-  [mobileShootButton, mobileDashButton].forEach((button) => {
+  [mobileShootButton, mobileDashButton, mobileContextButton].forEach((button) => {
     if (!button) return;
     button.classList.toggle("is-hidden", !isVisible);
   });
@@ -1182,6 +1285,27 @@ function setMobileActionButtonsVisible(isVisible) {
 
 function updateMobileActionButtonsVisibility() {
   setMobileActionButtonsVisible(gameState.gamePhase !== GAME_PHASES.WIN);
+}
+
+function updateMobileContextButton() {
+  if (!mobileContextButton) return;
+
+  const isDefending = gameState.ballCarrier === TEAMS.P2;
+
+  mobileContextButton.classList.toggle("is-defense", isDefending);
+  mobileContextButton.classList.toggle("is-attack", !isDefending);
+  mobileContextButton.setAttribute(
+    "aria-label",
+    isDefending ? "Cambiar defensa" : "Pase"
+  );
+
+  if (mobileContextIcon) {
+    mobileContextIcon.textContent = isDefending ? "🔁" : "🤝";
+  }
+
+  if (mobileContextLabel) {
+    mobileContextLabel.textContent = isDefending ? "DEFENSA" : "PASE";
+  }
 }
 
 if (mobileShootButton) {
@@ -1199,6 +1323,7 @@ if (mobileShootButton) {
 }
 
 
+
 if (mobileDashButton) {
   const handleMobileDash = (event) => {
     event.preventDefault();
@@ -1209,6 +1334,25 @@ if (mobileDashButton) {
 
   mobileDashButton.addEventListener("pointerdown", handleMobileDash);
   mobileDashButton.addEventListener("touchstart", handleMobileDash, {
+    passive: false,
+  });
+}
+
+if (mobileContextButton) {
+  const handleMobileContextAction = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isRushPaused) return;
+
+    if (canSwitchDefense()) {
+      switchControlledDefender();
+    } else {
+      passControlledPlayer();
+    }
+  };
+
+  mobileContextButton.addEventListener("pointerdown", handleMobileContextAction);
+  mobileContextButton.addEventListener("touchstart", handleMobileContextAction, {
     passive: false,
   });
 }
@@ -1496,6 +1640,7 @@ function animate(time) {
     syncMeshes();
     refreshFullUI(gameState, uiTeamOptions);
     updateMobileActionButtonsVisibility();
+    updateMobileContextButton();
     updateResponsiveCamera();
     renderer.render(scene, camera);
     return;
@@ -1507,6 +1652,7 @@ function animate(time) {
   checkGoalParticles();
   refreshFullUI(gameState, uiTeamOptions);
   updateMobileActionButtonsVisibility();
+  updateMobileContextButton();
   updateResponsiveCamera();
 
   renderer.render(scene, camera);
