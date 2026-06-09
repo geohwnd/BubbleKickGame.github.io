@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Kick — World Menu</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #061b18;
+        color: #fff;
+      }
+
+      body {
+        min-height: 100vh;
+        display: block;
+        background: radial-gradient(
+            circle at 18% 20%,
+            rgba(255, 255, 255, 0.46),
+            transparent 0 15%,
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at 78% 26%,
+            rgba(255, 255, 255, 0.24),
+            transparent 0 14%,
+            transparent 32%
+          ),
+          radial-gradient(
+            ellipse at 72% 52%,
+            rgba(94, 242, 214, 0.9) 0 18%,
+            transparent 18.5%
+          ),
+          radial-gradient(
+            ellipse at 84% 52%,
+            rgba(81, 224, 210, 0.62) 0 30%,
+            transparent 30.5%
+          ),
+          radial-gradient(
+            ellipse at 20% 52%,
+            rgba(45, 67, 255, 0.96) 0 38%,
+            transparent 38.5%
+          ),
+          linear-gradient(120deg, #2d43ff 0%, #3158ff 42%, #5df0d6 100%);
+      }
+
+      #menu-stage-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .menu-vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: linear-gradient(
+            90deg,
+            rgba(20, 39, 168, 0.32) 0%,
+            rgba(25, 64, 220, 0.16) 40%,
+            rgba(95, 240, 214, 0.08) 72%,
+            rgba(18, 51, 171, 0.22) 100%
+          ),
+          radial-gradient(
+            ellipse at 70% 52%,
+            transparent 0 40%,
+            rgba(24, 45, 190, 0.24) 82%
+          );
+      }
+
+      .menu-pattern {
+        position: fixed;
+        inset: -10%;
+        z-index: 3;
+        pointer-events: none;
+        opacity: 0.08;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(255, 255, 255, 0.14),
+          transparent 0 38%
+        );
+        mix-blend-mode: screen;
+      }
+
+      .menu-shell {
+        position: relative;
+        z-index: 5;
+        width: 100vw;
+        height: 100vh;
+        padding: clamp(26px, 5vw, 62px);
+        display: grid;
+        grid-template-columns: minmax(330px, 560px) 1fr;
+        align-items: center;
+        overflow: hidden;
+        text-align: left;
+      }
+
+      .title-block {
+        position: absolute;
+        top: clamp(28px, 6vh, 64px);
+        right: clamp(30px, 7vw, 108px);
+        width: min(520px, 42vw);
+        z-index: 8;
+        text-align: left;
+      }
+
+      .title-block::before {
+        content: "THE WORLD MATCH";
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 7px 14px;
+        border-radius: 999px;
+        color: #061b18;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+        font-size: 12px;
+        line-height: 1;
+        font-weight: 1000;
+        letter-spacing: 1.1px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        color: #ffffff;
+        font-size: clamp(54px, 6.6vw, 112px);
+        line-height: 0.88;
+        font-weight: 1000;
+        letter-spacing: -3px;
+        text-shadow: 0 7px 0 rgba(0, 0, 0, 0.18),
+          0 28px 44px rgba(0, 0, 0, 0.32);
+        text-transform: uppercase;
+      }
+
+      .title-underline {
+        width: 88px;
+        height: 12px;
+        margin-top: 22px;
+        background: #b8ea00;
+        border-radius: 999px;
+        box-shadow: 0 0 18px rgba(184, 234, 0, 0.55);
+      }
+
+      .actions {
+        position: relative;
+        width: clamp(300px, 29vw, 370px);
+        display: grid;
+        gap: 6px;
+        z-index: 7;
+        transform: translateY(18px);
+        max-height: 70vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 8px;
+        scrollbar-width: none;
+        background: transparent;
+      }
+
+      .actions::-webkit-scrollbar {
+        display: none;
+      }
+
+      .actions::before,
+      .actions::after {
+        content: none;
+      }
+
+      .play-btn {
+        position: relative;
+        width: 100%;
+        min-height: 56px;
+        padding: 10px 16px 10px 66px;
+        border: 0;
+        border-radius: 0 24px 24px 0;
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+        overflow: visible;
+        transition: transform 0.16s ease, filter 0.18s ease;
+        isolation: isolate;
+        background-clip: padding-box;
+      }
+
+      .play-btn::after {
+        content: none;
+      }
+
+      .play-btn.ai {
+        background: #050505;
+        transform: translateX(0);
+        z-index: 6;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0);
+      }
+
+      .play-btn.local {
+        background: linear-gradient(
+          135deg,
+          #315dff 0%,
+          #0ad4b7 48%,
+          #b6f000 100%
+        );
+        transform: translateX(0);
+        z-index: 6;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0);
+      }
+
+      .play-btn.tutorial {
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        color: #1232d8;
+        transform: translateX(0);
+        z-index: 6;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0);
+      }
+
+      .play-btn.tutorial .btn-title,
+      .play-btn.tutorial .btn-desc {
+        color: #1232d8;
+        text-shadow: none;
+      }
+
+      .play-btn.coming-soon {
+        background: linear-gradient(135deg, #4c5565 0%, #2f3744 100%);
+        color: rgba(255, 255, 255, 0.72);
+        cursor: not-allowed;
+        filter: grayscale(0.35);
+        opacity: 0.78;
+      }
+
+      .play-btn.coming-soon .btn-title,
+      .play-btn.coming-soon .btn-desc {
+        color: rgba(255, 255, 255, 0.72);
+        text-shadow: none;
+      }
+
+      .play-btn.coming-soon .btn-desc {
+        color: #b9ff22;
+      }
+
+      .play-btn.coming-soon:hover,
+      .play-btn.coming-soon:active {
+        transform: translateX(0);
+        filter: grayscale(0.35);
+      }
+
+      .play-btn:hover {
+        transform: translateX(7px) scale(1.012);
+        filter: brightness(1.09) saturate(1.1);
+      }
+
+      .play-btn.local:hover {
+        transform: translateX(7px) scale(1.012);
+      }
+
+      .play-btn:active {
+        transform: translateX(8px) scale(0.99);
+      }
+
+      .btn-copy {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        text-align: left;
+        z-index: 2;
+        min-height: 40px;
+      }
+
+      .btn-title {
+        color: #fff;
+        font-size: clamp(18px, 1.8vw, 28px);
+        font-weight: 1000;
+        letter-spacing: -0.9px;
+        line-height: 0.9;
+        text-transform: uppercase;
+        text-shadow: 0 5px 0 rgba(0, 0, 0, 0.16);
+      }
+
+      .btn-desc {
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+      }
+
+      .btn-icon {
+        position: absolute;
+        left: 36px;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        font-size: 21px;
+        filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.35));
+      }
+      @media (min-width: 901px) {
+        .actions {
+          transform: translateY(38px);
+        }
+
+        .play-btn {
+          min-height: 58px;
+        }
+
+        .play-btn.ai .btn-title,
+        .play-btn.local .btn-title,
+        .play-btn.tutorial .btn-title {
+          font-size: clamp(19px, 1.75vw, 29px);
+        }
+      }
+
+      .menu-footer {
+        position: fixed;
+        right: clamp(22px, 4vw, 58px);
+        bottom: clamp(18px, 4vh, 44px);
+        z-index: 7;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .credits-trigger {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        padding: 8px 13px;
+        color: rgba(255, 255, 255, 0.86);
+        background: rgba(0, 0, 0, 0.22);
+        font: inherit;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+      }
+
+      .credits-trigger:hover {
+        transform: translateY(-1px);
+        color: #061b18;
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .credits-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(4, 13, 44, 0.54);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.18s ease;
+      }
+
+      .credits-modal.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .credits-card {
+        position: relative;
+        width: min(420px, calc(100vw - 42px));
+        padding: 28px;
+        border-radius: 30px;
+        background: linear-gradient(145deg, rgba(6, 27, 24, 0.86), rgba(18, 50, 216, 0.72));
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42), 0 0 40px rgba(93, 240, 214, 0.18);
+        color: #ffffff;
+      }
+
+      .credits-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 50%;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .credits-eyebrow {
+        display: inline-flex;
+        margin-bottom: 12px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        color: #061b18;
+        background: #b8ea00;
+        font-size: 10px;
+        font-weight: 1000;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
+      .credits-title {
+        margin: 0 0 4px;
+        font-size: 34px;
+        line-height: 0.9;
+        font-weight: 1000;
+        letter-spacing: -1px;
+        text-transform: uppercase;
+      }
+
+      .credits-version {
+        margin-bottom: 20px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .credits-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .credits-role {
+        display: grid;
+        gap: 4px;
+        padding: 13px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .credits-role strong {
+        color: #b8ea00;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .credits-role span {
+        color: rgba(255, 255, 255, 0.94);
+        font-size: 15px;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      @media (max-width: 900px) {
+        .menu-shell {
+          grid-template-columns: 1fr;
+          align-items: stretch;
+          padding: clamp(18px, 5vw, 28px);
+          overflow-y: auto;
+        }
+
+        .title-block {
+          position: relative;
+          right: auto;
+          left: auto;
+          top: auto;
+          width: 100%;
+          margin-top: clamp(10px, 3vh, 28px);
+          margin-bottom: 28px;
+        }
+
+        h1 {
+          font-size: clamp(48px, 14vw, 78px);
+        }
+
+        .title-underline {
+          width: 78px;
+          height: 10px;
+          margin-top: 18px;
+        }
+
+        .actions {
+          width: 100%;
+          max-height: none;
+          overflow: visible;
+          padding-right: 0;
+          margin-bottom: 92px;
+          transform: none;
+          align-self: end;
+        }
+
+        .play-btn {
+          min-height: 58px;
+          padding: 9px 16px 9px 68px;
+          border-radius: 0 22px 22px 0;
+        }
+
+        .play-btn.local {
+          transform: translateX(0);
+        }
+
+        .play-btn:hover {
+          transform: translateX(6px) scale(1.01);
+        }
+
+        .play-btn.local:hover {
+          transform: translateX(6px) scale(1.01);
+        }
+
+        .btn-title {
+          font-size: clamp(19px, 6vw, 26px);
+        }
+
+        .btn-desc {
+          font-size: 8.5px;
+        }
+
+        .menu-footer {
+          position: fixed;
+          left: 50%;
+          right: auto;
+          bottom: calc(12px + env(safe-area-inset-bottom));
+          transform: translateX(-50%);
+          z-index: 40;
+          width: min(92vw, 420px);
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          text-align: center;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: rgba(0, 0, 0, 0.24);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          font-size: 9px;
+          line-height: 1.25;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+
+        .menu-footer span {
+          width: 100%;
+          opacity: 0.82;
+        }
+
+        .credits-trigger {
+          padding: 7px 12px;
+          font-size: 10px;
+          background: rgba(0, 0, 0, 0.28);
+        }
+      }
+
+      @media (max-width: 420px) {
+        .menu-shell {
+          padding: 18px;
+        }
+
+        .title-block {
+          margin-top: 8px;
+          margin-bottom: 22px;
+        }
+
+        .title-block::before {
+          font-size: 10px;
+          padding: 6px 12px;
+          margin-bottom: 10px;
+        }
+
+        h1 {
+          font-size: clamp(46px, 15vw, 62px);
+        }
+
+        .actions {
+          gap: 8px;
+          margin-bottom: 96px;
+        }
+
+        .play-btn {
+          min-height: 54px;
+          padding: 8px 14px 8px 64px;
+          border-radius: 0 20px 20px 0;
+        }
+
+        .play-btn.local {
+          transform: translateX(0);
+        }
+
+        .btn-icon {
+          left: 35px;
+          width: 30px;
+          height: 30px;
+          font-size: 20px;
+        }
+
+        .btn-title {
+          font-size: 21px;
+        }
+
+        .btn-desc {
+          margin-top: 3px;
+          font-size: 8px;
+          letter-spacing: 0.7px;
+        }
+
+        .menu-footer {
+          bottom: calc(10px + env(safe-area-inset-bottom));
+          width: min(90vw, 360px);
+          padding: 7px 10px;
+          font-size: 8px;
+          letter-spacing: 0.7px;
+        }
+
+        .credits-trigger {
+          padding: 6px 11px;
+          font-size: 9px;
+          letter-spacing: 0.8px;
+        }
+
+        .credits-card {
+          padding: 24px 20px;
+          border-radius: 26px;
+        }
+
+        .credits-title {
+          font-size: 30px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <audio
+      id="menu-music"
+      src="audio/chiral-zone_main-full.mp3"
+      loop
+      preload="auto"
+    ></audio>
+    <canvas id="menu-stage-canvas" aria-hidden="true"></canvas>
+    <div class="menu-vignette" aria-hidden="true"></div>
+    <div class="menu-pattern" aria-hidden="true"></div>
+
+    <main class="menu-shell" aria-label="Menú principal">
+      <div class="title-block">
+        <h1>Bubble<br />Kick 26</h1>
+        <div class="title-underline"></div>
+      </div>
+
+      <section class="actions" aria-label="Modos de juego">
+        <a class="play-btn tutorial" href="tutorial_Rush.html">
+          <span class="btn-copy">
+            <span class="btn-title">Tutorial</span>
+            <span class="btn-desc">Aprende Rush Match</span>
+          </span>
+          <span class="btn-icon">🎓</span>
+        </a>
+        <a
+          class="play-btn ai"
+          href="teamselection.html"
+          onclick="saveMode('rush')"
+        >
+          <span class="btn-copy">
+            <span class="btn-title">Rush<br />Match</span>
+            <span class="btn-desc">Partido principal 4v4</span>
+          </span>
+          <span class="btn-icon">⚽</span>
+        </a>
+
+        <a class="play-btn local" href="football_penalties.html">
+          <span class="btn-copy">
+            <span class="btn-title">Penalties</span>
+            <span class="btn-desc">Tanda de penales</span>
+          </span>
+          <span class="btn-icon">🥅</span>
+        </a>
+
+        <a class="play-btn ai" href="football_juggling.html">
+          <span class="btn-copy">
+            <span class="btn-title">Juggling</span>
+            <span class="btn-desc">Mantén el balón en el aire</span>
+          </span>
+          <span class="btn-icon">🤹</span>
+        </a>
+
+        <a
+          class="play-btn coming-soon"
+          href="#"
+          aria-disabled="true"
+          onclick="return false;"
+        >
+          <span class="btn-copy">
+            <span class="btn-title">Rush World<br />Tournament</span>
+            <span class="btn-desc">Coming soon</span>
+          </span>
+          <span class="btn-icon">🏆</span>
+        </a>
+
+        <a class="play-btn ai" href="football_streetSurvival.html">
+          <span class="btn-copy">
+            <span class="btn-title">Street<br />Survival</span>
+            <span class="btn-desc">Modo arcade callejero</span>
+          </span>
+          <span class="btn-icon">🔥</span>
+        </a>
+      </section>
+    </main>
+
+    <div class="menu-footer">
+      <span>© 2026 Jobbin. All Rights Reserved.</span>
+      <button id="credits-open-btn" class="credits-trigger" type="button">
+        Créditos
+      </button>
+    </div>
+
+    <div id="credits-modal" class="credits-modal is-hidden" aria-hidden="true">
+      <div class="credits-card" role="dialog" aria-modal="true" aria-labelledby="credits-title">
+        <button id="credits-close-btn" class="credits-close" type="button" aria-label="Cerrar créditos">
+          ×
+        </button>
+
+        <div class="credits-eyebrow">Primera versión</div>
+        <h2 id="credits-title" class="credits-title">Créditos</h2>
+        <div class="credits-version">Bubble Kick 26 · Versión inicial</div>
+
+        <div class="credits-list">
+          <div class="credits-role">
+            <strong>Programación</strong>
+            <span>Gerardo Arias</span>
+          </div>
+
+          <div class="credits-role">
+            <strong>Arte y Animación 3D</strong>
+            <span>Gerardo Arias</span>
+          </div>
+
+          <div class="credits-role">
+            <strong>Rigging</strong>
+            <span>Gerardo Arias<br />Josué Moncada</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+      function saveMode(mode) {
+        localStorage.setItem("bubbleKickMode", mode);
+      }
+
+      const creditsModal = document.getElementById("credits-modal");
+      const creditsOpenBtn = document.getElementById("credits-open-btn");
+      const creditsCloseBtn = document.getElementById("credits-close-btn");
+
+      function openCredits() {
+        creditsModal?.classList.remove("is-hidden");
+        creditsModal?.setAttribute("aria-hidden", "false");
+      }
+
+      function closeCredits() {
+        creditsModal?.classList.add("is-hidden");
+        creditsModal?.setAttribute("aria-hidden", "true");
+      }
+
+      creditsOpenBtn?.addEventListener("click", openCredits);
+      creditsCloseBtn?.addEventListener("click", closeCredits);
+
+      creditsModal?.addEventListener("click", (event) => {
+        if (event.target === creditsModal) {
+          closeCredits();
+        }
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeCredits();
+        }
+      });
+
+      const menuMusic = document.getElementById("menu-music");
+      let menuMusicStarted = false;
+
+      function startMenuMusic() {
+        if (!menuMusic || menuMusicStarted) return;
+
+        menuMusic.volume = 0.42;
+        menuMusic
+          .play()
+          .then(() => {
+            menuMusicStarted = true;
+          })
+          .catch(() => {
+            menuMusicStarted = false;
+          });
+      }
+
+      window.addEventListener("pointerdown", startMenuMusic, { once: true });
+      window.addEventListener("keydown", startMenuMusic, { once: true });
+
+      startMenuMusic();
+
+      const canvas = document.getElementById("menu-stage-canvas");
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x284bff, 0.014);
+
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 180);
+      camera.position.set(0, 12, 18);
+      camera.lookAt(0, 0, -12);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+      });
+
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.domElement.style.filter =
+        "saturate(1.38) contrast(1.08) brightness(1.1)";
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.15);
+      scene.add(ambient);
+
+      const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+      sun.position.set(-6, 10, 8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      scene.add(sun);
+
+      const cyanFill = new THREE.DirectionalLight(0x6fffe0, 0.6);
+      cyanFill.position.set(8, 4, 8);
+      scene.add(cyanFill);
+
+      const blueBack = new THREE.DirectionalLight(0x3366ff, 0.1);
+      blueBack.position.set(-5, 3, -10);
+      scene.add(blueBack);
+
+      const loader = new THREE.GLTFLoader();
+      const mixers = [];
+      const runners = [];
+      const balls = [];
+      const clock = new THREE.Clock();
+
+      const runnerTeams = [
+        { code: "MEX", colors: ["#00843d", "#ffffff", "#ce1126"] },
+        { code: "BRA", colors: ["#f7d117", "#009c3b", "#002776"] },
+        { code: "ARG", colors: ["#75aadb", "#ffffff", "#f6b40e"] },
+        { code: "FRA", colors: ["#1d4ed8", "#ffffff", "#ef4444"] },
+        { code: "GER", colors: ["#ffffff", "#111111", "#ef4444"] },
+        { code: "POR", colors: ["#d00027", "#006b3f", "#ffcc00"] },
+        { code: "KSA", colors: ["#006c35", "#ffffff", "#111111"] },
+        { code: "JPN", colors: ["#ffffff", "#d50032", "#1d4ed8"] },
+        { code: "USA", colors: ["#ffffff", "#1d4ed8", "#b31942"] },
+        { code: "MAR", colors: ["#c1272d", "#006233", "#ffffff"] },
+        { code: "KOR", colors: ["#ef4444", "#ffffff", "#1d4ed8"] },
+        { code: "QAT", colors: ["#8a1538", "#ffffff", "#111111"] },
+      ];
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      function tintCharacterModel(model, colors) {
+        model.traverse((child) => {
+          if (!child.isMesh && !child.isSkinnedMesh) return;
+
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.frustumCulled = false;
+
+          const originalMaterial = child.material;
+          const material = originalMaterial
+            ? originalMaterial.clone()
+            : new THREE.MeshStandardMaterial();
+          const key = `${originalMaterial?.name || ""} ${
+            child.name || ""
+          }`.toLowerCase();
+
+          if (
+            key.includes("firstcolor") ||
+            key.includes("m_firstcolor") ||
+            key.includes("first_color")
+          ) {
+            material.color = new THREE.Color(colors[0]);
+          } else if (
+            key.includes("secondcolor") ||
+            key.includes("m_secondcolor") ||
+            key.includes("second_color")
+          ) {
+            material.color = new THREE.Color(colors[1]);
+          } else if (
+            key.includes("thirdcolor") ||
+            key.includes("m_thirdcolor") ||
+            key.includes("third_color")
+          ) {
+            material.color = new THREE.Color(colors[2]);
+          }
+
+          material.skinning = true;
+          material.needsUpdate = true;
+          child.material = material;
+        });
+      }
+
+      function normalizeModel(model, targetHeight = 1.62) {
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+
+        box.getSize(size);
+        box.getCenter(center);
+        model.position.sub(center);
+        model.position.y += size.y / 2;
+
+        if (size.y > 0) {
+          model.scale.setScalar(targetHeight / size.y);
+        }
+      }
+
+      function createFallbackRunner(colors) {
+        const group = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: colors[0],
+          roughness: 0.58,
+        });
+        const headMat = new THREE.MeshStandardMaterial({
+          color: 0xc58a4b,
+          roughness: 0.65,
+        });
+        const legMat = new THREE.MeshStandardMaterial({
+          color: colors[2],
+          roughness: 0.6,
+        });
+
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.28, 0.72, 8, 16),
+          bodyMat
+        );
+        body.position.y = 0.96;
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 18, 12),
+          headMat
+        );
+        head.position.y = 1.54;
+
+        const legA = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.07, 0.46, 6, 8),
+          legMat
+        );
+        legA.position.set(-0.12, 0.38, 0.04);
+        legA.rotation.x = 0.55;
+        const legB = legA.clone();
+        legB.position.x = 0.12;
+        legB.rotation.x = -0.55;
+
+        group.add(body, head, legA, legB);
+        group.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        return group;
+      }
+
+      function createRunnerLabel(text) {
+        const labelCanvas = document.createElement("canvas");
+        labelCanvas.width = 256;
+        labelCanvas.height = 96;
+
+        const ctx = labelCanvas.getContext("2d");
+        const safeText = (text || "---")
+          .toString()
+          .trim()
+          .slice(0, 4)
+          .toUpperCase();
+
+        ctx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+        ctx.font = "900 38px Inter, Segoe UI, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const boxW = 122;
+        const boxH = 54;
+        const x = (labelCanvas.width - boxW) / 2;
+        const y = (labelCanvas.height - boxH) / 2;
+        const r = 22;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + boxW - r, y);
+        ctx.quadraticCurveTo(x + boxW, y, x + boxW, y + r);
+        ctx.lineTo(x + boxW, y + boxH - r);
+        ctx.quadraticCurveTo(x + boxW, y + boxH, x + boxW - r, y + boxH);
+        ctx.lineTo(x + r, y + boxH);
+        ctx.quadraticCurveTo(x, y + boxH, x, y + boxH - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 6;
+        ctx.fillText(
+          safeText,
+          labelCanvas.width / 2,
+          labelCanvas.height / 2 + 1
+        );
+
+        const texture = new THREE.CanvasTexture(labelCanvas);
+        texture.needsUpdate = true;
+
+        const material = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        });
+
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(1.45, 0.54, 1);
+        sprite.renderOrder = 900;
+        return sprite;
+      }
+
+      function setupRunnerObject(model, index, colors) {
+        const runner = new THREE.Group();
+        const laneColumns = [-3.8, -2.15, -0.65, 0.95, 2.55, 4.05];
+        const lane = laneColumns[index % laneColumns.length];
+        const row = Math.floor(index / laneColumns.length);
+        const depthLane = -5.5 - row * 4.15 - (index % 3) * 0.9;
+
+        runner.userData.baseX = -16 - Math.random() * 13 - (index % 4) * 1.2;
+        runner.userData.speed = 2.85 + Math.random() * 1.35;
+        runner.userData.depthLane = depthLane;
+        runner.userData.lane = lane;
+        runner.userData.phase = Math.random() * Math.PI * 2;
+        runner.userData.hasBall = false;
+        runner.userData.baseScale = 2.25 - Math.min(index, 8) * 0.045;
+
+        model.rotation.y = Math.PI / 2;
+        runner.add(model);
+        const team = runnerTeams[index % runnerTeams.length];
+        const label = createRunnerLabel(team.code);
+        label.position.set(0, 2.05, 0);
+        runner.add(label);
+        runner.position.set(runner.userData.baseX, 0, depthLane);
+        runner.scale.setScalar(runner.userData.baseScale);
+        scene.add(runner);
+        runners.push(runner);
+
+        if (runner.userData.hasBall) {
+          createMenuBallForRunner(runner);
+        }
+      }
+
+      function loadRunner(index) {
+        const team = runnerTeams[index % runnerTeams.length];
+        const colors = team.colors;
+
+        loader.load(
+          "models/Character_FootballRunAnimation.glb",
+          (gltf) => {
+            const model = gltf.scene;
+            tintCharacterModel(model, colors);
+            normalizeModel(model, 1.58);
+
+            if (gltf.animations && gltf.animations.length > 0) {
+              const mixer = new THREE.AnimationMixer(model);
+              const clip =
+                gltf.animations.find(
+                  (animation) =>
+                    animation.name.toLowerCase().includes("run") ||
+                    animation.name.toLowerCase().includes("walk") ||
+                    animation.name.toLowerCase().includes("animation")
+                ) || gltf.animations[0];
+
+              const action = mixer.clipAction(clip);
+              action.timeScale = 1.15 + Math.random() * 0.35;
+              action.reset();
+              action.play();
+              mixers.push(mixer);
+            }
+
+            setupRunnerObject(model, index, colors);
+          },
+          undefined,
+          () => {
+            setupRunnerObject(createFallbackRunner(colors), index, colors);
+          }
+        );
+      }
+
+      function createFallbackBall() {
+        const group = new THREE.Group();
+        const ball = new THREE.Mesh(
+          new THREE.SphereGeometry(0.3, 24, 18),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 })
+        );
+        const patch = new THREE.Mesh(
+          new THREE.SphereGeometry(0.09, 6, 4),
+          new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.65 })
+        );
+        patch.position.set(0.16, 0.08, 0.2);
+        group.add(ball, patch);
+        return group;
+      }
+
+      function createMenuBallForRunner(runner) {
+        const ballGroup = new THREE.Group();
+        ballGroup.userData.runner = runner;
+        ballGroup.userData.offset = new THREE.Vector3(0.55, 0.28, 0.16);
+
+        loader.load(
+          "models/Ball_Model.glb",
+          (gltf) => {
+            const ball = gltf.scene;
+            normalizeModel(ball, 0.42);
+            ball.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+            ballGroup.add(ball);
+          },
+          undefined,
+          () => {
+            ballGroup.add(createFallbackBall());
+          }
+        );
+
+        scene.add(ballGroup);
+        balls.push(ballGroup);
+      }
+
+      function createInfinitePlane() {
+        const ground = new THREE.Group();
+
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(80, 260),
+          new THREE.MeshLambertMaterial({
+            color: 0x38f0c8,
+            transparent: true,
+            opacity: 0.26,
+          })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.z = -48;
+        floor.receiveShadow = true;
+        ground.add(floor);
+
+        const stripeMatA = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.06,
+        });
+        const stripeMatB = new THREE.MeshBasicMaterial({
+          color: 0xb6f000,
+          transparent: true,
+          opacity: 0.08,
+        });
+
+        for (let i = 0; i < 34; i++) {
+          const stripe = new THREE.Mesh(
+            new THREE.PlaneGeometry(1.2, 260),
+            i % 2 === 0 ? stripeMatA : stripeMatB
+          );
+          stripe.rotation.x = -Math.PI / 2;
+          stripe.position.set(-38 + i * 3.2, 0.012, -48);
+          stripe.userData.startX = stripe.position.x;
+          ground.add(stripe);
+        }
+
+        scene.add(ground);
+        return ground;
+      }
+
+      const infinitePlane = createInfinitePlane();
+
+      for (let i = 0; i < 14; i++) {
+        loadRunner(i);
+      }
+
+      function updateRunners(dt, elapsed) {
+        runners.forEach((runner, index) => {
+          runner.position.x += runner.userData.speed * dt;
+          runner.position.z =
+            runner.userData.depthLane +
+            Math.sin(elapsed * 1.2 + runner.userData.phase) * 0.22;
+          runner.position.y =
+            Math.sin(elapsed * 7 + runner.userData.phase) * 0.012;
+
+          if (runner.position.x > 22) {
+            runner.position.x = -24 - Math.random() * 14;
+            runner.userData.depthLane = -5.5 - Math.random() * 34;
+            runner.userData.speed = 2.8 + Math.random() * 1.45;
+          }
+
+          const distanceFade = THREE.MathUtils.clamp(
+            (runner.position.z + 46) / 46,
+            0.34,
+            1
+          );
+          runner.scale.setScalar(runner.userData.baseScale * distanceFade);
+        });
+      }
+
+      function updatePlane(dt) {
+        // Los jugadores avanzan en X positivo, por eso las franjas viajan también en X.
+        infinitePlane.children.forEach((child) => {
+          if (child.userData.startX === undefined) return;
+
+          child.position.x += 1.8 * dt;
+
+          if (child.position.x > 42) {
+            child.position.x -= 34 * 3.2;
+          }
+        });
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const elapsed = performance.now() * 0.001;
+
+        mixers.forEach((mixer) => mixer.update(dt));
+        updateRunners(dt, elapsed);
+        updatePlane(dt);
+
+        camera.position.x = Math.sin(elapsed * 0.18) * 0.28;
+        camera.lookAt(0, 0, -12);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>

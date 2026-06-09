@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Kick — Arcade Soccer</title>
+
+    <link rel="stylesheet" href="css/styleRush.css" />
+
+    <style>
+      #pause-btn {
+        position: fixed;
+        top: max(18px, env(safe-area-inset-top));
+        right: max(18px, env(safe-area-inset-right));
+        z-index: 80;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.34);
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+      }
+
+      #pause-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background:
+          radial-gradient(ellipse at 72% 48%, rgba(93, 240, 214, 0.24), transparent 0 34%, transparent 55%),
+          rgba(0, 0, 0, 0.58);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      #pause-overlay.is-hidden {
+        display: none;
+      }
+
+      .pause-card {
+        width: min(420px, calc(100vw - 38px));
+        padding: 30px;
+        border-radius: 32px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+      }
+
+      .pause-title {
+        color: #ffffff;
+        font-size: clamp(52px, 8vw, 84px);
+        line-height: 0.9;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        text-shadow: 0 7px 24px rgba(0, 0, 0, 0.38);
+      }
+
+      .pause-subtitle {
+        margin: 12px 0 24px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .pause-actions {
+        display: grid;
+        gap: 12px;
+      }
+
+      .pause-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        border: 0;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff 0%, #95f4ff 58%, #b9ff22 100%);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25), 0 0 34px rgba(185, 255, 34, 0.22);
+      }
+
+      .pause-action-btn.secondary {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
+      @media (max-width: 680px) {
+        #pause-btn {
+          top: auto;
+          right: max(14px, env(safe-area-inset-right));
+          bottom: max(18px, env(safe-area-inset-bottom));
+          padding: 10px 14px;
+          font-size: 11px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <!-- UI -->
+    <div id="ui">
+      <div id="scoreboard">
+        <div class="score-side p1">
+          <div class="player-dot"></div>
+
+          <span class="score-label" id="p1-score-label">
+            Tú
+          </span>
+
+          <span class="score-num" id="score-p1">
+            0
+          </span>
+        </div>
+
+        <div class="score-divider"></div>
+
+        <div class="match-clock">
+          <span class="clock-label">
+            Tiempo
+          </span>
+
+          <span class="clock-num" id="match-clock">
+            1:30
+          </span>
+        </div>
+
+        <div class="score-divider"></div>
+
+        <div class="score-side p2">
+          <span class="score-num" id="score-p2">
+            0
+          </span>
+
+          <span class="score-label" id="p2-score-label">
+            IA
+          </span>
+
+          <div class="player-dot"></div>
+        </div>
+      </div>
+
+      <!-- Turn -->
+      <div id="turn-indicator">
+        <div id="turn-dot"></div>
+
+        <span id="turn-text">
+          MODO RUSH
+        </span>
+      </div>
+
+      <!-- Strength -->
+      <div id="strength-bar-wrap">
+        <span id="strength-label">
+          Fuerza
+        </span>
+
+        <div id="strength-track">
+          <div id="strength-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal -->
+    <div id="goal-overlay">
+      <div id="goal-text">
+        ⚽ GOL!
+      </div>
+
+      <div id="scorer-text"></div>
+    </div>
+
+    <!-- Win -->
+    <div id="win-overlay">
+      <div id="win-trophy">
+        🏆
+      </div>
+
+      <div id="win-title">
+        ¡GANASTE!
+      </div>
+
+      <div id="win-sub">
+        Partido terminado
+      </div>
+
+      <div id="match-stats">
+        <div class="match-stats-title">
+          Estadísticas del partido
+        </div>
+
+        <div id="match-stats-content" class="stats-empty">
+          Sin goles registrados
+        </div>
+      </div>
+
+      <button id="restart-btn">
+        NUEVA PARTIDA
+      </button>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instruction">
+      J1: WASD para moverte · Space dispara
+    </div>
+
+    <div id="rush-help">
+      Modo Rush vs IA
+    </div>
+
+    <button id="pause-btn" type="button" aria-label="Pausar partido">
+      ⏸ Pausa
+    </button>
+
+    <div id="pause-overlay" class="is-hidden" aria-hidden="true">
+      <div class="pause-card">
+        <div class="pause-title">
+          Pausa
+        </div>
+
+        <div class="pause-subtitle">
+          Partido detenido
+        </div>
+
+        <div class="pause-actions">
+          <button id="resume-btn" class="pause-action-btn" type="button">
+            Reanudar
+          </button>
+
+          <a class="pause-action-btn secondary" href="index.html">
+            Salir al menú
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <button id="mobile-dash-btn" aria-label="Sprint">
+      💨
+      <span>DASH</span>
+    </button>
+
+    <button id="mobile-shoot-btn" aria-label="Chutar">
+      ⚽
+      <span>SHOOT</span>
+    </button>
+
+    <!--<button id="quick-restart-btn">
+      ↺ REINICIAR
+    </button> -->
+
+    <!-- IMPORT MAP -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/GLTFLoader.js":
+            "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+        }
+      }
+    </script>
+
+    <!-- MAIN -->
+    <script type="module" src="./js/mainRush.js"></script>
+  </body>
+</html>

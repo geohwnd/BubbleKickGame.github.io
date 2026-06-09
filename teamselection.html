@@ -1,0 +1,1256 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Kick — Selección de equipos</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #ffffff;
+        overflow: hidden;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #2f49ff;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(255,255,255,0.62), transparent 0 16%, transparent 32%),
+          radial-gradient(circle at 80% 20%, rgba(255,255,255,0.28), transparent 0 12%, transparent 28%),
+          radial-gradient(circle at 45% 52%, rgba(255,255,255,0.16), transparent 0 18%, transparent 44%),
+          linear-gradient(120deg, #2d43ff 0%, #3158ff 38%, #5df0d6 100%);
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: -10%;
+        pointer-events: none;
+        opacity: 0.92;
+        background:
+          radial-gradient(ellipse at 78% 50%, rgba(94, 242, 214, 0.92) 0 18%, transparent 18.3%),
+          radial-gradient(ellipse at 83% 50%, rgba(81, 224, 210, 0.72) 0 28%, transparent 28.4%),
+          radial-gradient(ellipse at 18% 52%, rgba(38, 62, 252, 0.95) 0 36%, transparent 36.4%);
+        filter: blur(0.1px);
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100vw - 28px));
+        height: 100vh;
+        margin: 0 auto;
+        padding: 18px 0 20px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 12px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .back-link,
+      .small-pill {
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 34px;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 1000;
+        font-size: 11px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(7, 24, 86, 0.38);
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        box-shadow: 0 9px 22px rgba(0, 0, 0, 0.14), inset 0 0 0 1px rgba(255,255,255,0.08);
+        backdrop-filter: blur(10px);
+      }
+
+      .hint {
+        justify-self: end;
+        color: rgba(255,255,255,0.88);
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: right;
+      }
+
+      .brand {
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+        text-align: center;
+      }
+
+      .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.24);
+        border: 1px solid rgba(255,255,255,0.28);
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.08);
+        font-size: 10px;
+        font-weight: 1000;
+        letter-spacing: 1.1px;
+        text-transform: uppercase;
+      }
+
+      .brand-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #7ef8e8;
+        box-shadow: 0 0 14px #7ef8e8;
+      }
+
+      h1 {
+        color: #ffffff;
+        font-size: clamp(34px, 5vw, 62px);
+        line-height: 0.9;
+        font-weight: 1000;
+        letter-spacing: -2.4px;
+        text-transform: uppercase;
+        text-shadow: 0 5px 0 rgba(21, 49, 166, 0.22), 0 18px 32px rgba(0,0,0,0.18);
+      }
+
+      .versus-stage {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
+        align-items: center;
+        gap: clamp(12px, 2vw, 30px);
+        padding: 4px 0 0;
+      }
+
+      .player-panel {
+        min-width: 0;
+        height: min(58vh, 530px);
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 34px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+        border: 1px solid rgba(255,255,255,0.28);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.14), inset 0 0 0 1px rgba(255,255,255,0.12);
+        backdrop-filter: blur(12px);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .player-panel::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.18);
+        pointer-events: none;
+      }
+
+      .player-panel.p1 {
+        background: linear-gradient(135deg, rgba(50, 63, 255, 0.36), rgba(105, 237, 218, 0.18));
+      }
+
+      .player-panel.p2 {
+        background: linear-gradient(135deg, rgba(105, 237, 218, 0.2), rgba(50, 63, 255, 0.34));
+      }
+
+      .player-header {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .player-title {
+        font-size: 13px;
+        font-weight: 1000;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.82);
+      }
+
+      .ready-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 82px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.22);
+        border: 1px solid rgba(255,255,255,0.24);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+      }
+
+      .ready-label.ready {
+        color: #2036ff;
+        background: #7ef8e8;
+        box-shadow: 0 0 20px rgba(126,248,232,0.46);
+      }
+
+      .preview-wrap {
+        position: relative;
+        z-index: 2;
+        min-height: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      .preview-canvas {
+        width: 100%;
+        height: 100%;
+        min-height: 260px;
+        display: block;
+        border-radius: 28px;
+        background:
+          radial-gradient(ellipse at 50% 74%, rgba(255,255,255,0.22), transparent 0 24%, transparent 38%),
+          linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+      }
+
+      .empty-player {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: rgba(255,255,255,0.72);
+        font-size: 18px;
+        font-weight: 1000;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+
+      .team-nameplate {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .team-nameplate .country {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        max-width: 100%;
+        color: #ffffff;
+        font-size: clamp(18px, 2.5vw, 30px);
+        font-weight: 1000;
+        line-height: 1;
+        letter-spacing: -1px;
+        text-transform: uppercase;
+        text-shadow: 0 5px 18px rgba(0,0,0,0.24);
+      }
+
+      .team-nameplate .country span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .palette {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .palette-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        border: 2px solid rgba(255,255,255,0.78);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+      }
+
+      .panel-actions {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+
+      .ghost-btn,
+      .edit-team-btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 9px 13px;
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 1000;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        transition: transform 0.14s ease, filter 0.18s ease;
+      }
+
+      .ghost-btn {
+        color: #ffffff;
+        background: rgba(0,0,0,0.24);
+        border: 1px solid rgba(255,255,255,0.24);
+      }
+
+      .edit-team-btn {
+        color: #233bff;
+        background: #7ef8e8;
+        box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+      }
+
+      .ghost-btn:hover,
+      .edit-team-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.06);
+      }
+
+      .vs-block {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        align-self: center;
+      }
+
+      .vs-text {
+        width: clamp(86px, 12vw, 126px);
+        height: clamp(86px, 12vw, 126px);
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #2036ff;
+        background: rgba(255,255,255,0.9);
+        border: 4px solid rgba(255,255,255,0.74);
+        box-shadow: 0 18px 34px rgba(25, 48, 180, 0.26), inset 0 -10px 0 rgba(45, 67, 255, 0.08);
+        font-size: clamp(28px, 5vw, 48px);
+        font-weight: 1000;
+        letter-spacing: -3px;
+        text-transform: uppercase;
+        transform: rotate(-5deg);
+      }
+
+      .start-btn {
+        width: min(190px, 100%);
+        border: 0;
+        border-radius: 999px;
+        padding: 14px 18px;
+        color: #243cff;
+        font-size: 13px;
+        font-weight: 1000;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: linear-gradient(180deg, #ffffff, #7ef8e8);
+        box-shadow: 0 10px 0 rgba(0,0,0,0.16), 0 18px 40px rgba(0,0,0,0.16);
+        transition: transform 0.15s ease, filter 0.2s ease, opacity 0.2s ease;
+      }
+
+      .start-btn:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+        filter: grayscale(0.5);
+      }
+
+      .start-btn:not(:disabled):hover {
+        transform: translateY(-2px) scale(1.03);
+        filter: brightness(1.08);
+      }
+
+      .bottom-selector {
+        min-height: 142px;
+        padding: 12px;
+        border-radius: 30px;
+        background: rgba(6, 25, 92, 0.35);
+        border: 1px solid rgba(255,255,255,0.26);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.16), inset 0 0 0 1px rgba(255,255,255,0.08);
+        backdrop-filter: blur(14px);
+        display: grid;
+        gap: 10px;
+      }
+
+      .selector-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .search-wrap {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.25);
+      }
+
+      .search-wrap span {
+        color: rgba(255,255,255,0.76);
+        font-size: 15px;
+      }
+
+      #searchInput {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 850;
+      }
+
+      #searchInput::placeholder {
+        color: rgba(255,255,255,0.68);
+      }
+
+      .turn-pill {
+        flex: 0 0 auto;
+        padding: 9px 13px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.22);
+        border: 1px solid rgba(255,255,255,0.24);
+        color: rgba(255,255,255,0.9);
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .teams-strip-wrap {
+        position: relative;
+        min-width: 0;
+      }
+
+      .teams-strip {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 84px;
+        gap: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 4px 4px 10px;
+        scroll-snap-type: x proximity;
+      }
+
+      .teams-strip::-webkit-scrollbar {
+        height: 9px;
+      }
+
+      .teams-strip::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.14);
+        border-radius: 999px;
+      }
+
+      .teams-strip::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.55);
+        border-radius: 999px;
+      }
+
+      .team-card {
+        position: relative;
+        height: 84px;
+        border: 0;
+        border-radius: 18px;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        justify-items: center;
+        align-items: center;
+        gap: 4px;
+        padding: 7px 6px 6px;
+        color: #ffffff;
+        cursor: pointer;
+        overflow: hidden;
+        scroll-snap-align: center;
+        background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.12));
+        border: 1px solid rgba(255,255,255,0.22);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 10px 18px rgba(0,0,0,0.12);
+        transition: transform 0.12s ease, filter 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .team-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.5;
+        background: linear-gradient(135deg, var(--team-color), rgba(255,255,255,0.14));
+      }
+
+      .team-card > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .team-card:hover {
+        transform: translateY(-4px) scale(1.04);
+        filter: brightness(1.08);
+      }
+
+      .team-card.selected-p1 {
+        box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #2e43ff, 0 16px 24px rgba(0,0,0,0.18);
+      }
+
+      .team-card.selected-p2 {
+        box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #7ef8e8, 0 16px 24px rgba(0,0,0,0.18);
+      }
+
+      .team-card.disabled {
+        opacity: 0.58;
+      }
+
+      .team-flag {
+        font-size: 30px;
+        line-height: 1;
+        filter: drop-shadow(0 7px 10px rgba(0,0,0,0.24));
+      }
+
+      .team-code {
+        max-width: 100%;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pick-badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        z-index: 2;
+        min-width: 24px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        color: #243cff;
+        background: #ffffff;
+        font-size: 9px;
+        font-weight: 1000;
+      }
+
+      .empty-state {
+        display: none;
+        padding: 16px;
+        text-align: center;
+        color: rgba(255,255,255,0.82);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .roster-hidden-inputs {
+        display: none;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        z-index: 50;
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+        padding: 12px 16px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.62);
+        color: #ffffff;
+        border: 1px solid rgba(255,255,255,0.2);
+        font-size: 13px;
+        font-weight: 900;
+        backdrop-filter: blur(10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (max-width: 980px) {
+        html,
+        body {
+          overflow-y: auto;
+        }
+
+        .page {
+          height: auto;
+          min-height: 100vh;
+        }
+
+        .topbar,
+        .versus-stage {
+          grid-template-columns: 1fr;
+        }
+
+        .back-link,
+        .hint {
+          justify-self: center;
+          text-align: center;
+        }
+
+        .player-panel {
+          height: 430px;
+        }
+
+        .vs-block {
+          order: 2;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .selector-top {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .teams-strip {
+          grid-auto-columns: 76px;
+        }
+
+        .team-card {
+          height: 78px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <a class="back-link" href="index.html">← Menú</a>
+
+        <div class="brand">
+          <div class="brand-badge"><span class="brand-dot"></span> 8v8 Footii Match</div>
+          <h1>Elige equipos</h1>
+        </div>
+
+        <p class="hint">Selecciona local y visitante desde la barra inferior</p>
+      </header>
+
+      <main class="versus-stage">
+        <section class="player-panel p1" aria-label="Equipo local">
+          <div class="player-header">
+            <span class="player-title">Jugador 1</span>
+            <span id="p1Ready" class="ready-label">Sin equipo</span>
+          </div>
+
+          <div class="preview-wrap">
+            <canvas id="p1Preview" class="preview-canvas"></canvas>
+            <div id="p1Empty" class="empty-player">Elige local</div>
+          </div>
+
+          <div class="team-nameplate" id="p1Frame">
+            <div class="country"><span>＋</span><span>Local</span></div>
+          </div>
+
+          <div class="panel-actions">
+            <button id="clearP1" class="ghost-btn" type="button">Limpiar</button>
+            <button id="editP1" class="edit-team-btn" type="button">Editar equipo</button>
+          </div>
+
+          <div class="roster-hidden-inputs">
+            <input id="p1Player0" type="hidden" value="Capitán" />
+            <input id="p1Player1" type="hidden" value="Extremo" />
+            <input id="p1Player2" type="hidden" value="Defensa" />
+            <input id="p1Player3" type="hidden" value="Portero" />
+          </div>
+        </section>
+
+        <section class="vs-block">
+          <div class="vs-text">VS.</div>
+          <button id="startButton" class="start-btn" type="button" disabled>Iniciar partido</button>
+        </section>
+
+        <section class="player-panel p2" aria-label="Equipo visitante">
+          <div class="player-header">
+            <span id="p2Ready" class="ready-label">Sin equipo</span>
+            <span class="player-title">Jugador 2</span>
+          </div>
+
+          <div class="preview-wrap">
+            <canvas id="p2Preview" class="preview-canvas"></canvas>
+            <div id="p2Empty" class="empty-player">Elige visitante</div>
+          </div>
+
+          <div class="team-nameplate" id="p2Frame">
+            <div class="country"><span>＋</span><span>Visitante</span></div>
+          </div>
+
+          <div class="panel-actions">
+            <button id="clearP2" class="ghost-btn" type="button">Limpiar</button>
+            <button id="editP2" class="edit-team-btn" type="button">Editar equipo</button>
+          </div>
+
+          <div class="roster-hidden-inputs">
+            <input id="p2Player0" type="hidden" value="Capitán IA" />
+            <input id="p2Player1" type="hidden" value="Atacante IA" />
+            <input id="p2Player2" type="hidden" value="Defensa IA" />
+            <input id="p2Player3" type="hidden" value="Portero IA" />
+          </div>
+        </section>
+      </main>
+
+      <section class="bottom-selector" aria-label="Selector de equipos">
+        <div class="selector-top">
+          <label class="search-wrap" for="searchInput">
+            <span>🔎</span>
+            <input id="searchInput" type="search" placeholder="Buscar selección, país o código..." autocomplete="off" />
+          </label>
+          <div id="turnPill" class="turn-pill">Turno: Local</div>
+        </div>
+
+        <div class="teams-strip-wrap">
+          <div id="teamsGrid" class="teams-strip"></div>
+          <div id="emptyState" class="empty-state">No encontramos equipos con esa búsqueda.</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+      const groups = [
+        { id: "A", teams: [
+          { sticker: 8, code: "MEX", name: "Mexico", flag: "🇲🇽" },
+          { sticker: 10, code: "RSA", name: "South Africa", flag: "🇿🇦" },
+          { sticker: 12, code: "KOR", name: "Korea Republic", flag: "🇰🇷" },
+          { sticker: 14, code: "CZE", name: "Czechia", flag: "🇨🇿" }
+        ]},
+        { id: "B", teams: [
+          { sticker: 16, code: "CAN", name: "Canada", flag: "🇨🇦" },
+          { sticker: 18, code: "BIH", name: "Bosnia-Herzegovina", flag: "🇧🇦" },
+          { sticker: 20, code: "QAT", name: "Qatar", flag: "🇶🇦" },
+          { sticker: 22, code: "SUI", name: "Switzerland", flag: "🇨🇭" }
+        ]},
+        { id: "C", teams: [
+          { sticker: 24, code: "BRA", name: "Brazil", flag: "🇧🇷" },
+          { sticker: 26, code: "MAR", name: "Morocco", flag: "🇲🇦" },
+          { sticker: 28, code: "HAI", name: "Haiti", flag: "🇭🇹" },
+          { sticker: 30, code: "SCO", name: "Scotland", flag: "🏴" }
+        ]},
+        { id: "D", teams: [
+          { sticker: 32, code: "USA", name: "USA", flag: "🇺🇸" },
+          { sticker: 34, code: "PAR", name: "Paraguay", flag: "🇵🇾" },
+          { sticker: 36, code: "AUS", name: "Australia", flag: "🇦🇺" },
+          { sticker: 38, code: "TUR", name: "Türkiye", flag: "🇹🇷" }
+        ]},
+        { id: "E", teams: [
+          { sticker: 40, code: "GER", name: "Germany", flag: "🇩🇪" },
+          { sticker: 42, code: "CUW", name: "Curaçao", flag: "🇨🇼" },
+          { sticker: 44, code: "CIV", name: "Côte d’Ivoire", flag: "🇨🇮" },
+          { sticker: 46, code: "ECU", name: "Ecuador", flag: "🇪🇨" }
+        ]},
+        { id: "F", teams: [
+          { sticker: 48, code: "NED", name: "Netherlands", flag: "🇳🇱" },
+          { sticker: 50, code: "JPN", name: "Japan", flag: "🇯🇵" },
+          { sticker: 52, code: "SWE", name: "Sweden", flag: "🇸🇪" },
+          { sticker: 54, code: "TUN", name: "Tunisia", flag: "🇹🇳" }
+        ]},
+        { id: "G", teams: [
+          { sticker: 58, code: "BEL", name: "Belgium", flag: "🇧🇪" },
+          { sticker: 60, code: "EGY", name: "Egypt", flag: "🇪🇬" },
+          { sticker: 62, code: "IRN", name: "IR Iran", flag: "🇮🇷" },
+          { sticker: 64, code: "NZL", name: "New Zealand", flag: "🇳🇿" }
+        ]},
+        { id: "H", teams: [
+          { sticker: 66, code: "ESP", name: "Spain", flag: "🇪🇸" },
+          { sticker: 68, code: "CPV", name: "Cabo Verde", flag: "🇨🇻" },
+          { sticker: 70, code: "KSA", name: "Saudi Arabia", flag: "🇸🇦" },
+          { sticker: 72, code: "URU", name: "Uruguay", flag: "🇺🇾" }
+        ]},
+        { id: "I", teams: [
+          { sticker: 74, code: "FRA", name: "France", flag: "🇫🇷" },
+          { sticker: 76, code: "SEN", name: "Senegal", flag: "🇸🇳" },
+          { sticker: 78, code: "IRQ", name: "Iraq", flag: "🇮🇶" },
+          { sticker: 80, code: "NOR", name: "Norway", flag: "🇳🇴" }
+        ]},
+        { id: "J", teams: [
+          { sticker: 82, code: "ARG", name: "Argentina", flag: "🇦🇷" },
+          { sticker: 84, code: "ALG", name: "Algeria", flag: "🇩🇿" },
+          { sticker: 86, code: "AUT", name: "Austria", flag: "🇦🇹" },
+          { sticker: 88, code: "JOR", name: "Jordan", flag: "🇯🇴" }
+        ]},
+        { id: "K", teams: [
+          { sticker: 90, code: "POR", name: "Portugal", flag: "🇵🇹" },
+          { sticker: 92, code: "COD", name: "Congo DR", flag: "🇨🇩" },
+          { sticker: 94, code: "UZB", name: "Uzbekistan", flag: "🇺🇿" },
+          { sticker: 96, code: "COL", name: "Colombia", flag: "🇨🇴" }
+        ]},
+        { id: "L", teams: [
+          { sticker: 98, code: "ENG", name: "England", flag: "🏴" },
+          { sticker: 100, code: "CRO", name: "Croatia", flag: "🇭🇷" },
+          { sticker: 102, code: "GHA", name: "Ghana", flag: "🇬🇭" },
+          { sticker: 104, code: "PAN", name: "Panama", flag: "🇵🇦" }
+        ]}
+      ];
+
+      const TEAM_COLOR_PALETTES = {
+        MEX: ["#1f9d55", "#ffffff", "#d62828"], RSA: ["#007a4d", "#f7c948", "#0033a0"], KOR: ["#ffffff", "#e63946", "#2563eb"], CZE: ["#ffffff", "#d62828", "#2563eb"],
+        CAN: ["#d62828", "#ffffff", "#d62828"], BIH: ["#1f5fbf", "#f7c948", "#ffffff"], QAT: ["#8a1538", "#ffffff", "#8a1538"], SUI: ["#e63946", "#ffffff", "#e63946"],
+        BRA: ["#f2c94c", "#1f9d55", "#2563eb"], MAR: ["#c1121f", "#1f9d55", "#ffffff"], HAI: ["#1d4ed8", "#d62828", "#ffffff"], SCO: ["#2563eb", "#ffffff", "#2563eb"],
+        USA: ["#2563eb", "#ffffff", "#d62828"], PAR: ["#d62828", "#ffffff", "#2563eb"], AUS: ["#f7c948", "#1f9d55", "#ffffff"], TUR: ["#e63946", "#ffffff", "#e63946"],
+        GER: ["#111827", "#e63946", "#f2c94c"], CUW: ["#2f80ed", "#f7c948", "#ffffff"], CIV: ["#f2994a", "#ffffff", "#2f9e44"], ECU: ["#f2c94c", "#2563eb", "#d62828"],
+        NED: ["#f2994a", "#ffffff", "#2563eb"], JPN: ["#ffffff", "#d62828", "#ffffff"], SWE: ["#2563eb", "#f2c94c", "#2563eb"], TUN: ["#e63946", "#ffffff", "#e63946"],
+        BEL: ["#111827", "#f2c94c", "#e63946"], EGY: ["#d62828", "#ffffff", "#111827"], IRN: ["#2f9e44", "#ffffff", "#d62828"], NZL: ["#111827", "#ffffff", "#d62828"],
+        ESP: ["#e63946", "#f2c94c", "#e63946"], CPV: ["#2f80ed", "#ffffff", "#f2c94c"], KSA: ["#2f9e44", "#ffffff", "#2f9e44"], URU: ["#60a5fa", "#ffffff", "#111827"],
+        FRA: ["#2563eb", "#ffffff", "#e63946"], SEN: ["#2f9e44", "#f2c94c", "#d62828"], IRQ: ["#d62828", "#ffffff", "#111827"], NOR: ["#d62828", "#ffffff", "#2563eb"],
+        ARG: ["#60a5fa", "#ffffff", "#60a5fa"], ALG: ["#2f9e44", "#ffffff", "#d62828"], AUT: ["#e63946", "#ffffff", "#e63946"], JOR: ["#111827", "#ffffff", "#2f9e44"],
+        POR: ["#16a34a", "#e63946", "#f2c94c"], COD: ["#2f80ed", "#f2c94c", "#d62828"], UZB: ["#2dd4bf", "#ffffff", "#2563eb"], COL: ["#f2c94c", "#2563eb", "#d62828"],
+        ENG: ["#ffffff", "#e63946", "#2563eb"], CRO: ["#e63946", "#ffffff", "#2563eb"], GHA: ["#d62828", "#f2c94c", "#2f9e44"], PAN: ["#ffffff", "#2563eb", "#d62828"]
+      };
+
+      const selectedFallbackColors = ["#ffffff", "#2f49ff", "#7ef8e8"];
+      let selectedP1 = loadStoredTeam("bubbleKickP1Team");
+      let selectedP2 = loadStoredTeam("bubbleKickP2Team");
+      let nextPlayer = selectedP1 && !selectedP2 ? 2 : 1;
+
+      const teamsGrid = document.getElementById("teamsGrid");
+      const searchInput = document.getElementById("searchInput");
+      const startButton = document.getElementById("startButton");
+      const emptyState = document.getElementById("emptyState");
+      const toast = document.getElementById("toast");
+      const turnPill = document.getElementById("turnPill");
+      const defaultP1Roster = ["Capitán", "Extremo", "Defensa", "Portero"];
+      const defaultP2Roster = ["Capitán IA", "Atacante IA", "Defensa IA", "Portero IA"];
+
+      function teamKey(team) {
+        return `${team.code}-${team.name}`;
+      }
+
+      function safeJsonParse(value, fallback = null) {
+        try {
+          return value ? JSON.parse(value) : fallback;
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      function loadStoredTeam(storageKey) {
+        const storedTeam = safeJsonParse(localStorage.getItem(storageKey), null);
+        if (!storedTeam || !storedTeam.code || !storedTeam.name) return null;
+        return withTeamStyle(storedTeam);
+      }
+
+      function loadStoredRoster(playerNumber) {
+        const defaults = playerNumber === 1 ? defaultP1Roster : defaultP2Roster;
+        const storageKey = playerNumber === 1 ? "bubbleKickP1Roster" : "bubbleKickP2Roster";
+        const storedRoster = safeJsonParse(localStorage.getItem(storageKey), null);
+
+        return defaults.map((fallback, index) => {
+          const value = Array.isArray(storedRoster) ? storedRoster[index] : null;
+          return typeof value === "string" && value.trim()
+            ? value.trim().slice(0, 18)
+            : fallback;
+        });
+      }
+
+      function hydrateRosterInputs() {
+        [1, 2].forEach((playerNumber) => {
+          const roster = loadStoredRoster(playerNumber);
+
+          roster.forEach((name, index) => {
+            const input = document.getElementById(`p${playerNumber}Player${index}`);
+            if (input) input.value = name;
+          });
+        });
+      }
+
+      function saveSelectionState() {
+        if (selectedP1) {
+          localStorage.setItem("bubbleKickP1Team", JSON.stringify(selectedP1));
+        }
+
+        if (selectedP2) {
+          localStorage.setItem("bubbleKickP2Team", JSON.stringify(selectedP2));
+        }
+
+        localStorage.setItem("bubbleKickP1Roster", JSON.stringify(getRoster(1)));
+        localStorage.setItem("bubbleKickP2Roster", JSON.stringify(getRoster(2)));
+      }
+
+      function withTeamStyle(team) {
+        const colors = TEAM_COLOR_PALETTES[team.code] || selectedFallbackColors;
+        return {
+          ...team,
+          icon: team.flag,
+          color: colors[0],
+          colors,
+        };
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => toast.classList.remove("show"), 1500);
+      }
+
+      function getAllTeams() {
+        return groups.flatMap((group) => group.teams.map((team) => ({ ...team, groupId: group.id })));
+      }
+
+      function renderTeams() {
+        const query = searchInput.value.trim().toLowerCase();
+        teamsGrid.innerHTML = "";
+
+        const filteredTeams = getAllTeams().filter((team) => {
+          const text = `${team.name} ${team.code} ${team.groupId}`.toLowerCase();
+          return text.includes(query);
+        });
+
+        filteredTeams.forEach((team) => {
+          const styledTeam = withTeamStyle(team);
+          const key = teamKey(team);
+          const isP1 = selectedP1 && teamKey(selectedP1) === key;
+          const isP2 = selectedP2 && teamKey(selectedP2) === key;
+          const disabled = isP1 || isP2;
+
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = `team-card ${isP1 ? "selected-p1" : ""} ${isP2 ? "selected-p2" : ""} ${disabled ? "disabled" : ""}`;
+          card.style.setProperty("--team-color", styledTeam.color);
+          card.innerHTML = `
+            <span class="team-flag">${team.flag}</span>
+            <span class="team-code">${team.code}</span>
+            ${isP1 ? '<span class="pick-badge">J1</span>' : ''}
+            ${isP2 ? '<span class="pick-badge">J2</span>' : ''}
+          `;
+          card.addEventListener("click", () => selectTeam(team));
+          teamsGrid.appendChild(card);
+        });
+
+        emptyState.style.display = filteredTeams.length === 0 ? "block" : "none";
+      }
+
+      function selectTeam(team) {
+        if (selectedP1 && teamKey(selectedP1) === teamKey(team)) {
+          showToast("Ese equipo ya lo eligió el local");
+          return;
+        }
+
+        if (selectedP2 && teamKey(selectedP2) === teamKey(team)) {
+          showToast("Ese equipo ya lo eligió el visitante");
+          return;
+        }
+
+        if (nextPlayer === 1) {
+          selectedP1 = withTeamStyle(team);
+          nextPlayer = selectedP2 ? 1 : 2;
+          showToast(`Local eligió ${team.name}`);
+        } else {
+          selectedP2 = withTeamStyle(team);
+          nextPlayer = selectedP1 ? 2 : 1;
+          showToast(`Visitante eligió ${team.name}`);
+        }
+
+        updateSelectionUI();
+        renderTeams();
+      }
+
+      function clearPick(playerNumber) {
+        if (playerNumber === 1) {
+          selectedP1 = null;
+          nextPlayer = 1;
+          localStorage.removeItem("bubbleKickP1Team");
+        } else {
+          selectedP2 = null;
+          nextPlayer = 2;
+          localStorage.removeItem("bubbleKickP2Team");
+        }
+
+        updateSelectionUI();
+        renderTeams();
+      }
+
+      function renderFrame(team, label) {
+        if (!team) {
+          return `<div class="country"><span>＋</span><span>${label}</span></div>`;
+        }
+
+        const colors = team.colors || [team.color];
+        return `
+          <div class="country" title="${team.name}">
+            <span>${team.icon || team.flag}</span>
+            <span>${team.name}</span>
+          </div>
+          <div class="palette">
+            ${colors.map((color) => `<span class="palette-dot" style="background:${color};"></span>`).join("")}
+          </div>
+        `;
+      }
+
+      function getRoster(playerNumber) {
+        const defaults = playerNumber === 1 ? defaultP1Roster : defaultP2Roster;
+        return defaults.map((name, index) => {
+          const input = document.getElementById(`p${playerNumber}Player${index}`);
+          return (input?.value || name).trim() || name;
+        });
+      }
+
+      function updateSelectionUI() {
+        document.getElementById("p1Frame").innerHTML = renderFrame(selectedP1, "Local");
+        document.getElementById("p2Frame").innerHTML = renderFrame(selectedP2, "Visitante");
+        document.getElementById("p1Ready").textContent = selectedP1 ? "Ready!" : "Sin equipo";
+        document.getElementById("p2Ready").textContent = selectedP2 ? "Ready!" : "Sin equipo";
+        document.getElementById("p1Ready").classList.toggle("ready", !!selectedP1);
+        document.getElementById("p2Ready").classList.toggle("ready", !!selectedP2);
+        document.getElementById("p1Empty").style.display = selectedP1 ? "none" : "grid";
+        document.getElementById("p2Empty").style.display = selectedP2 ? "none" : "grid";
+        startButton.disabled = !(selectedP1 && selectedP2);
+        turnPill.textContent = nextPlayer === 1 ? "Turno: Local" : "Turno: Visitante";
+
+        p1Preview.setTeam(selectedP1);
+        p2Preview.setTeam(selectedP2);
+      }
+
+      function openTeamEditor(playerNumber) {
+        saveSelectionState();
+        localStorage.setItem("bubbleKickEditingTeam", String(playerNumber));
+        window.location.href = "editTeam.html";
+      }
+
+      function startMatch() {
+        if (!selectedP1 || !selectedP2) {
+          showToast("Selecciona equipo local y visitante");
+          return;
+        }
+
+        saveSelectionState();
+        localStorage.setItem("bubbleKickMode", "local");
+        window.location.href = "bubble-soccer_Rush.html";
+      }
+
+      class CharacterPreview {
+        constructor(canvas, side = 1) {
+          this.canvas = canvas;
+          this.side = side;
+          this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+          this.scene = new THREE.Scene();
+          this.camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+          this.camera.position.set(0, 1.35, 4.25);
+          this.camera.lookAt(0, 1.0, 0);
+
+          const ambient = new THREE.AmbientLight(0xffffff, 2.1);
+          this.scene.add(ambient);
+
+          const key = new THREE.DirectionalLight(0xffffff, 2.5);
+          key.position.set(2.5 * side, 4, 5);
+          this.scene.add(key);
+
+          const fill = new THREE.DirectionalLight(0x7ef8e8, 1.4);
+          fill.position.set(-3 * side, 2.5, 3);
+          this.scene.add(fill);
+
+          const floor = new THREE.Mesh(
+            new THREE.CircleGeometry(1.55, 64),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 })
+          );
+          floor.rotation.x = -Math.PI / 2;
+          floor.position.y = 0.02;
+          this.scene.add(floor);
+
+          this.group = new THREE.Group();
+          this.group.rotation.y = side > 0 ? -0.28 : 0.28;
+          this.scene.add(this.group);
+
+          this.mixer = null;
+          this.model = null;
+          this.colors = selectedFallbackColors;
+          this.clock = new THREE.Clock();
+          this.loader = new GLTFLoader();
+          this.loadModel();
+
+          this.resizeObserver = new ResizeObserver(() => this.resize());
+          this.resizeObserver.observe(canvas);
+          this.resize();
+          this.animate();
+        }
+
+        loadModel() {
+          this.loader.load(
+            "models/Character_FootballIdleAnimation.glb",
+            (gltf) => {
+              this.model = gltf.scene;
+              this.tintModel(this.model, this.colors);
+              this.normalizeModel(this.model);
+              this.group.add(this.model);
+
+              if (gltf.animations && gltf.animations.length > 0) {
+                this.mixer = new THREE.AnimationMixer(this.model);
+                const clip =
+                  gltf.animations.find((animation) =>
+                    animation.name.toLowerCase().includes("run") ||
+                    animation.name.toLowerCase().includes("walk") ||
+                    animation.name.toLowerCase().includes("animation")
+                  ) || gltf.animations[0];
+
+                const action = this.mixer.clipAction(clip);
+                action.reset();
+                action.play();
+              }
+            },
+            undefined,
+            () => {
+              const fallback = new THREE.Mesh(
+                new THREE.CapsuleGeometry(0.36, 0.9, 8, 16),
+                new THREE.MeshStandardMaterial({ color: this.colors[0] })
+              );
+              fallback.position.y = 0.78;
+              this.model = fallback;
+              this.group.add(fallback);
+            }
+          );
+        }
+
+        normalizeModel(model) {
+          const box = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+
+          model.position.sub(center);
+          model.position.y += size.y / 2;
+
+          const targetHeight = 0.52;
+          if (size.y > 0) {
+            model.scale.setScalar(targetHeight / size.y);
+          }
+        }
+
+        tintModel(model, colors) {
+          model.traverse((child) => {
+            if (!child.isMesh && !child.isSkinnedMesh) return;
+
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.frustumCulled = false;
+
+            const originalMaterial = child.material;
+            const material = originalMaterial ? originalMaterial.clone() : new THREE.MeshStandardMaterial();
+            const key = `${originalMaterial?.name || ""} ${child.name || ""}`.toLowerCase();
+
+            if (key.includes("firstcolor") || key.includes("m_firstcolor") || key.includes("first_color")) {
+              material.color = new THREE.Color(colors[0]);
+            } else if (key.includes("secondcolor") || key.includes("m_secondcolor") || key.includes("second_color")) {
+              material.color = new THREE.Color(colors[1]);
+            } else if (key.includes("thirdcolor") || key.includes("m_thirdcolor") || key.includes("third_color")) {
+              material.color = new THREE.Color(colors[2]);
+            }
+
+            material.skinning = true;
+            material.needsUpdate = true;
+            child.material = material;
+          });
+        }
+
+        setTeam(team) {
+          this.colors = team?.colors || selectedFallbackColors;
+
+          if (this.model) {
+            this.tintModel(this.model, this.colors);
+          }
+        }
+
+        resize() {
+          const rect = this.canvas.getBoundingClientRect();
+          const width = Math.max(1, rect.width);
+          const height = Math.max(1, rect.height);
+
+          this.renderer.setSize(width, height, false);
+          this.camera.aspect = width / height;
+          this.camera.updateProjectionMatrix();
+        }
+
+        animate() {
+          requestAnimationFrame(() => this.animate());
+          const dt = Math.min(this.clock.getDelta(), 0.05);
+
+          if (this.mixer) {
+            this.mixer.update(dt);
+          }
+
+          this.group.rotation.y += 0.0035 * this.side;
+          this.renderer.render(this.scene, this.camera);
+        }
+      }
+
+      const p1Preview = new CharacterPreview(document.getElementById("p1Preview"), 1);
+      const p2Preview = new CharacterPreview(document.getElementById("p2Preview"), -1);
+
+      hydrateRosterInputs();
+
+      document.getElementById("clearP1").addEventListener("click", () => clearPick(1));
+      document.getElementById("clearP2").addEventListener("click", () => clearPick(2));
+      document.getElementById("editP1").addEventListener("click", () => openTeamEditor(1));
+      document.getElementById("editP2").addEventListener("click", () => openTeamEditor(2));
+      startButton.addEventListener("click", startMatch);
+      searchInput.addEventListener("input", renderTeams);
+
+      updateSelectionUI();
+      renderTeams();
+    </script>
+  </body>
+</html>

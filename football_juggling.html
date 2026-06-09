@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Juggling FC</title>
+    <link rel="stylesheet" href="css/styleJuggling.css" />
+  </head>
+  <body>
+    <div id="cursor"></div>
+    <div id="drop-flash"></div>
+    <canvas id="game-canvas"></canvas>
+
+    <div id="countdown-screen" class="countdown-screen">
+      <div id="countdown-number" class="countdown-number">3</div>
+      <div class="countdown-label">Prepárate</div>
+    </div>
+
+    <div id="game-over-screen" class="game-over-screen hidden">
+      <div class="game-over-card">
+        <div class="game-over-title">Juggling Complete</div>
+
+        <div class="game-over-subtitle">
+          Dominadas realizadas
+        </div>
+
+        <div id="final-score" class="game-over-score">
+          0
+        </div>
+
+        <button id="play-again-btn" class="pill-btn">
+          Volver a jugar
+        </button>
+      </div>
+    </div>
+
+    <div class="top-left">
+      <a class="pill-btn" href="index.html">← Menú</a>
+      <button class="pill-btn" type="button" onclick="window.location.href='index.html'">
+        Salir
+      </button>
+    </div>
+
+    <svg
+      id="field-lines"
+      viewBox="0 0 1000 600"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <rect
+        x="50"
+        y="30"
+        width="900"
+        height="540"
+        fill="none"
+        stroke="white"
+        stroke-width="3"
+      />
+      <circle
+        cx="500"
+        cy="300"
+        r="80"
+        fill="none"
+        stroke="white"
+        stroke-width="3"
+      />
+      <line
+        x1="500"
+        y1="30"
+        x2="500"
+        y2="570"
+        stroke="white"
+        stroke-width="3"
+      />
+      <rect
+        x="50"
+        y="190"
+        width="120"
+        height="220"
+        fill="none"
+        stroke="white"
+        stroke-width="3"
+      />
+      <rect
+        x="830"
+        y="190"
+        width="120"
+        height="220"
+        fill="none"
+        stroke="white"
+        stroke-width="3"
+      />
+    </svg>
+
+    <div id="hud">
+      <div id="counter-box">
+        <div id="counter-label">Toques</div>
+        <div id="counter">0</div>
+      </div>
+      <div id="combo-box"><div id="combo-text">COMBO!</div></div>
+      <div id="best-box">
+        <div id="best-label">Mejor</div>
+        <div id="best-score">0</div>
+      </div>
+      <div id="controls-hint">
+        <span class="hint-key">WASD / Mouse</span>
+        <span class="hint-key">Mover</span>
+        <span class="hint-key">Acércate al balón</span>
+        <span class="hint-key">Auto-kick</span>
+      </div>
+    </div>
+
+    <div id="loading-bar-wrap">
+      <div id="loading-bar-label">Cargando animaciones…</div>
+      <div id="loading-bar-bg"><div id="loading-bar-fill"></div></div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module" src="js/jugglingMode.js"></script>
+  </body>
+</html>

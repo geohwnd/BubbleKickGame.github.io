@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png">
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Bubble Kick 26 — Tutorial Rush Match</title>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700;900&display=swap");
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #1730e8;
+        color: #ffffff;
+        font-family: "Rajdhani", system-ui, sans-serif;
+        touch-action: none;
+        user-select: none;
+      }
+
+      #tutorial-canvas {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        touch-action: none;
+      }
+
+      .top-left-controls {
+        position: fixed;
+        top: max(16px, env(safe-area-inset-top));
+        left: max(16px, env(safe-area-inset-left));
+        z-index: 40;
+        display: flex;
+        gap: 10px;
+      }
+
+      .glass-btn,
+      .primary-btn,
+      .mobile-action-btn {
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 999px;
+        padding: 10px 16px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.34);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+      }
+
+      .tutorial-title {
+        position: fixed;
+        top: max(16px, env(safe-area-inset-top));
+        left: 50%;
+        z-index: 35;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: min(520px, calc(100vw - 230px));
+        padding: 10px 24px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.92);
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-align: center;
+        text-transform: uppercase;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        display: none;
+      }
+
+      .tutorial-card {
+        position: fixed;
+        left: 50%;
+        top: max(78px, calc(env(safe-area-inset-top) + 70px));
+        z-index: 35;
+        transform: translateX(-50%);
+        bottom: auto;
+        width: min(720px, calc(100vw - 36px));
+        padding: 18px;
+        border-radius: 28px;
+        background: rgba(0, 0, 0, 0.34);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .step-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff, #95f4ff 58%, #b9ff22);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+      }
+
+      .step-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(38px, 5vw, 62px);
+        line-height: 0.88;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-shadow: 0 7px 22px rgba(0, 0, 0, 0.34);
+      }
+
+      .step-text {
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .step-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .primary-btn {
+        min-width: 132px;
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        border: 0;
+      }
+
+      .progress-dots {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+      }
+
+      .progress-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      .progress-dot.active {
+        background: #b9ff22;
+        box-shadow: 0 0 20px rgba(185, 255, 34, 0.65);
+      }
+
+      .floating-hint {
+        position: fixed;
+        z-index: 30;
+        left: 50%;
+        top: 92px;
+        transform: translateX(-50%);
+        padding: 10px 18px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1.3px;
+        text-align: center;
+        text-transform: uppercase;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        display: none;
+      }
+
+      .mobile-actions {
+        position: fixed;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: max(154px, calc(env(safe-area-inset-bottom) + 136px));
+        z-index: 38;
+        display: flex;
+        gap: 12px;
+      }
+
+      .mobile-action-btn {
+        display: none;
+        width: 84px;
+        height: 84px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-size: 28px;
+        color: #ffffff;
+        background: linear-gradient(
+          135deg,
+          rgba(185, 255, 34, 0.72),
+          rgba(93, 240, 214, 0.72)
+        );
+      }
+
+      .mobile-action-btn span {
+        margin-top: 4px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+      }
+
+      .success-badge {
+        position: fixed;
+        left: 50%;
+        top: max(310px, calc(env(safe-area-inset-top) + 292px));
+        z-index: 30;
+        transform: translateX(-50%) scale(0.88);
+        padding: 10px 18px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff, #b9ff22);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22),
+          0 0 30px rgba(185, 255, 34, 0.35);
+      }
+
+      .success-badge.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+
+      .field-wall-hint {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 8;
+        box-shadow: inset 0 0 0 4px rgba(185, 255, 34, 0.16), inset 0 0 80px rgba(93, 240, 214, 0.12);
+      }
+
+      @media (max-width: 760px), (pointer: coarse) {
+        .top-left-controls {
+          top: max(10px, env(safe-area-inset-top));
+          left: 10px;
+        }
+
+        .glass-btn {
+          padding: 8px 12px;
+          font-size: 10px;
+        }
+
+        .tutorial-title {
+          top: max(54px, calc(env(safe-area-inset-top) + 44px));
+          min-width: calc(100vw - 32px);
+          padding: 9px 14px;
+          font-size: 10px;
+        }
+
+        .floating-hint {
+          top: max(100px, calc(env(safe-area-inset-top) + 90px));
+          width: min(88vw, 420px);
+          font-size: 10px;
+          white-space: normal;
+        }
+
+        .success-badge {
+          top: max(360px, calc(env(safe-area-inset-top) + 340px));
+          font-size: 11px;
+        }
+
+        .tutorial-card {
+          top: max(120px, calc(env(safe-area-inset-top) + 110px));
+          bottom: auto;
+          padding: 15px;
+          border-radius: 24px;
+        }
+
+        .step-title {
+          font-size: 38px;
+        }
+
+        .step-text {
+          font-size: 13px;
+        }
+
+        .step-actions {
+          gap: 8px;
+        }
+
+        .primary-btn,
+        .glass-btn.card-btn {
+          min-width: 92px;
+          padding: 10px 12px;
+          font-size: 10px;
+        }
+
+        .mobile-actions {
+          bottom: max(214px, calc(env(safe-area-inset-bottom) + 196px));
+          right: 14px;
+        }
+
+        .mobile-action-btn {
+          display: flex;
+          width: 72px;
+          height: 72px;
+          font-size: 24px;
+        }
+      }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js",
+          "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <canvas id="tutorial-canvas"></canvas>
+    <div class="field-wall-hint" aria-hidden="true"></div>
+
+    <div class="top-left-controls">
+      <a class="glass-btn" href="index.html">← Menu</a>
+      <button id="reset-step-btn" class="glass-btn" type="button">
+        ↻ Restart
+      </button>
+    </div>
+
+    <div class="tutorial-title">Tutorial · Rush Match</div>
+    <div id="floating-hint" class="floating-hint">
+      Learn the basic controls
+    </div>
+    <div id="success-badge" class="success-badge">Well done!</div>
+
+    <div class="mobile-actions">
+      <button id="tutorial-dash-btn" class="mobile-action-btn" type="button">
+        💨<span>Dash</span>
+      </button>
+      <button id="tutorial-shoot-btn" class="mobile-action-btn" type="button">
+        ⚽<span>Shoot</span>
+      </button>
+    </div>
+
+    <section class="tutorial-card">
+      <div id="step-kicker" class="step-kicker">Step 1 of 5</div>
+      <h1 id="step-title" class="step-title">Move your player</h1>
+      <p id="step-text" class="step-text">
+        On PC, use WASD or the arrow keys. On mobile, drag on the field to move your player.
+      </p>
+
+      <div class="step-actions">
+        <button id="prev-step-btn" class="glass-btn card-btn" type="button">
+          Previous
+        </button>
+        <div id="progress-dots" class="progress-dots"></div>
+        <button id="next-step-btn" class="primary-btn" type="button">
+          Next
+        </button>
+      </div>
+    </section>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { RGBELoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js";
+      import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+      import { DRACOLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/DRACOLoader.js";
+      // Postprocessing desactivado en tutorial para mejorar rendimiento/claridad visual.
+      // import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
+      // import { RenderPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js";
+      // import { UnrealBloomPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+      // import { OutputPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/OutputPass.js";
+
+      import {
+        createFootballStadiumGroup,
+        readStoredTeam,
+        sanitizeTeamPalette,
+        makeBobble,
+        makeShadow,
+        updatePlayerMeshFacing,
+        updatePlayerAnimationVariant,
+        applyPlayerVisualScale,
+      } from "./js/modelsRush.js";
+
+      import {
+        Body,
+        FIELD_W,
+        FIELD_H,
+        PLAYER_VISUAL_SCALE,
+        PLAYER_BODY_RADIUS,
+        BALL_RADIUS,
+        wallBounce,
+      } from "./js/physicsRush.js";
+
+      const canvas = document.getElementById("tutorial-canvas");
+      const floatingHint = document.getElementById("floating-hint");
+      const successBadge = document.getElementById("success-badge");
+      const stepKicker = document.getElementById("step-kicker");
+      const stepTitle = document.getElementById("step-title");
+      const stepText = document.getElementById("step-text");
+      const prevStepBtn = document.getElementById("prev-step-btn");
+      const nextStepBtn = document.getElementById("next-step-btn");
+      const resetStepBtn = document.getElementById("reset-step-btn");
+      const progressDots = document.getElementById("progress-dots");
+      const tutorialDashBtn = document.getElementById("tutorial-dash-btn");
+      const tutorialShootBtn = document.getElementById("tutorial-shoot-btn");
+
+      canvas.style.touchAction = "none";
+      canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NoToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      renderer.setClearColor(0x1730e8);
+      renderer.domElement.style.filter =
+        "saturate(1.5) contrast(1.55) brightness(0.78)";
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x1730e8, 0.018);
+
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 220);
+      const cameraTarget = new THREE.Vector3(0, 0, 0);
+
+      // Postprocessing desactivado en tutorial.
+      // const composer = new EffectComposer(renderer);
+      // const renderPass = new RenderPass(scene, camera);
+      // composer.addPass(renderPass);
+      // const bloomPass = new UnrealBloomPass(
+      //   new THREE.Vector2(window.innerWidth, window.innerHeight),
+      //   0.12,
+      //   0.25,
+      //   0.48
+      // );
+      // composer.addPass(bloomPass);
+      // const outputPass = new OutputPass();
+      // composer.addPass(outputPass);
+
+      const rgbeLoader = new RGBELoader();
+      rgbeLoader.load("models/sunny_rose_garden_2k.hdr", (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+      });
+
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/");
+
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+      const FIELD_MODEL_PATH = "models/CanchaIndividual.glb";
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const clock = new THREE.Clock();
+
+      const selectedTeamP1 = readStoredTeam("bubbleKickP1Team");
+      const selectedTeamP2 = readStoredTeam("bubbleKickP2Team");
+
+      const p1TeamColors = sanitizeTeamPalette(selectedTeamP1?.colors, [
+        selectedTeamP1?.color || "#ff4444",
+        "#ffffff",
+        "#ffcc00",
+      ]);
+
+      const p2TeamColors = sanitizeTeamPalette(selectedTeamP2?.colors, [
+        selectedTeamP2?.color || "#3388ff",
+        "#ffffff",
+        "#00eebb",
+      ]);
+
+      const TUTORIAL_PLAYER_SCALE = PLAYER_VISUAL_SCALE * 1.2;
+      const TUTORIAL_DUMMY_SCALE = PLAYER_VISUAL_SCALE * 1.2;
+
+      const tutorialPlayerMesh = makeBobble(p1TeamColors);
+      const tutorialDummyMesh = makeBobble(p2TeamColors);
+      const playerShadow = makeShadow(scene);
+      const dummyShadow = makeShadow(scene);
+      const ballShadow = makeShadow(scene);
+
+      applyPlayerVisualScale(tutorialPlayerMesh, TUTORIAL_PLAYER_SCALE);
+      applyPlayerVisualScale(tutorialDummyMesh, TUTORIAL_DUMMY_SCALE);
+
+      const keys = new Set();
+      let pointerDown = false;
+      let currentStepIndex = 0;
+      let completedStep = false;
+      let dashUntil = 0;
+      let dashCooldownUntil = 0;
+      let shootPulseUntil = 0;
+      let ballPickupBlockedUntil = 0;
+      let messageTimeout = null;
+
+      const player = {
+        group: tutorialPlayerMesh,
+        velocity: new THREE.Vector3(),
+        target: new THREE.Vector3(0, 0, 0),
+        hasPointerTarget: false,
+        facing: new THREE.Vector3(1, 0, 0),
+        speed: 4.4,
+      };
+
+      const ball = {
+        group: new THREE.Group(),
+        velocity: new THREE.Vector3(),
+        attached: true,
+      };
+
+      const tutorialBallBody = new Body(0, BALL_RADIUS, 0, BALL_RADIUS, 0.6);
+
+      const dummy = {
+        group: tutorialDummyMesh,
+        velocity: new THREE.Vector3(),
+        facing: new THREE.Vector3(-1, 0, 0),
+        hasBall: false,
+        dashUntil: 0,
+        dashCooldownUntil: 0,
+      };
+
+      const goalTarget = new THREE.Group();
+      const dashTrail = [];
+
+      const steps = [
+        {
+          title: "Move your player",
+          text: "On PC, use WASD or the arrow keys. On mobile, drag on the field to move your player.",
+          hint: "Move in any direction to complete this step.",
+        },
+        {
+          title: "Keep the ball in front",
+          text: "In Rush Match, the ball stays in front of the player who has possession. Change direction to practice dribbling.",
+          hint: "Dribble the ball for a few seconds without stopping.",
+        },
+        {
+          title: "Use Dash",
+          text: "Press Shift to dash. On mobile, use the Dash button. Dash helps you escape or steal the ball.",
+          hint: "Perform a dash to complete this step.",
+        },
+        {
+          title: "Kick forward",
+          text: "Press E, Space, or the Shoot button to kick. In Rush Match, the shot goes in the direction your player is facing.",
+          hint: "Kick the ball toward the green target.",
+        },
+        {
+          title: "Steal with Dash",
+          text: "When the AI has the ball, get close and use dash to steal possession. Practice your timing.",
+          hint: "Dash into the opponent to recover the ball.",
+        },
+      ];
+
+      init();
+
+      function init() {
+        setupLights();
+        setupField();
+        setupPlayer();
+        setupBall();
+        setupDummy();
+        setupGoalTarget();
+        setupInput();
+        setupProgressDots();
+        setStep(0);
+        resize();
+        animate();
+      }
+
+      function setupLights() {
+        scene.add(new THREE.AmbientLight(0xffffff, 1.25));
+
+        const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+        sun.position.set(8, 20, 10);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        sun.shadow.camera.left = -15;
+        sun.shadow.camera.right = 15;
+        sun.shadow.camera.top = 15;
+        sun.shadow.camera.bottom = -15;
+        scene.add(sun);
+
+        const fill = new THREE.DirectionalLight(0xddeeff, 3.2);
+        fill.position.set(-5, 8, -5);
+        scene.add(fill);
+      }
+
+      function setupField() {
+        loader.load(
+          FIELD_MODEL_PATH,
+          (gltf) => {
+            const fieldModel = gltf.scene;
+
+            fieldModel.traverse((child) => {
+              if (!child.isMesh) return;
+              child.castShadow = true;
+              child.receiveShadow = true;
+              child.frustumCulled = false;
+              child.visible = true;
+
+              if (child.material) {
+                const materials = Array.isArray(child.material)
+                  ? child.material
+                  : [child.material];
+
+                materials.forEach((material) => {
+                  material.side = THREE.DoubleSide;
+                  material.needsUpdate = true;
+                });
+              }
+            });
+
+            const box = new THREE.Box3().setFromObject(fieldModel);
+            const size = new THREE.Vector3();
+            const center = new THREE.Vector3();
+            box.getSize(size);
+            box.getCenter(center);
+
+            fieldModel.position.sub(center);
+            fieldModel.position.y -= box.min.y;
+
+            const maxXZ = Math.max(size.x, size.z);
+            const targetSize = Math.max(FIELD_W, FIELD_H) + 2.4;
+
+            if (maxXZ > 0) {
+              fieldModel.scale.setScalar(targetSize / maxXZ);
+            }
+
+            // El modelo ya viene orientado desde Blender, no rotar aquí.
+            fieldModel.rotation.set(0, 0, 0);
+            fieldModel.position.y = -0.04;
+            scene.add(fieldModel);
+          },
+          undefined,
+          (error) => {
+            console.warn(`No se pudo cargar ${FIELD_MODEL_PATH}`, error);
+          }
+        );
+      }
+
+      function setupPlayer() {
+        player.group.position.set(-2.2, 0, 0);
+        scene.add(player.group);
+      }
+
+      function setupBall() {
+        const fallbackBall = new THREE.Mesh(
+          new THREE.SphereGeometry(0.24, 32, 20),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.38 })
+        );
+        fallbackBall.castShadow = true;
+        ball.group.add(fallbackBall);
+        scene.add(ball.group);
+
+        loader.load("models/Ball_Model.glb", (gltf) => {
+          ball.group.clear();
+          const model = gltf.scene;
+          normalizeBallObject(model, 0.48);
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          ball.group.add(model);
+        });
+      }
+
+      function setupDummy() {
+        dummy.group.position.set(2.1, 0, 0.4);
+        scene.add(dummy.group);
+      }
+
+      function setupGoalTarget() {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.52, 0.7, 64),
+          new THREE.MeshBasicMaterial({
+            color: 0xb9ff22,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+          })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        goalTarget.add(ring);
+
+        const glow = new THREE.Mesh(
+          new THREE.CircleGeometry(0.8, 64),
+          new THREE.MeshBasicMaterial({
+            color: 0xb9ff22,
+            transparent: true,
+            opacity: 0.16,
+            depthWrite: false,
+          })
+        );
+        glow.rotation.x = -Math.PI / 2;
+        goalTarget.add(glow);
+        goalTarget.position.set(3.2, 0.04, -1.6);
+        scene.add(goalTarget);
+      }
+
+      // createFallbackPlayer removed
+
+      function normalizeBallObject(object, targetSize) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) object.scale.setScalar(targetSize / maxDim);
+        const scaledCenter = center.multiplyScalar(object.scale.x);
+        object.position.sub(scaledCenter);
+      }
+
+      function setupInput() {
+        window.addEventListener("keydown", (event) => {
+          const key = event.key.toLowerCase();
+          keys.add(key);
+
+          if (key === "shift") {
+            event.preventDefault();
+            if (!event.repeat) doDash();
+          }
+
+          if (key === " " || key === "e" || key === "enter") {
+            event.preventDefault();
+            if (!event.repeat) doShoot();
+          }
+        });
+
+        window.addEventListener("keyup", (event) => {
+          keys.delete(event.key.toLowerCase());
+        });
+
+        canvas.addEventListener("pointerdown", (event) => {
+          pointerDown = true;
+          updatePointerTarget(event);
+        });
+
+        canvas.addEventListener("pointermove", (event) => {
+          if (!pointerDown) return;
+          updatePointerTarget(event);
+        });
+
+        window.addEventListener("pointerup", () => {
+          pointerDown = false;
+        });
+
+        tutorialDashBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          doDash();
+        });
+
+        tutorialShootBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          doShoot();
+        });
+
+        prevStepBtn.addEventListener("click", () =>
+          setStep(currentStepIndex - 1)
+        );
+        nextStepBtn.addEventListener("click", () =>
+          setStep(currentStepIndex + 1)
+        );
+        resetStepBtn.addEventListener("click", () => setStep(currentStepIndex));
+      }
+
+      function setupProgressDots() {
+        progressDots.innerHTML = "";
+        steps.forEach((_, index) => {
+          const dot = document.createElement("div");
+          dot.className = "progress-dot";
+          dot.addEventListener("click", () => setStep(index));
+          progressDots.appendChild(dot);
+        });
+      }
+
+      function setStep(index) {
+        currentStepIndex = THREE.MathUtils.clamp(index, 0, steps.length - 1);
+        completedStep = false;
+        const step = steps[currentStepIndex];
+
+        stepKicker.textContent = `Paso ${currentStepIndex + 1} de ${
+          steps.length
+        }`;
+        stepTitle.textContent = step.title;
+        stepText.textContent = step.text;
+        floatingHint.textContent = step.hint;
+        prevStepBtn.disabled = currentStepIndex === 0;
+        nextStepBtn.textContent =
+          currentStepIndex === steps.length - 1 ? "Terminar" : "Siguiente";
+
+        [...progressDots.children].forEach((dot, dotIndex) => {
+          dot.classList.toggle("active", dotIndex === currentStepIndex);
+        });
+
+        resetSceneForStep();
+      }
+
+      function resetSceneForStep() {
+        player.group.position.set(-2.2, 0, 0);
+        player.velocity.set(0, 0, 0);
+        player.facing.set(1, 0, 0);
+        player.group.rotation.y = 0;
+        player.hasPointerTarget = false;
+
+        dummy.group.position.set(2.1, 0, 0.4);
+        dummy.hasBall = false;
+        dummy.dashUntil = 0;
+        dummy.dashCooldownUntil = 0;
+        dummy.group.visible = currentStepIndex === 4;
+
+        goalTarget.visible = currentStepIndex === 3;
+
+        ball.attached = currentStepIndex !== 4;
+        if (currentStepIndex === 4) {
+        dummy.hasBall = true;
+        ball.attached = false;
+
+        tutorialBallBody.pos.set(
+        dummy.group.position.x - 0.65,
+        BALL_RADIUS,
+         dummy.group.position.z
+         );
+       }
+        ball.velocity.set(0, 0, 0);
+        tutorialBallBody.pos.set(-1.52, BALL_RADIUS, 0);
+        tutorialBallBody.vel.set(0, 0, 0);
+        ball.group.position.copy(tutorialBallBody.pos);
+
+        dashUntil = 0;
+        dashCooldownUntil = 0;
+        shootPulseUntil = 0;
+        ballPickupBlockedUntil = 0;
+        successBadge.classList.remove("show");
+      }
+
+      function showSuccess(message = "¡Bien hecho!") {
+        if (completedStep) return;
+        completedStep = true;
+        successBadge.textContent = message;
+        successBadge.classList.add("show");
+        clearTimeout(messageTimeout);
+        messageTimeout = setTimeout(
+          () => successBadge.classList.remove("show"),
+          1200
+        );
+      }
+
+      function updatePointerTarget(event) {
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const point = new THREE.Vector3();
+
+        if (raycaster.ray.intersectPlane(groundPlane, point)) {
+          player.target.set(
+            THREE.MathUtils.clamp(point.x, -6.8, 6.8),
+            0,
+            THREE.MathUtils.clamp(point.z, -4.5, 4.5)
+          );
+          player.hasPointerTarget = true;
+        }
+      }
+
+      function getMoveVector() {
+        const x =
+          (keys.has("d") || keys.has("arrowright") ? 1 : 0) -
+          (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
+        const z =
+          (keys.has("s") || keys.has("arrowdown") ? 1 : 0) -
+          (keys.has("w") || keys.has("arrowup") ? 1 : 0);
+        const move = new THREE.Vector3(x, 0, z);
+        if (move.lengthSq() > 1) move.normalize();
+        return move;
+      }
+
+      function doDash() {
+        const now = performance.now();
+        if (now < dashCooldownUntil) return;
+
+        let direction = getMoveVector();
+        if (direction.lengthSq() < 0.001) direction.copy(player.facing);
+        direction.y = 0;
+        if (direction.lengthSq() < 0.001) direction.set(1, 0, 0);
+        direction.normalize();
+
+        dashUntil = now + 180;
+        dashCooldownUntil = now + 720;
+        player.facing.copy(direction);
+        player.velocity.copy(direction).multiplyScalar(13.5);
+        player.hasPointerTarget = false;
+
+        if (currentStepIndex === 2) showSuccess("Dash realizado");
+      }
+
+      function doShoot() {
+        if (!ball.attached && currentStepIndex !== 3) return;
+
+        const direction = player.facing.clone();
+        direction.y = 0;
+
+        if (direction.lengthSq() < 0.001) {
+          direction.set(1, 0, 0);
+        }
+
+        direction.normalize();
+        ball.attached = false;
+
+        if (typeof player.group.playStrikeAnimation === "function") {
+          player.group.playStrikeAnimation("idle");
+          }
+
+        tutorialBallBody.pos.copy(ball.group.position);
+        tutorialBallBody.pos.y = BALL_RADIUS;
+        tutorialBallBody.vel.copy(direction).multiplyScalar(18);
+        tutorialBallBody.vel.y = 0.85;
+
+        ball.velocity.copy(tutorialBallBody.vel);
+        shootPulseUntil = performance.now() + 220;
+        ballPickupBlockedUntil = performance.now() + 520;
+
+        if (currentStepIndex === 3) showSuccess("Disparo realizado");
+      }
+
+      function updatePlayer(dt) {
+        const now = performance.now();
+
+        if (now < dashUntil) {
+          player.group.position.addScaledVector(player.velocity, dt);
+        } else {
+          const move = getMoveVector();
+
+          if (move.lengthSq() > 0.001) {
+            player.hasPointerTarget = false;
+            player.velocity.lerp(
+              move.multiplyScalar(player.speed),
+              1 - Math.pow(0.002, dt)
+            );
+          } else if (player.hasPointerTarget) {
+            const toTarget = player.target.clone().sub(player.group.position);
+            toTarget.y = 0;
+
+            if (toTarget.length() > 0.08) {
+              player.velocity.lerp(
+                toTarget.normalize().multiplyScalar(player.speed),
+                1 - Math.pow(0.002, dt)
+              );
+            } else {
+              player.velocity.multiplyScalar(Math.pow(0.002, dt));
+            }
+          } else {
+            player.velocity.multiplyScalar(Math.pow(0.001, dt));
+          }
+
+          player.group.position.addScaledVector(player.velocity, dt);
+        }
+
+        player.group.position.x = THREE.MathUtils.clamp(
+          player.group.position.x,
+          -6.8,
+          6.8
+        );
+        player.group.position.z = THREE.MathUtils.clamp(
+          player.group.position.z,
+          -4.5,
+          4.5
+        );
+
+        const flatVelocity = player.velocity.clone();
+        flatVelocity.y = 0;
+
+        if (flatVelocity.lengthSq() > 0.03) {
+          player.facing.copy(flatVelocity.normalize());
+        }
+
+        updatePlayerMeshFacing(player.group, {
+          pos: player.group.position,
+          vel: player.velocity,
+          facing: player.facing,
+        });
+
+        updatePlayerAnimationVariant(
+          player.group,
+          { speed: player.velocity.length(), vel: player.velocity },
+          player.velocity.lengthSq() > 0.08 ? "run" : "idle"
+        );
+
+        if (currentStepIndex === 0 && player.velocity.lengthSq() > 1.2)
+          showSuccess("Movement completed");
+        if (currentStepIndex === 1 && player.velocity.lengthSq() > 1.2)
+          showSuccess("Dribbling completed");
+      }
+
+      function updateBall(dt) {
+        if (ball.attached && !dummy.hasBall) {
+          const right = new THREE.Vector3(
+            player.facing.z,
+            0,
+            -player.facing.x
+          ).normalize();
+          const footSwitch =
+            player.velocity.lengthSq() > 0.05
+              ? Math.sin(performance.now() * 0.014) * 0.055
+              : 0;
+          const target = player.group.position
+            .clone()
+            .add(player.facing.clone().multiplyScalar(0.68))
+            .add(right.multiplyScalar(footSwitch));
+
+          target.y = BALL_RADIUS;
+
+          tutorialBallBody.pos.copy(target);
+          tutorialBallBody.vel.copy(player.velocity);
+          ball.group.position.copy(tutorialBallBody.pos);
+
+          if (player.velocity.lengthSq() > 0.08) {
+            const rollAxis = new THREE.Vector3(
+              player.velocity.z,
+              0,
+              -player.velocity.x
+            ).normalize();
+            ball.group.rotateOnWorldAxis(
+              rollAxis,
+              Math.min(player.velocity.length() * 0.018, 0.12)
+            );
+          }
+          return;
+        }
+
+        tutorialBallBody.update(dt);
+        wallBounce(tutorialBallBody);
+        tutorialBallBody.pos.x = THREE.MathUtils.clamp(
+          tutorialBallBody.pos.x,
+          -FIELD_W / 2 + BALL_RADIUS,
+          FIELD_W / 2 - BALL_RADIUS
+        );
+        tutorialBallBody.pos.z = THREE.MathUtils.clamp(
+          tutorialBallBody.pos.z,
+          -FIELD_H / 2 + BALL_RADIUS,
+          FIELD_H / 2 - BALL_RADIUS
+        );
+        tutorialBallBody.pos.y = BALL_RADIUS;
+        ball.group.position.copy(tutorialBallBody.pos);
+        ball.velocity.copy(tutorialBallBody.vel);
+
+        if (tutorialBallBody.vel.lengthSq() > 0.05) {
+          const rollAxis = new THREE.Vector3(
+            tutorialBallBody.vel.z,
+            0,
+            -tutorialBallBody.vel.x
+          ).normalize();
+          ball.group.rotateOnWorldAxis(
+            rollAxis,
+            Math.min(tutorialBallBody.vel.length() * 0.024, 0.2)
+          );
+        }
+
+        const playerDistanceToBall = player.group.position.distanceTo(tutorialBallBody.pos);
+        const pickupDistance = PLAYER_BODY_RADIUS + BALL_RADIUS + 0.32;
+        const canPickupBall = performance.now() >= ballPickupBlockedUntil;
+
+        if (canPickupBall && playerDistanceToBall < pickupDistance) {
+          ball.attached = true;
+          tutorialBallBody.vel.set(0, 0, 0);
+          ball.velocity.set(0, 0, 0);
+          showSuccess("Balón recuperado");
+          return;
+        }
+
+        if (
+          currentStepIndex === 3 &&
+          ball.group.position.distanceTo(goalTarget.position) < 0.9
+        ) {
+          showSuccess("¡Buen tiro!");
+          tutorialBallBody.vel.multiplyScalar(0.92);
+        }
+      }
+
+      function updateDummy(dt) {
+        if (currentStepIndex !== 4) return;
+
+        const toBall = tutorialBallBody.pos.clone().sub(dummy.group.position);
+        toBall.y = 0;
+
+        if (toBall.lengthSq() > 0.001) {
+          dummy.velocity.lerp(
+            toBall.normalize().multiplyScalar(2.2),
+            1 - Math.pow(0.01, dt)
+          );
+          dummy.group.position.addScaledVector(dummy.velocity, dt);
+          dummy.facing.copy(dummy.velocity.clone().setY(0).normalize());
+
+          updatePlayerMeshFacing(dummy.group, {
+            pos: dummy.group.position,
+            vel: dummy.velocity,
+            facing: dummy.facing,
+          });
+
+          updatePlayerAnimationVariant(
+            dummy.group,
+            { speed: dummy.velocity.length(), vel: dummy.velocity },
+            dummy.velocity.lengthSq() > 0.08 ? "run" : "idle"
+          );
+        }
+
+        const playerToDummy = player.group.position.distanceTo(
+          dummy.group.position
+        );
+
+        const now = performance.now();
+
+        if (
+         !dummy.hasBall &&
+         playerToDummy < 1.15 &&
+          now > dummy.dashCooldownUntil
+        ) {
+           dummy.dashUntil = now + 180;
+           dummy.dashCooldownUntil = now + 900;
+         }
+         if (
+  !dummy.hasBall &&
+  now < dummy.dashUntil &&
+  playerToDummy < 1.05 &&
+  ball.attached
+) {
+  dummy.hasBall = true;
+  ball.attached = false;
+  tutorialBallBody.vel.set(0, 0, 0);
+}
+        const isDashing = performance.now() < dashUntil;
+
+        if (
+  dummy.hasBall &&
+  isDashing &&
+  playerToDummy < 1.05
+) {
+  dummy.hasBall = false;
+
+  ball.attached = true;
+  tutorialBallBody.vel.set(0, 0, 0);
+  ball.velocity.set(0, 0, 0);
+
+  showSuccess("Ball recovered!");
+}
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.034);
+
+        updatePlayer(dt);
+        updateBall(dt);
+        updateDummy(dt);
+
+        playerShadow.position.set(
+          player.group.position.x,
+          0.01,
+          player.group.position.z
+        );
+        dummyShadow.position.set(
+          dummy.group.position.x,
+          0.01,
+          dummy.group.position.z
+        );
+        ballShadow.position.set(
+          ball.group.position.x,
+          0.01,
+          ball.group.position.z
+        );
+        dummyShadow.visible = dummy.group.visible;
+
+        goalTarget.rotation.y += 0.025;
+        goalTarget.scale.setScalar(
+          1 + Math.sin(performance.now() * 0.006) * 0.06
+        );
+
+        const now = performance.now();
+        player.group.scale.setScalar(
+          now < dashUntil ? TUTORIAL_PLAYER_SCALE * 1.08 : TUTORIAL_PLAYER_SCALE
+        );
+        dummy.group.scale.setScalar(TUTORIAL_DUMMY_SCALE);
+        ball.group.scale.setScalar(now < shootPulseUntil ? 1.25 : 1);
+
+        if (dummy.hasBall) {
+  const target = dummy.group.position
+    .clone()
+    .add(dummy.facing.clone().multiplyScalar(0.68));
+
+  target.y = BALL_RADIUS;
+
+  tutorialBallBody.pos.copy(target);
+  tutorialBallBody.vel.copy(dummy.velocity);
+
+  ball.group.position.copy(tutorialBallBody.pos);
+}
+
+        updateCamera();
+        renderer.render(scene, camera);
+      }
+
+      function updateCamera() {
+        const mobile =
+          window.innerWidth < 760 || window.innerHeight > window.innerWidth;
+        if (mobile) {
+          camera.position.set(
+            player.group.position.x,
+            8.4,
+            player.group.position.z + 8.6
+          );
+          cameraTarget.lerp(player.group.position, 0.08);
+        } else {
+          camera.position.set(0, 9.6, 11.8);
+          cameraTarget.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+        }
+
+        camera.lookAt(cameraTarget.x, 0.35, cameraTarget.z);
+      }
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        // composer.setSize(width, height);
+        // bloomPass.setSize(width, height);
+        camera.aspect = width / height;
+        camera.fov = width < 760 && height > width ? 52 : 45;
+        camera.updateProjectionMatrix();
+      }
+
+      window.addEventListener("resize", resize);
+    </script>
+  </body>
+</html>
