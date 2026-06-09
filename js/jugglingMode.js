@@ -74,57 +74,22 @@ limeRim.position.set(-7, 4, -5);
 scene.add(limeRim);
 
 // ─── Field ───────────────────────────────────────────────────────────────────
-const field = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({
-    color: 0x4bbcff,
-    roughness: 0.86,
-    metalness: 0.02,
-  })
-);
-field.rotation.x = -Math.PI / 2;
-field.receiveShadow = true;
-scene.add(field);
+// Plano azul removido temporalmente para probar el look sin suelo base.
+// const field = new THREE.Mesh(
+//   new THREE.PlaneGeometry(20, 20),
+//   new THREE.MeshStandardMaterial({
+//     color: 0x4bbcff,
+//     roughness: 0.86,
+//     metalness: 0.02,
+//   })
+// );
+// field.rotation.x = -Math.PI / 2;
+// field.receiveShadow = true;
+// scene.add(field);
 
-// Stripes
-const stripeMat = new THREE.MeshBasicMaterial({
-  color: 0x315dff,
-  transparent: true,
-  opacity: 0.12,
-});
-for (let i = -4; i <= 4; i += 2) {
-  const sm = new THREE.Mesh(new THREE.PlaneGeometry(2, 20), stripeMat);
-  sm.rotation.x = -Math.PI / 2;
-  sm.position.set(i, 0.002, 0);
-  scene.add(sm);
-}
+// Franjas azules removidas: se dejan únicamente las líneas de la cancha.
 
-// Bubble Kick style glow/depth
-const aquaGlow = new THREE.Mesh(
-  new THREE.CircleGeometry(5.7, 96),
-  new THREE.MeshBasicMaterial({
-    color: 0x5df0d6,
-    transparent: true,
-    opacity: 0.28,
-    depthWrite: false,
-  })
-);
-aquaGlow.rotation.x = -Math.PI / 2;
-aquaGlow.position.set(2.8, 0.012, 0.2);
-scene.add(aquaGlow);
-
-const limeGlow = new THREE.Mesh(
-  new THREE.CircleGeometry(2.2, 96),
-  new THREE.MeshBasicMaterial({
-    color: 0xb9ff22,
-    transparent: true,
-    opacity: 0.08,
-    depthWrite: false,
-  })
-);
-limeGlow.rotation.x = -Math.PI / 2;
-limeGlow.position.set(-1.8, 0.014, -1.4);
-scene.add(limeGlow);
+// Glows/círculos de fondo removidos: se dejan únicamente las líneas de la cancha.
 
 // Lines
 function line(x1, z1, x2, z2) {
@@ -179,6 +144,147 @@ ballShadow.rotation.x = -Math.PI / 2;
 ballShadow.position.y = 0.005;
 scene.add(ballShadow);
 
+// ─── Landing Predictor ────────────────────────────────────────────────────────
+const predictRingMat = new THREE.MeshBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+  side: THREE.DoubleSide,
+});
+
+const predictRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.28, 0.38, 36),
+  predictRingMat
+);
+predictRing.rotation.x = -Math.PI / 2;
+predictRing.position.y = 0.012;
+scene.add(predictRing);
+
+const predictDotMat = new THREE.MeshBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+  side: THREE.DoubleSide,
+});
+
+const predictDot = new THREE.Mesh(
+  new THREE.CircleGeometry(0.12, 32),
+  predictDotMat
+);
+predictDot.rotation.x = -Math.PI / 2;
+predictDot.position.y = 0.011;
+scene.add(predictDot);
+
+const crossMat = new THREE.LineBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+});
+
+function makeCrossLine(x1, z1, x2, z2) {
+  const g = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(x1, 0.013, z1),
+    new THREE.Vector3(x2, 0.013, z2),
+  ]);
+  return new THREE.Line(g, crossMat);
+}
+
+const cross1 = makeCrossLine(-0.55, 0, 0.55, 0);
+const cross2 = makeCrossLine(0, -0.55, 0, 0.55);
+scene.add(cross1);
+scene.add(cross2);
+
+let predictPulse = 0;
+
+function hideLandingPredictor() {
+  predictRingMat.opacity = 0;
+  predictDotMat.opacity = 0;
+  crossMat.opacity = 0;
+}
+
+function predictLanding(px, py, pz, vx, vy, vz) {
+  let x = px;
+  let y = py;
+  let z = pz;
+  let dx = vx;
+  let dy = vy;
+  let dz = vz;
+
+  const step = 0.016;
+  const maxSteps = 400;
+
+  for (let i = 0; i < maxSteps; i++) {
+    dy += GRAVITY * step;
+    x += dx * step;
+    z += dz * step;
+    y += dy * step;
+
+    if (Math.abs(x) > FIELD_H) {
+      dx *= -0.7;
+      x = Math.sign(x) * FIELD_H;
+    }
+
+    if (Math.abs(z) > FIELD_H) {
+      dz *= -0.7;
+      z = Math.sign(z) * FIELD_H;
+    }
+
+    if (y <= BALL_R) {
+      return { x, z, t: i * step };
+    }
+  }
+
+  return { x, z, t: maxSteps * step };
+}
+
+function updateLandingPredictor(dt) {
+  predictPulse += dt * 3.5;
+
+  if (
+    !isPlaying ||
+    countdownActive ||
+    !ballReady ||
+    !ball.visible ||
+    bPos.y <= 0.5
+  ) {
+    hideLandingPredictor();
+    return;
+  }
+
+  const land = predictLanding(
+    bPos.x,
+    bPos.y,
+    bPos.z,
+    bVel.x,
+    bVel.y,
+    bVel.z
+  );
+
+  const urgency = Math.max(0, Math.min(1, 1 - land.t / 1.8));
+  const alpha = 0.25 + urgency * 0.7;
+  const pulse = 1 + Math.sin(predictPulse) * 0.12 * urgency;
+
+  predictRing.position.x = land.x;
+  predictRing.position.z = land.z;
+  predictRing.scale.setScalar(pulse);
+  predictRingMat.opacity = alpha;
+  predictRingMat.color.setRGB(
+    0.9,
+    0.22 + urgency * 0.55,
+    0.08 + urgency * 0.1
+  );
+
+  predictDot.position.x = land.x;
+  predictDot.position.z = land.z;
+  predictDotMat.opacity = alpha * 0.35;
+
+  cross1.position.x = land.x;
+  cross1.position.z = land.z;
+  cross2.position.x = land.x;
+  cross2.position.z = land.z;
+  crossMat.opacity = alpha * 0.6;
+}
+
 // ─── Ball State ───────────────────────────────────────────────────────────────
 const bPos = new THREE.Vector3(0, 2, 0);
 const bVel = new THREE.Vector3(0.02, 0, 0.01);
@@ -192,6 +298,9 @@ const charPos = new THREE.Vector3(0, 0, 1);
 const charTgt = new THREE.Vector3(0, 0, 1);
 const SPEED = 5.5;
 const KICK_R = 0.85;
+const BALL_DRIFT_BASE = 0.75;
+const BALL_DRIFT_MAX = 2.45;
+const BALL_DIFFICULTY_TOUCHES = 26;
 
 let character = null;
 let mixer = null;
@@ -540,10 +649,34 @@ function doKick() {
   dir.normalize();
 
   const power = 4.6 + Math.random() * 0.9;
+
+  const difficulty = Math.min(touches / BALL_DIFFICULTY_TOUCHES, 1);
+  const driftStrength = THREE.MathUtils.lerp(
+    BALL_DRIFT_BASE,
+    BALL_DRIFT_MAX,
+    difficulty
+  );
+
+  const driftAngle = Math.random() * Math.PI * 2;
+  const drift = new THREE.Vector3(
+    Math.cos(driftAngle),
+    0,
+    Math.sin(driftAngle)
+  );
+
+  const returnBias = new THREE.Vector3()
+    .subVectors(new THREE.Vector3(0, 0, 0), bPos)
+    .setY(0);
+
+  if (returnBias.lengthSq() > 0.001) {
+    returnBias.normalize();
+    drift.addScaledVector(returnBias, 0.28 + difficulty * 0.28).normalize();
+  }
+
   bVel.set(
-    dir.x * 0.7 + (Math.random() - 0.5) * 0.5,
+    dir.x * 0.35 + drift.x * driftStrength,
     power,
-    dir.z * 0.7 + (Math.random() - 0.5) * 0.5
+    dir.z * 0.35 + drift.z * driftStrength
   );
 
   addTouch();
@@ -743,6 +876,8 @@ function loop() {
   ballShadow.scale.setScalar(ss);
   shadowMat.opacity = 0.35 * ss;
 
+  updateLandingPredictor(dt);
+
   if (Object.keys(charMixers).length > 0) {
     Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
   } else if (mixer) {
@@ -761,6 +896,7 @@ function beginJugglingRun() {
   ballReady = false;
   ball.visible = false;
   ballShadow.visible = false;
+  hideLandingPredictor();
   clearTimeout(ballSpawnTimeout);
 
   charPos.set(0, 0, 1);
