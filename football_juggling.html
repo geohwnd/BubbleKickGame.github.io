@@ -12,6 +12,45 @@
     <div id="drop-flash"></div>
     <canvas id="game-canvas"></canvas>
 
+    <div id="juggling-intro" class="juggling-intro-screen hidden">
+      <div class="juggling-intro-card">
+        <div class="juggling-intro-tag">
+          THE WORLD MATCH · MODO JUGGLING
+        </div>
+
+        <div class="juggling-intro-logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
+
+        <div class="juggling-intro-description">
+          Mantén el balón en el aire realizando dominadas con ambos pies.
+          <br /><br />
+          Muévete para colocarte bajo el balón y consigue la mayor cantidad de
+          toques posibles.
+        </div>
+
+        <button id="start-juggling-btn" class="juggling-intro-play-btn" type="button">
+          ¡JUGAR!
+        </button>
+
+        <div class="juggling-intro-steps">
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">↔️</div>
+            <div class="juggling-intro-label">MOVERTE</div>
+          </div>
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">⚽</div>
+            <div class="juggling-intro-label">DOMINAR</div>
+          </div>
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">🔥</div>
+            <div class="juggling-intro-label">COMBO</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="countdown-screen" class="countdown-screen">
       <div id="countdown-number" class="countdown-number">3</div>
       <div class="countdown-label">Prepárate</div>
@@ -19,19 +58,30 @@
 
     <div id="game-over-screen" class="game-over-screen hidden">
       <div class="game-over-card">
-        <div class="game-over-title">Juggling Complete</div>
+        <div class="game-over-tag">FIN DE TANDA · MODO JUGGLING</div>
+
+        <div class="game-over-logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
 
         <div class="game-over-subtitle">
-          Dominadas realizadas
+          TUS DOMINADAS
         </div>
 
         <div id="final-score" class="game-over-score">
           0
         </div>
 
-        <button id="play-again-btn" class="pill-btn">
-          Volver a jugar
-        </button>
+        <div class="game-over-actions">
+          <button id="play-again-btn" class="game-over-primary-btn" type="button">
+            REVANCHA
+          </button>
+
+          <a class="game-over-secondary-btn" href="index.html">
+            MENÚ PRINCIPAL
+          </a>
+        </div>
       </div>
     </div>
 

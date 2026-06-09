@@ -322,6 +322,10 @@ async function tryLoadGLB(filename, key) {
       const modelMixer = new THREE.AnimationMixer(model);
       const action = modelMixer.clipAction(gltf.animations[0]);
 
+      if (key === "leftJug" || key === "rightJug") {
+        action.timeScale = 1.85;
+      }
+
       action.setLoop(
         key === "idle" || key === "move" ? THREE.LoopRepeat : THREE.LoopOnce
       );
@@ -561,6 +565,48 @@ function animateWalk(dt, moving) {
   }
 }
 
+function updateCharacterMovement(dt) {
+  const moveDir = new THREE.Vector3();
+  if (keys["w"] || keys["arrowup"]) moveDir.z -= 1;
+  if (keys["s"] || keys["arrowdown"]) moveDir.z += 1;
+  if (keys["a"] || keys["arrowleft"]) moveDir.x -= 1;
+  if (keys["d"] || keys["arrowright"]) moveDir.x += 1;
+  const usingKeys = moveDir.lengthSq() > 0;
+
+  if (usingKeys) {
+    moveDir.normalize();
+    charTgt.addScaledVector(moveDir, SPEED * dt);
+  } else if (mouseGround) {
+    const diff = new THREE.Vector3().subVectors(mouseGround, charPos).setY(0);
+    const dist = diff.length();
+    if (dist > 0.12) {
+      diff.normalize();
+      charTgt.addScaledVector(diff, Math.min(SPEED * dt, dist));
+    }
+  }
+
+  charTgt.x = Math.max(-FIELD_H + 0.5, Math.min(FIELD_H - 0.5, charTgt.x));
+  charTgt.z = Math.max(-FIELD_H + 0.5, Math.min(FIELD_H - 0.5, charTgt.z));
+  charPos.lerp(charTgt, 0.2);
+  charPos.y = 0;
+
+  if (character) {
+    const delta = new THREE.Vector3()
+      .subVectors(charTgt, character.position)
+      .setY(0);
+    if (delta.lengthSq() > 0.0001)
+      character.rotation.y = THREE.MathUtils.lerp(
+        character.rotation.y,
+        Math.atan2(delta.x, delta.z),
+        0.15
+      );
+    character.position.copy(charPos);
+  }
+
+  const isMoving = charPos.distanceTo(charTgt) > 0.04 || usingKeys;
+  animateWalk(dt, isMoving);
+}
+
 // ─── Game Loop ────────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 
@@ -574,35 +620,29 @@ function loop() {
   }
 
   if (countdownActive) {
+    updateCharacterMovement(dt);
     ball.visible = false;
     ballShadow.visible = false;
+
     if (Object.keys(charMixers).length > 0) {
       Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
     } else if (mixer) {
       mixer.update(dt);
     }
-
-    if (character) {
-      character.position.copy(charPos);
-    }
-
-    ball.position.copy(bPos);
-    ballShadow.position.x = bPos.x;
-    ballShadow.position.z = bPos.z;
 
     composer.render();
     return;
   }
 
   if (!ballReady) {
+    updateCharacterMovement(dt);
+    ball.visible = false;
+    ballShadow.visible = false;
+
     if (Object.keys(charMixers).length > 0) {
       Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
     } else if (mixer) {
       mixer.update(dt);
-    }
-
-    if (character) {
-      character.position.copy(charPos);
     }
 
     composer.render();
