@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>Bubble Kick 26 — Penales</title>
+    <title>Bubble Kick — Penalties</title>
 
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700;900&display=swap");
@@ -199,6 +199,11 @@
         transition: opacity 0.4s ease;
       }
 
+      #hint,
+      #kbar-wrap {
+        display: none !important;
+      }
+
       #kbar-wrap {
         position: fixed;
         left: 50%;
@@ -248,6 +253,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        padding: 24px;
         background: radial-gradient(
             ellipse at 72% 48%,
             rgba(93, 240, 214, 0.28),
@@ -264,9 +270,96 @@
         transition: opacity 0.35s ease;
       }
 
+      #overlay.penalty-ended {
+        background: rgba(4, 13, 44, 0.48);
+      }
+
       #overlay.hidden {
         opacity: 0;
         pointer-events: none;
+      }
+
+      .penalty-panel {
+        width: auto;
+        padding: 0;
+        border-radius: 0;
+        text-align: center;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+      }
+
+      #overlay.penalty-ended .penalty-panel {
+        width: min(520px, calc(100vw - 36px));
+        padding: 30px 26px 26px;
+        border-radius: 32px;
+        background: linear-gradient(
+          145deg,
+          rgba(4, 18, 95, 0.9),
+          rgba(8, 38, 165, 0.82) 56%,
+          rgba(8, 120, 92, 0.62)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36),
+          0 0 44px rgba(93, 240, 214, 0.16);
+      }
+
+      .final-goals-wrap {
+        display: none;
+        margin: 12px 0 18px;
+      }
+
+      #overlay.penalty-ended .final-goals-wrap {
+        display: block;
+      }
+
+      .final-goals-label {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+
+      .final-goals-number {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(96px, 18vw, 154px);
+        line-height: 0.82;
+        color: #b9ff22;
+        text-shadow: 0 0 34px rgba(185, 255, 34, 0.4),
+          0 12px 34px rgba(0, 0, 0, 0.34);
+      }
+
+      .penalty-actions {
+        display: grid;
+        gap: 12px;
+        width: min(300px, 100%);
+        margin: 22px auto 0;
+      }
+
+      .menu-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 24px;
+        letter-spacing: 2px;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      #overlay.penalty-ended .menu-btn {
+        display: inline-flex;
+      }
+
+      #overlay.penalty-ended .ov-sub,
+      #overlay.penalty-ended .ov-steps {
+        display: none;
       }
 
       .ov-tag {
@@ -435,26 +528,39 @@
     <div id="hint">DESLIZA HACIA LA PORTERÍA ⚽</div>
 
     <div id="overlay">
-      <div class="ov-tag">THE WORLD MATCH · MODO PENALES</div>
-      <div class="ov-title">BUBBLE<br />KICK <span>26</span></div>
-      <div class="ov-sub">
-        Comienza a tirar. Desliza tu dedo por la pantalla para simular la
-        trayectoria del balón y anotar la mayor cantidad de goles posibles antes
-        de que el arquero te detenga uno.
-      </div>
-      <button id="play-btn">¡JUGAR!</button>
-      <div class="ov-steps">
-        <div class="ov-step">
-          <div class="ov-icon">👆</div>
-          <div class="ov-slbl">DESLIZA</div>
+      <div class="penalty-panel">
+        <div class="ov-tag">THE WORLD MATCH · MODO PENALES</div>
+        <div class="ov-title">BUBBLE<br />KICK <span>26</span></div>
+
+        <div class="final-goals-wrap">
+          <div class="final-goals-label">Tus goles</div>
+          <div id="final-goals-num" class="final-goals-number">0</div>
         </div>
-        <div class="ov-step">
-          <div class="ov-icon">🎯</div>
-          <div class="ov-slbl">APUNTA</div>
+
+        <div class="ov-sub">
+          Comienza a tirar. Desliza tu dedo por la pantalla para simular la
+          trayectoria del balón y anotar la mayor cantidad de goles posibles antes
+          de que el arquero te detenga uno.
         </div>
-        <div class="ov-step">
-          <div class="ov-icon">⚽</div>
-          <div class="ov-slbl">¡GOL!</div>
+
+        <div class="penalty-actions">
+          <button id="play-btn">¡JUGAR!</button>
+          <a id="penalty-menu-btn" class="menu-btn" href="index.html">MENÚ PRINCIPAL</a>
+        </div>
+
+        <div class="ov-steps">
+          <div class="ov-step">
+            <div class="ov-icon">👆</div>
+            <div class="ov-slbl">DESLIZA</div>
+          </div>
+          <div class="ov-step">
+            <div class="ov-icon">🎯</div>
+            <div class="ov-slbl">APUNTA</div>
+          </div>
+          <div class="ov-step">
+            <div class="ov-icon">⚽</div>
+            <div class="ov-slbl">¡GOL!</div>
+          </div>
         </div>
       </div>
     </div>
@@ -469,6 +575,7 @@
     </script>
 
     <script type="module">
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -478,6 +585,16 @@
       const CANNON = await import(
         "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
       );
+
+      const penaltyMusic = new Audio("audio/Crush Funk.mp3");
+      penaltyMusic.loop = true;
+      penaltyMusic.preload = "auto";
+      penaltyMusic.volume = 0.45;
+
+      function startPenaltyMusic() {
+        penaltyMusic.currentTime = 0;
+        penaltyMusic.play().catch(() => {});
+      }
 
       const canvas = document.getElementById("c");
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -559,57 +676,60 @@
       rimLight.position.set(0, 7, -10);
       scene.add(rimLight);
 
-      const fieldMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(40, 60),
-        new THREE.MeshStandardMaterial({
-          color: 0x4bbcff,
-          roughness: 0.86,
-          metalness: 0.02,
-        })
-      );
-      fieldMesh.rotation.x = -Math.PI / 2;
-      fieldMesh.receiveShadow = true;
-      scene.add(fieldMesh);
+      // Plano celeste removido: ahora el suelo visual viene del modelo CanchaIndividual.glb.
+      // const fieldMesh = new THREE.Mesh(
+      //   new THREE.PlaneGeometry(40, 60),
+      //   new THREE.MeshStandardMaterial({
+      //     color: 0x4bbcff,
+      //     roughness: 0.86,
+      //     metalness: 0.02,
+      //   })
+      // );
+      // fieldMesh.rotation.x = -Math.PI / 2;
+      // fieldMesh.receiveShadow = true;
+      // scene.add(fieldMesh);
 
-      for (let i = -3; i <= 3; i++) {
-        const stripe = new THREE.Mesh(
-          new THREE.PlaneGeometry(3.5, 60),
-          new THREE.MeshBasicMaterial({
-            color: i % 2 === 0 ? 0x315dff : 0x2450ff,
-            transparent: true,
-            opacity: 0.11,
-          })
-        );
-        stripe.rotation.x = -Math.PI / 2;
-        stripe.position.set(i * 3.5, 0.002, 0);
-        scene.add(stripe);
-      }
+      // Franjas azules removidas para evitar manchas/sombras sobre la cancha importada.
+      // for (let i = -3; i <= 3; i++) {
+      //   const stripe = new THREE.Mesh(
+      //     new THREE.PlaneGeometry(3.5, 60),
+      //     new THREE.MeshBasicMaterial({
+      //       color: i % 2 === 0 ? 0x315dff : 0x2450ff,
+      //       transparent: true,
+      //       opacity: 0.11,
+      //     })
+      //   );
+      //   stripe.rotation.x = -Math.PI / 2;
+      //   stripe.position.set(i * 3.5, 0.002, 0);
+      //   scene.add(stripe);
+      // }
 
-      const aquaGlow = new THREE.Mesh(
-        new THREE.CircleGeometry(8.5, 96),
-        new THREE.MeshBasicMaterial({
-          color: 0x5df0d6,
-          transparent: true,
-          opacity: 0.23,
-          depthWrite: false,
-        })
-      );
-      aquaGlow.rotation.x = -Math.PI / 2;
-      aquaGlow.position.set(3.2, 0.012, 1.2);
-      scene.add(aquaGlow);
+      // Glows del suelo removidos para que la cancha importada se vea limpia.
+      // const aquaGlow = new THREE.Mesh(
+      //   new THREE.CircleGeometry(8.5, 96),
+      //   new THREE.MeshBasicMaterial({
+      //     color: 0x5df0d6,
+      //     transparent: true,
+      //     opacity: 0.23,
+      //     depthWrite: false,
+      //   })
+      // );
+      // aquaGlow.rotation.x = -Math.PI / 2;
+      // aquaGlow.position.set(3.2, 0.012, 1.2);
+      // scene.add(aquaGlow);
 
-      const limeGlow = new THREE.Mesh(
-        new THREE.CircleGeometry(2.5, 96),
-        new THREE.MeshBasicMaterial({
-          color: 0xb9ff22,
-          transparent: true,
-          opacity: 0.08,
-          depthWrite: false,
-        })
-      );
-      limeGlow.rotation.x = -Math.PI / 2;
-      limeGlow.position.set(-2.5, 0.014, 4.2);
-      scene.add(limeGlow);
+      // const limeGlow = new THREE.Mesh(
+      //   new THREE.CircleGeometry(2.5, 96),
+      //   new THREE.MeshBasicMaterial({
+      //     color: 0xb9ff22,
+      //     transparent: true,
+      //     opacity: 0.08,
+      //     depthWrite: false,
+      //   })
+      // );
+      // limeGlow.rotation.x = -Math.PI / 2;
+      // limeGlow.position.set(-2.5, 0.014, 4.2);
+      // scene.add(limeGlow);
 
       const spot = new THREE.Mesh(
         new THREE.CircleGeometry(0.14, 16),
@@ -623,8 +743,10 @@
       spot.position.set(0, 0.005, 11);
       scene.add(spot);
 
-      const GW = 7.32;
-      const GH = 2.44;
+      const goalVisualMeshes = [];
+
+      const GW = 9.2;
+      const GH = 3.05;
       const GD = 2.0;
       const PR = 0.07;
       const postMat = new THREE.MeshStandardMaterial({
@@ -641,6 +763,7 @@
         mesh.rotation.set(rx, ry, rz);
         mesh.castShadow = true;
         scene.add(mesh);
+        goalVisualMeshes.push(mesh);
 
         const body = new CANNON.Body({ mass: 0 });
         const shape = new CANNON.Cylinder(PR, PR, len, 8);
@@ -678,6 +801,7 @@
           mesh.position.set(x, y, z);
           mesh.rotation.set(rx, ry, rz);
           scene.add(mesh);
+          goalVisualMeshes.push(mesh);
         });
       }
 
@@ -711,7 +835,94 @@
         0
       );
 
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath(
+        "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/libs/draco/"
+      );
+
       const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+
+      loader.load(
+        "models/CanchaParaPenalties.glb",
+        (gltf) => {
+          const importedField = gltf.scene;
+
+          importedField.traverse((child) => {
+            if (!child.isMesh && !child.isSkinnedMesh) return;
+
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.frustumCulled = false;
+            child.visible = true;
+
+            if (child.material) {
+              const materials = Array.isArray(child.material)
+                ? child.material.map((material) => material.clone())
+                : [child.material.clone()];
+
+              materials.forEach((material) => {
+                const meshName = `${child.name || ""}`.toLowerCase();
+                const materialName = `${material.name || ""}`.toLowerCase();
+                const isFieldMaterial =
+                  meshName.includes("floor") ||
+                  meshName.includes("cancha") ||
+                  meshName.includes("field") ||
+                  materialName.includes("floor") ||
+                  materialName.includes("cancha") ||
+                  materialName.includes("field") ||
+                  materialName.includes("grass");
+
+                if (isFieldMaterial && material.color) {
+                  material.color.set("#25d637");
+                  material.roughness = 0.78;
+                  material.metalness = 0.02;
+                }
+
+                material.side = THREE.DoubleSide;
+                material.needsUpdate = true;
+              });
+
+              child.material = Array.isArray(child.material)
+                ? materials
+                : materials[0];
+            }
+          });
+
+          const box = new THREE.Box3().setFromObject(importedField);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+
+          box.getSize(size);
+          box.getCenter(center);
+
+          importedField.position.sub(center);
+
+          const targetFieldWidth = 40;
+          if (size.x > 0) {
+            importedField.scale.setScalar(targetFieldWidth / size.x);
+          }
+
+          const scaledBox = new THREE.Box3().setFromObject(importedField);
+          importedField.position.y -= scaledBox.min.y;
+
+          // Se coloca dentro del encuadre del modo penales: entre la cámara y la portería.
+          importedField.position.z = 15.8;
+          importedField.position.y = -0.035;
+          importedField.rotation.set(0, Math.PI / 2, 0);
+
+          scene.add(importedField);
+
+          // La cancha importada ya trae su portería, ocultamos la portería procedural.
+          goalVisualMeshes.forEach((mesh) => {
+            mesh.visible = false;
+          });
+        },
+        undefined,
+        (error) => {
+          console.warn("No se pudo cargar CanchaIndividual.glb", error);
+        }
+      );
       const BALL_R = 0.22;
       const ballGroup = new THREE.Group();
       scene.add(ballGroup);
@@ -1010,6 +1221,7 @@
           );
           mesh.position.set(x, y, z);
           scene.add(mesh);
+          goalVisualMeshes.push(mesh);
           particles.push({
             mesh,
             vel: new THREE.Vector3(
@@ -1068,6 +1280,7 @@
       const hintEl = document.getElementById("hint");
       const overlayEl = document.getElementById("overlay");
       const restartBtn = document.getElementById("restart-btn");
+      const finalGoalsNumEl = document.getElementById("final-goals-num");
 
       function updateHUD() {
         scoreNumEl.textContent = goals;
@@ -1170,14 +1383,14 @@
         const title = overlayEl.querySelector(".ov-tag");
         const subtitle = overlayEl.querySelector(".ov-sub");
         const playButton = document.getElementById("play-btn");
+        overlayEl.classList.add("penalty-ended");
+        if (finalGoalsNumEl) finalGoalsNumEl.textContent = goals;
 
         if (title) title.textContent = "FIN DE TANDA · MODO PENALES";
         if (subtitle) {
-          subtitle.innerHTML = `Anotaste <strong>${goals}</strong> gol${
-            goals === 1 ? "" : "es"
-          }.<br>Vuelve a jugar e intenta superar tu marca.`;
+          subtitle.innerHTML = "";
         }
-        if (playButton) playButton.textContent = "JUGAR DE NUEVO";
+        if (playButton) playButton.textContent = "REVANCHA";
 
         setTimeout(() => {
           overlayEl.classList.remove("hidden");
@@ -1199,10 +1412,10 @@
         const nx = dx / mag;
         const ny = -dy / mag;
 
-        const spd = 18 + p * 15;
-        const vx = nx * spd * p;
-        const vy = Math.max(ny * spd * p, 2.8);
-        const vz = -(15 + p * 11);
+        const spd = 11.2 + p * 8.4;
+        const vx = nx * spd * p * 0.74;
+        const vy = Math.max(ny * spd * p * 0.74, 2.05);
+        const vz = -(10.2 + p * 6.9);
 
         ballPhysBody.velocity.set(vx, vy, vz);
         ballPhysBody.angularVelocity.set(-ny * 6, nx * 4, 0);
@@ -1304,6 +1517,8 @@
         streak = 0;
         updateHUD();
         overlayEl.classList.add("hidden");
+        startPenaltyMusic();
+        overlayEl.classList.remove("penalty-ended");
         const title = overlayEl.querySelector(".ov-tag");
         const subtitle = overlayEl.querySelector(".ov-sub");
         const playButton = document.getElementById("play-btn");
@@ -1476,11 +1691,11 @@
         }
 
         camera.position.set(
-          Math.sin(elapsed * 0.28) * 0.14,
-          2.8 + Math.sin(elapsed * 0.45) * 0.06,
-          16
+          Math.sin(elapsed * 0.28) * 0.08,
+          2.18 + Math.sin(elapsed * 0.45) * 0.035,
+          15.8
         );
-        camera.lookAt(0, 1.6, 0);
+        camera.lookAt(0, 0.82, 3.9);
         rimLight.intensity = 1.4 + Math.sin(elapsed * 2.2) * 0.3;
 
         composer.render();

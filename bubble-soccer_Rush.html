@@ -112,6 +112,34 @@
         border: 1px solid rgba(255, 255, 255, 0.22);
       }
 
+      .win-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .win-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1.3px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
       @media (max-width: 680px) {
         #pause-btn {
           top: auto;
@@ -119,6 +147,17 @@
           bottom: max(18px, env(safe-area-inset-bottom));
           padding: 10px 14px;
           font-size: 11px;
+        }
+
+        .win-actions {
+          display: grid;
+          width: min(280px, 88vw);
+          margin-inline: auto;
+        }
+
+        .win-menu-btn,
+        #restart-btn {
+          width: 100%;
         }
       }
     </style>
@@ -223,9 +262,15 @@
         </div>
       </div>
 
-      <button id="restart-btn">
-        NUEVA PARTIDA
-      </button>
+      <div class="win-actions">
+        <button id="restart-btn">
+          REVANCHA
+        </button>
+
+        <a class="win-menu-btn" href="index.html">
+          SALIR AL MENÚ PRINCIPAL
+        </a>
+      </div>
     </div>
 
     <!-- Instructions -->
