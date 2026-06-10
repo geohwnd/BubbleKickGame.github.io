@@ -586,10 +586,19 @@
         "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
       );
 
-      const penaltyMusic = new Audio("audio/Crush Funk.mp3");
+      const penaltyMusic = new Audio("audio/snes-dancing_main-full.mp3");
       penaltyMusic.loop = true;
       penaltyMusic.preload = "auto";
       penaltyMusic.volume = 0.45;
+
+      const goalSound = new Audio("audio/Anotacion.mp3");
+      goalSound.preload = "auto";
+      goalSound.volume = 0.82;
+
+      function playGoalSound() {
+        goalSound.currentTime = 0;
+        goalSound.play().catch(() => {});
+      }
 
       function startPenaltyMusic() {
         penaltyMusic.currentTime = 0;
@@ -1519,14 +1528,7 @@
         updateHUD();
         overlayEl.classList.add("hidden");
         startPenaltyMusic();
-        const goalSound = new Audio("audio/Anotacion.mp3");
-goalSound.preload = "auto";
-goalSound.volume = 0.82;
 
-function playGoalSound() {
-  goalSound.currentTime = 0;
-  goalSound.play().catch(() => {});
-}
         overlayEl.classList.remove("penalty-ended");
         const title = overlayEl.querySelector(".ov-tag");
         const subtitle = overlayEl.querySelector(".ov-sub");

@@ -10,6 +10,30 @@ const countdownScreen = document.getElementById("countdown-screen");
 const countdownNumber = document.getElementById("countdown-number");
 const jugglingIntroScreen = document.getElementById("juggling-intro");
 const startJugglingBtn = document.getElementById("start-juggling-btn");
+const jugglingMusic = new Audio("audio/Brazil Football Samba.mp3");
+jugglingMusic.loop = true;
+jugglingMusic.preload = "auto";
+jugglingMusic.volume = 0.42;
+
+let jugglingMusicStarted = false;
+
+const juggleHitSound = new Audio("audio/Combo Hit 05.wav");
+juggleHitSound.preload = "auto";
+juggleHitSound.volume = 0.72;
+
+function playJuggleHitSound() {
+  juggleHitSound.currentTime = 0;
+  juggleHitSound.play().catch(() => {});
+}
+
+function startJugglingMusic() {
+  if (jugglingMusicStarted) return;
+  jugglingMusicStarted = true;
+
+  jugglingMusic.play().catch(() => {
+    jugglingMusicStarted = false;
+  });
+}
 let countdownActive = false;
 let countdownTimeouts = [];
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -604,6 +628,7 @@ function prepareBallSpawn() {
 
 function addTouch() {
   touches++;
+  playJuggleHitSound();
   counterEl.textContent = touches;
   counterEl.classList.remove("pulse");
   void counterEl.offsetWidth;
@@ -948,10 +973,12 @@ function startGame() {
 startGame();
 
 startJugglingBtn?.addEventListener("click", () => {
+  startJugglingMusic();
   beginJugglingRun();
 });
 
 playAgainBtn?.addEventListener("click", () => {
+  startJugglingMusic();
   beginJugglingRun();
 });
 
