@@ -601,6 +601,9 @@
       <button id="tutorial-pass-btn" class="mobile-action-btn" type="button">
         🤝<span>Pass</span>
       </button>
+      <button id="tutorial-switch-btn" class="mobile-action-btn" type="button">
+       🔁<span>Switch</span>
+       </button>
     </div>
 
     <section class="tutorial-card">
@@ -667,6 +670,7 @@
       const tutorialDashBtn = document.getElementById("tutorial-dash-btn");
       const tutorialShootBtn = document.getElementById("tutorial-shoot-btn");
       const tutorialPassBtn = document.getElementById("tutorial-pass-btn");
+      const tutorialSwitchBtn = document.getElementById("tutorial-switch-btn");
       const tutorialCard = document.querySelector(".tutorial-card");
       const stepProgressDisplay = document.getElementById(
         "step-progress-display"
@@ -757,6 +761,7 @@
       const dummyShadow = makeShadow(scene);
       const ballShadow = makeShadow(scene);
 
+      applyPlayerVisualScale(tutorialPlayerMesh, TUTORIAL_PLAYER_SCALE);
       applyPlayerVisualScale(tutorialTeammateMesh, TUTORIAL_PLAYER_SCALE * 0.96);
       applyPlayerVisualScale(tutorialDummyMesh, TUTORIAL_DUMMY_SCALE);
 
@@ -775,6 +780,10 @@
       let stepProgressCount = 0;
       let stepProgressTime = 0;
       let stealInteractionBlockedUntil = 0;
+      let pendingPassTarget = false;
+      let teammateHasBall = false;
+      let teammateReturnTimeout = null;
+      let switchedToTeammate = false;
 
       const player = {
         group: tutorialPlayerMesh,
@@ -784,6 +793,15 @@
         facing: new THREE.Vector3(1, 0, 0),
         speed: 4.4,
       };
+
+      const teammate = {
+  group: tutorialTeammateMesh,
+  velocity: new THREE.Vector3(),
+  target: new THREE.Vector3(0, 0, 0),
+  hasPointerTarget: false,
+  facing: new THREE.Vector3(-1, 0, 0),
+  speed: 4.4,
+};
 
       const ball = {
         group: new THREE.Group(),
@@ -827,6 +845,16 @@
           hint: "Kick the ball 3 times to complete this step.",
         },
         {
+          title: "Make a pass",
+          text: "Press Q, or use the Pass button on mobile, to pass the ball to your teammate.",
+          hint: "Pass the ball to your teammate 3 times.",
+        },
+        {
+          title: "Switch teammate",
+          text: "Press C, or use the Switch button on mobile, to change the selected teammate.",
+          hint: "Switch players 3 times to complete this step.",
+        },
+        {
           title: "Steal with Dash",
           text: "When the AI has the ball, get close and use dash to steal possession. Practice your timing.",
           hint: "Dash into the opponent to recover the ball.",
@@ -838,6 +866,8 @@
         { type: "dribble", target: 2.0, unit: "s" },
         { type: "dash", target: 3, unit: "count" },
         { type: "shoot", target: 3, unit: "count" },
+        { type: "pass", target: 3, unit: "count" },
+        { type: "switch", target: 3, unit: "count" },
         { type: "steal", target: 3, unit: "count" },
       ];
 
@@ -850,6 +880,7 @@
         setupLights();
         setupField();
         setupPlayer();
+        setupTeammate();
         setupBall();
         setupDummy();
         setupGoalTarget();
@@ -936,6 +967,12 @@
         scene.add(player.group);
       }
 
+      function setupTeammate() {
+      teammate.group.position.set(1.65, 0, -1.15);
+      teammate.group.visible = false;
+      scene.add(teammate.group);
+      }
+
       function setupBall() {
         const fallbackBall = new THREE.Mesh(
           new THREE.SphereGeometry(0.24, 32, 20),
@@ -1020,6 +1057,15 @@
             event.preventDefault();
             if (!event.repeat) doShoot();
           }
+
+          if (key === "q") {
+            event.preventDefault();
+            if (!event.repeat) doPass();
+          }
+          if (key === "c") {
+           event.preventDefault();
+          if (!event.repeat) doSwitchPlayer();
+           }
         });
 
         window.addEventListener("keyup", (event) => {
@@ -1056,6 +1102,12 @@
           event.preventDefault();
           event.stopPropagation();
           doPass();
+        });
+
+        tutorialSwitchBtn.addEventListener("pointerdown", (event) => {
+         event.preventDefault();
+         event.stopPropagation();
+         doSwitchPlayer();
         });
 
         prevStepBtn.addEventListener("click", () =>
@@ -1119,25 +1171,35 @@
         player.facing.set(1, 0, 0);
         player.group.rotation.y = 0;
         player.hasPointerTarget = false;
+        teammate.group.position.set(1.65, 0, -1.15);
+        teammate.velocity.set(0, 0, 0);
+        teammate.target.set(1.65, 0, -1.15);
+teammate.hasPointerTarget = false;
+        teammate.facing.set(-1, 0, 0);
+        teammate.group.visible = currentStepIndex === 4 || currentStepIndex === 5;
+        switchedToTeammate = false;
         stepProgressCount = 0;
         stepProgressTime = 0;
         clearTimeout(autoAdvanceTimeout);
         clearTimeout(stealResetTimeout);
         stealInteractionBlockedUntil = 0;
+        pendingPassTarget = false;
+        teammateHasBall = false;
+        clearTimeout(teammateReturnTimeout);
 
         dummy.group.position.set(2.1, 0, 0.4);
         dummy.hasBall = false;
         dummy.dashUntil = 0;
         dummy.dashCooldownUntil = 0;
-        dummy.group.visible = currentStepIndex === 4;
+        dummy.group.visible = currentStepIndex === 6;
 
         goalTarget.visible = currentStepIndex === 3;
 
-        ball.attached = currentStepIndex !== 4;
+        ball.attached = currentStepIndex !== 6;
         ball.velocity.set(0, 0, 0);
         tutorialBallBody.vel.set(0, 0, 0);
 
-        if (currentStepIndex === 4) {
+        if (currentStepIndex === 6) {
           dummy.hasBall = true;
           ball.attached = false;
 
@@ -1232,12 +1294,16 @@
         const point = new THREE.Vector3();
 
         if (raycaster.ray.intersectPlane(groundPlane, point)) {
-          player.target.set(
-            THREE.MathUtils.clamp(point.x, -6.8, 6.8),
-            0,
-            THREE.MathUtils.clamp(point.z, -4.5, 4.5)
-          );
-          player.hasPointerTarget = true;
+          const targetActor =
+  currentStepIndex === 5 && switchedToTeammate ? teammate : player;
+
+targetActor.target.set(
+  THREE.MathUtils.clamp(point.x, -6.8, 6.8),
+  0,
+  THREE.MathUtils.clamp(point.z, -4.5, 4.5)
+);
+
+targetActor.hasPointerTarget = true;
         }
       }
 
@@ -1305,7 +1371,167 @@
         }
       }
 
+      function doPass() {
+        if (currentStepIndex !== 4) return;
+        if (!ball.attached) return;
+
+        const direction = teammate.group.position.clone().sub(player.group.position);
+        direction.y = 0;
+
+        if (direction.lengthSq() < 0.001) return;
+
+        direction.normalize();
+        player.facing.copy(direction);
+
+        if (typeof player.group.playStrikeAnimation === "function") {
+          player.group.playStrikeAnimation("idle");
+        }
+
+        ball.attached = false;
+
+        tutorialBallBody.pos.copy(ball.group.position);
+        tutorialBallBody.pos.y = BALL_RADIUS;
+        tutorialBallBody.vel.copy(direction).multiplyScalar(10.5);
+        tutorialBallBody.vel.y = 0.2;
+
+        ball.velocity.copy(tutorialBallBody.vel);
+        ballPickupBlockedUntil = performance.now() + 650;
+
+        //addStepActionProgress("Passing completed");
+        pendingPassTarget = true;
+
+        if (stepProgressCount < stepRequirements[4].target) {
+          setTimeout(() => {
+            if (currentStepIndex !== 4 || completedStep) return;
+
+            if (teammateHasBall) return;
+
+            ball.attached = true;
+            tutorialBallBody.vel.set(0, 0, 0);
+            ball.velocity.set(0, 0, 0);
+            updateStepProgressLabel();
+          }, 800);
+        }
+      }
+
+      function doSwitchPlayer() {
+  if (currentStepIndex !== 5) return;
+
+  switchedToTeammate = !switchedToTeammate;
+
+  player.hasPointerTarget = false;
+  teammate.hasPointerTarget = false;
+
+  player.velocity.set(0, 0, 0);
+  teammate.velocity.set(0, 0, 0);
+
+  addStepActionProgress("Switch completed");
+}
+      function updateTeammate(dt) {
+  if (currentStepIndex !== 4 && currentStepIndex !== 5) return;
+
+  if (currentStepIndex === 5) {
+    if (switchedToTeammate) {
+      const move = getMoveVector();
+
+      if (move.lengthSq() > 0.001) {
+        teammate.hasPointerTarget = false;
+        teammate.velocity.lerp(
+          move.multiplyScalar(teammate.speed),
+          1 - Math.pow(0.002, dt)
+        );
+      } else if (teammate.hasPointerTarget) {
+        const toTarget = teammate.target.clone().sub(teammate.group.position);
+        toTarget.y = 0;
+
+        if (toTarget.length() > 0.08) {
+          teammate.velocity.lerp(
+            toTarget.normalize().multiplyScalar(teammate.speed),
+            1 - Math.pow(0.002, dt)
+          );
+        } else {
+          teammate.velocity.multiplyScalar(Math.pow(0.002, dt));
+        }
+      } else {
+        teammate.velocity.multiplyScalar(Math.pow(0.001, dt));
+      }
+    } else {
+      teammate.velocity.multiplyScalar(Math.pow(0.001, dt));
+    }
+
+    teammate.group.position.addScaledVector(teammate.velocity, dt);
+    teammate.group.position.x = THREE.MathUtils.clamp(
+      teammate.group.position.x,
+      -TUTORIAL_LIMIT_X,
+      TUTORIAL_LIMIT_X
+    );
+    teammate.group.position.z = THREE.MathUtils.clamp(
+      teammate.group.position.z,
+      -TUTORIAL_LIMIT_Z,
+      TUTORIAL_LIMIT_Z
+    );
+
+    if (teammate.velocity.lengthSq() > 0.03) {
+      teammate.facing.copy(teammate.velocity.clone().setY(0).normalize());
+    }
+
+    return;
+  }
+
+  const target = new THREE.Vector3(2.35, 0, -0.45);
+
+  if (teammateHasBall) {
+    const toTarget = target.sub(teammate.group.position);
+    toTarget.y = 0;
+
+    if (toTarget.lengthSq() > 0.01) {
+      teammate.velocity.lerp(
+        toTarget.normalize().multiplyScalar(2.15),
+        1 - Math.pow(0.01, dt)
+      );
+    } else {
+      teammate.velocity.multiplyScalar(Math.pow(0.02, dt));
+    }
+  } else {
+    teammate.velocity.multiplyScalar(Math.pow(0.01, dt));
+  }
+
+  teammate.group.position.addScaledVector(teammate.velocity, dt);
+  teammate.group.position.x = THREE.MathUtils.clamp(
+    teammate.group.position.x,
+    -TUTORIAL_LIMIT_X,
+    TUTORIAL_LIMIT_X
+  );
+  teammate.group.position.z = THREE.MathUtils.clamp(
+    teammate.group.position.z,
+    -TUTORIAL_LIMIT_Z,
+    TUTORIAL_LIMIT_Z
+  );
+
+  if (teammate.velocity.lengthSq() > 0.03) {
+    teammate.facing.copy(teammate.velocity.clone().setY(0).normalize());
+  }
+}
+
+
       function updatePlayer(dt) {
+        if (currentStepIndex === 5 && switchedToTeammate) {
+  player.velocity.multiplyScalar(Math.pow(0.001, dt));
+
+  updatePlayerMeshFacing(player.group, {
+    pos: player.group.position,
+    vel: player.velocity,
+    facing: player.facing,
+  });
+
+  updatePlayerAnimationVariant(
+    player.group,
+    { speed: player.velocity.length(), vel: player.velocity },
+    player.velocity.lengthSq() > 0.08 ? "run" : "idle"
+  );
+
+  return;
+}
         const now = performance.now();
 
         if (now < dashUntil) {
@@ -1398,6 +1624,39 @@
       }
 
       function updateBall(dt) {
+        if (teammateHasBall) {
+          const right = new THREE.Vector3(
+            teammate.facing.z,
+            0,
+            -teammate.facing.x
+          ).normalize();
+          const footSwitch =
+            teammate.velocity.lengthSq() > 0.05
+              ? Math.sin(performance.now() * 0.014) * 0.055
+              : 0;
+          const target = teammate.group.position
+            .clone()
+            .add(teammate.facing.clone().multiplyScalar(0.68))
+            .add(right.multiplyScalar(footSwitch));
+
+          target.y = BALL_RADIUS;
+          target.x = THREE.MathUtils.clamp(
+            target.x,
+            -TUTORIAL_LIMIT_X + BALL_RADIUS,
+            TUTORIAL_LIMIT_X - BALL_RADIUS
+          );
+          target.z = THREE.MathUtils.clamp(
+            target.z,
+            -TUTORIAL_LIMIT_Z + BALL_RADIUS,
+            TUTORIAL_LIMIT_Z - BALL_RADIUS
+          );
+
+          tutorialBallBody.pos.copy(target);
+          tutorialBallBody.vel.copy(teammate.velocity);
+          ball.velocity.copy(teammate.velocity);
+          ball.group.position.copy(tutorialBallBody.pos);
+          return;
+        }
         if (ball.attached && !dummy.hasBall) {
           const right = new THREE.Vector3(
             player.facing.z,
@@ -1477,11 +1736,47 @@
         const pickupDistance = PLAYER_BODY_RADIUS + BALL_RADIUS + 0.32;
         const canPickupBall = performance.now() >= ballPickupBlockedUntil;
 
+        if (currentStepIndex === 4 && pendingPassTarget) {
+          const teammateDistance =
+            teammate.group.position.distanceTo(tutorialBallBody.pos);
+
+          if (teammateDistance < 0.8) {
+            pendingPassTarget = false;
+            teammateHasBall = true;
+            ball.attached = false;
+            tutorialBallBody.vel.set(0, 0, 0);
+            ball.velocity.set(0, 0, 0);
+
+            addStepActionProgress("Passing completed");
+
+            clearTimeout(teammateReturnTimeout);
+            teammateReturnTimeout = setTimeout(() => {
+              if (currentStepIndex !== 4 || completedStep) return;
+
+              teammateHasBall = false;
+              teammate.velocity.set(0, 0, 0);
+              teammate.group.position.set(1.65, 0, -1.15);
+              teammate.facing.set(-1, 0, 0);
+
+              ball.attached = true;
+              tutorialBallBody.vel.set(0, 0, 0);
+              ball.velocity.set(0, 0, 0);
+              updateStepProgressLabel();
+            }, 900);
+          }
+        }
+
         if (canPickupBall && playerDistanceToBall < pickupDistance) {
+          pendingPassTarget = false;
           ball.attached = true;
           tutorialBallBody.vel.set(0, 0, 0);
           ball.velocity.set(0, 0, 0);
-          if (currentStepIndex !== 3 && currentStepIndex !== 4) {
+          if (
+            currentStepIndex !== 3 &&
+            currentStepIndex !== 4 &&
+            currentStepIndex !== 5 &&
+            currentStepIndex !== 6
+          ) {
             showSuccess("Ball recovered");
           }
           return;
@@ -1496,7 +1791,7 @@
       }
 
       function updateDummy(dt) {
-        if (currentStepIndex !== 4) return;
+        if (currentStepIndex !== 6) return;
 
         const toBall = tutorialBallBody.pos.clone().sub(dummy.group.position);
         toBall.y = 0;
@@ -1574,7 +1869,7 @@
           ball.velocity.set(0, 0, 0);
           stealInteractionBlockedUntil = now + 950;
 
-          const requirement = stepRequirements[4];
+          const requirement = stepRequirements[6];
           const stealTarget = requirement?.target ?? 3;
 
           stepProgressCount = Math.min(stealTarget, stepProgressCount + 1);
@@ -1589,7 +1884,7 @@
             clearTimeout(stealResetTimeout);
 
             stealResetTimeout = setTimeout(() => {
-              if (currentStepIndex !== 4 || completedStep) return;
+              if (currentStepIndex !== 6 || completedStep) return;
 
               ball.attached = false;
               dummy.hasBall = true;
@@ -1616,6 +1911,7 @@
         const dt = Math.min(clock.getDelta(), 0.034);
 
         updatePlayer(dt);
+        updateTeammate(dt);
         updateBall(dt);
         updateDummy(dt);
 
@@ -1624,6 +1920,12 @@
           0.01,
           player.group.position.z
         );
+        teammateShadow.position.set(
+          teammate.group.position.x,
+          0.01,
+          teammate.group.position.z
+        );
+        teammateShadow.visible = teammate.group.visible;
         dummyShadow.position.set(
           dummy.group.position.x,
           0.01,
@@ -1636,15 +1938,41 @@
         );
         dummyShadow.visible = dummy.group.visible;
 
+        updatePlayerMeshFacing(teammate.group, {
+          pos: teammate.group.position,
+          vel: teammate.velocity,
+          facing: teammate.facing,
+        });
+
+        updatePlayerAnimationVariant(
+          teammate.group,
+          { speed: teammate.velocity.length(), vel: teammate.velocity },
+          teammate.velocity.lengthSq() > 0.08 ? "run" : "idle"
+        );
+
         goalTarget.rotation.y += 0.025;
         goalTarget.scale.setScalar(
           1 + Math.sin(performance.now() * 0.006) * 0.06
         );
 
         const now = performance.now();
-        player.group.scale.setScalar(
-          now < dashUntil ? TUTORIAL_PLAYER_SCALE * 1.08 : TUTORIAL_PLAYER_SCALE
-        );
+        if (currentStepIndex === 5) {
+          player.group.scale.setScalar(
+            switchedToTeammate
+              ? TUTORIAL_PLAYER_SCALE * 0.96
+              : TUTORIAL_PLAYER_SCALE * 1.08
+          );
+          teammate.group.scale.setScalar(
+            switchedToTeammate
+              ? TUTORIAL_PLAYER_SCALE * 1.08
+              : TUTORIAL_PLAYER_SCALE * 0.96
+          );
+        } else {
+          player.group.scale.setScalar(
+            now < dashUntil ? TUTORIAL_PLAYER_SCALE * 1.08 : TUTORIAL_PLAYER_SCALE
+          );
+          teammate.group.scale.setScalar(TUTORIAL_PLAYER_SCALE * 0.96);
+        }
         dummy.group.scale.setScalar(TUTORIAL_DUMMY_SCALE);
         ball.group.scale.setScalar(now < shootPulseUntil ? 1.25 : 1);
 

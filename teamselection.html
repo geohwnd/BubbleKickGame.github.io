@@ -667,7 +667,7 @@
         <a class="back-link" href="index.html">← Menú</a>
 
         <div class="brand">
-          <div class="brand-badge"><span class="brand-dot"></span> 8v8 Footii Match</div>
+          <div class="brand-badge"><span class="brand-dot"></span> 4v4 Rush Match</div>
           <h1>Elige equipos</h1>
         </div>
 
@@ -859,6 +859,35 @@
       };
 
       const selectedFallbackColors = ["#ffffff", "#2f49ff", "#7ef8e8"];
+      const TEAM_SELECTION_MUSIC_PATH = "audio/Rural Ride Loop_Music.mp3";
+      const teamSelectionMusic = new Audio(TEAM_SELECTION_MUSIC_PATH);
+      teamSelectionMusic.loop = true;
+      teamSelectionMusic.volume = 0.38;
+      let teamSelectionMusicStarted = false;
+
+      function startTeamSelectionMusic() {
+        if (teamSelectionMusicStarted) return;
+        teamSelectionMusicStarted = true;
+
+        teamSelectionMusic.play().catch(() => {
+          teamSelectionMusicStarted = false;
+        });
+      }
+
+      function setupTeamSelectionMusicAutoplay() {
+        startTeamSelectionMusic();
+
+        const unlockMusic = () => {
+          startTeamSelectionMusic();
+          window.removeEventListener("pointerdown", unlockMusic);
+          window.removeEventListener("keydown", unlockMusic);
+          window.removeEventListener("touchstart", unlockMusic);
+        };
+
+        window.addEventListener("pointerdown", unlockMusic, { once: true });
+        window.addEventListener("keydown", unlockMusic, { once: true });
+        window.addEventListener("touchstart", unlockMusic, { once: true });
+      }
       let selectedP1 = loadStoredTeam("bubbleKickP1Team");
       let selectedP2 = loadStoredTeam("bubbleKickP2Team");
       let nextPlayer = selectedP1 && !selectedP2 ? 2 : 1;
@@ -1240,6 +1269,7 @@
       const p1Preview = new CharacterPreview(document.getElementById("p1Preview"), 1);
       const p2Preview = new CharacterPreview(document.getElementById("p2Preview"), -1);
 
+      setupTeamSelectionMusicAutoplay();
       hydrateRosterInputs();
 
       document.getElementById("clearP1").addEventListener("click", () => clearPick(1));

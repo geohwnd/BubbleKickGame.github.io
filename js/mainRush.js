@@ -496,13 +496,13 @@ function setMasterVolume(value) {
   masterVolume = THREE.MathUtils.clamp(Number(value), 0, 1);
   localStorage.setItem(MASTER_VOLUME_STORAGE_KEY, String(masterVolume));
 
-  stadiumEnvironmentSound.volume = 0.32 * masterVolume;
+  stadiumEnvironmentSound.volume = 0.92 * masterVolume;
   goalSound.volume = 0.82 * masterVolume;
   kickSound.volume = 0.65 * masterVolume;
 }
 let lastGoalParticleState = false;
 
-const stadiumEnvironmentSound = new Audio("audio/Stadium_Environment.mp3");
+const stadiumEnvironmentSound = new Audio("audio/BaumannMusic_Brazil_CLEAN.mp3");
 stadiumEnvironmentSound.loop = true;
 stadiumEnvironmentSound.preload = "auto";
 stadiumEnvironmentSound.volume = 0.32 * masterVolume;

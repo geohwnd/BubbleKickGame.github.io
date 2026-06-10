@@ -1333,6 +1333,7 @@
         const bp = ballPhysBody.position;
 
         if (type === "goal") {
+          playGoalSound();
           goals++;
           streak++;
           updateHUD();
@@ -1518,6 +1519,14 @@
         updateHUD();
         overlayEl.classList.add("hidden");
         startPenaltyMusic();
+        const goalSound = new Audio("audio/Anotacion.mp3");
+goalSound.preload = "auto";
+goalSound.volume = 0.82;
+
+function playGoalSound() {
+  goalSound.currentTime = 0;
+  goalSound.play().catch(() => {});
+}
         overlayEl.classList.remove("penalty-ended");
         const title = overlayEl.querySelector(".ov-tag");
         const subtitle = overlayEl.querySelector(".ov-sub");

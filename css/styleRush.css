@@ -336,32 +336,38 @@ body {
   width: min(820px, calc(100vw - 32px));
   max-height: 72vh;
   overflow-y: auto;
-  padding: 28px 34px;
-  border-radius: 28px;
-  background: linear-gradient(
-    180deg,
-    rgba(12, 18, 16, 0.96),
-    rgba(3, 7, 6, 0.94)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(10px);
+  padding: 30px 34px;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at top right,
+      rgba(170,255,70,0.12),
+      transparent 35%),
+    linear-gradient(
+      180deg,
+      rgba(10,28,160,0.97),
+      rgba(6,20,125,0.97)
+    );
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.45),
+    0 0 60px rgba(70,120,255,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
 }
 
 .match-stats-title {
   width: fit-content;
-  margin: 0 auto 18px;
-  padding: 7px 18px;
+  margin: 0 auto 24px;
+  padding: 10px 24px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.86);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
   font-size: 12px;
   font-weight: 900;
-  letter-spacing: 1.2px;
-  text-align: center;
+  letter-spacing: 2px;
   text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .google-goals-summary {
@@ -375,7 +381,8 @@ body {
   align-items: center;
   gap: 24px;
   padding: 2px 0 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
 }
 
 .google-team-side {
@@ -396,10 +403,12 @@ body {
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.08);
   font-size: 34px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
 }
 
 .google-team-name {
@@ -427,6 +436,7 @@ body {
   font-weight: 900;
   line-height: 1;
   letter-spacing: -2px;
+  text-shadow: 0 6px 24px rgba(0,0,0,0.35);
 }
 
 .google-score span:nth-child(2) {
@@ -440,7 +450,7 @@ body {
   justify-content: center;
   gap: 10px;
   margin: 4px 0 -2px;
-  color: rgba(255, 255, 255, 0.86);
+  color: #d7ff54;
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 1px;
@@ -457,7 +467,7 @@ body {
 .google-goals-divider {
   width: 1px;
   min-height: 130px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255,255,255,0.08);
 }
 
 .google-goals-list {
@@ -476,6 +486,7 @@ body {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  padding: 4px 0;
 }
 
 .google-goals-list.right .google-goal-item {
@@ -503,11 +514,16 @@ body {
   left: 50%;
   z-index: 60;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: linear-gradient(
+    90deg,
+    #d9edf7 0%,
+    #baf3cb 55%,
+    #b9ff4a 100%
+  );
+  border: none;
+  color: #1730c9;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 900;
   letter-spacing: 1px;
   padding: 10px 24px;
   border-radius: 999px;
@@ -516,11 +532,13 @@ body {
   backdrop-filter: blur(6px);
   transition: background 0.2s, transform 0.1s;
   text-transform: uppercase;
+  box-shadow: 0 10px 28px rgba(185,255,74,0.22);
 }
 
 #restart-btn:hover,
 #quick-restart-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+  filter: brightness(1.05);
+  transform: translateX(-50%) scale(1.03);
 }
 
 #restart-btn:active,

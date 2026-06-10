@@ -3,6 +3,8 @@ const PLAYER_RUN_MODEL_PATH = "models/Character_FootballRunAnimation.glb";
 const KEEPER_IDLE_MODEL_PATH = "models/Character_GoalKeeper_Idle.glb";
 const KEEPER_WALK_MODEL_PATH = "models/Character_GoalKeeper_Walk.glb";
 
+const EDIT_TEAM_MUSIC_PATH = "audio/Rural Ride Loop_Music.mp3";
+
     const DEFAULT_P1 = ["Capitán", "Extremo", "Defensa", "Portero"];
     const DEFAULT_P2 = ["Capitán IA", "Atacante IA", "Defensa IA", "Portero IA"];
     const ROLES = ["Capitán", "Extremo", "Defensa", "Portero"];
@@ -29,6 +31,36 @@ const KEEPER_WALK_MODEL_PATH = "models/Character_GoalKeeper_Walk.glb";
 
 let activeTeam = 1;
 let activePlayerIndex = 0;
+
+const editTeamMusic = new Audio(EDIT_TEAM_MUSIC_PATH);
+editTeamMusic.loop = true;
+editTeamMusic.volume = 0.38;
+
+let editTeamMusicStarted = false;
+
+function startEditTeamMusic() {
+  if (editTeamMusicStarted) return;
+  editTeamMusicStarted = true;
+
+  editTeamMusic.play().catch(() => {
+    editTeamMusicStarted = false;
+  });
+}
+
+function setupEditTeamMusicAutoplay() {
+  startEditTeamMusic();
+
+  const unlockMusic = () => {
+    startEditTeamMusic();
+    window.removeEventListener("pointerdown", unlockMusic);
+    window.removeEventListener("keydown", unlockMusic);
+    window.removeEventListener("touchstart", unlockMusic);
+  };
+
+  window.addEventListener("pointerdown", unlockMusic, { once: true });
+  window.addEventListener("keydown", unlockMusic, { once: true });
+  window.addEventListener("touchstart", unlockMusic, { once: true });
+}
 
     const state = {
       1: loadTeamState(1),
@@ -643,5 +675,6 @@ function renderForm() {
       renderForm();
     });
 
-    initScene();
-    renderForm();
+setupEditTeamMusicAutoplay();
+initScene();
+renderForm();

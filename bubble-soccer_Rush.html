@@ -164,7 +164,21 @@
         align-items: center;
         justify-content: center;
         gap: 12px;
-        margin-top: 18px;
+        margin-top: 28px;
+      }
+
+      #restart-btn,
+      #quick-restart-btn {
+        position: static;
+        z-index: 60;
+        transform: none;
+        min-height: 44px;
+      }
+
+      #restart-btn:hover,
+      #quick-restart-btn:hover {
+        filter: brightness(1.05);
+        transform: scale(1.03);
       }
 
       .win-menu-btn {
@@ -172,10 +186,10 @@
         align-items: center;
         justify-content: center;
         min-height: 44px;
-        padding: 0 18px;
+        padding: 10px 24px;
         border-radius: 999px;
         color: #ffffff;
-        background: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.13);
         border: 1px solid rgba(255, 255, 255, 0.22);
         font-family: inherit;
         font-size: 13px;
@@ -184,6 +198,8 @@
         text-decoration: none;
         text-transform: uppercase;
         cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
       }
 
       @media (max-width: 680px) {
@@ -310,16 +326,16 @@
         <div id="match-stats-content" class="stats-empty">
           Sin goles registrados
         </div>
-      </div>
 
-      <div class="win-actions">
-        <button id="restart-btn">
-          REVANCHA
-        </button>
+        <div class="win-actions">
+          <button id="restart-btn">
+            REVANCHA
+          </button>
 
-        <a class="win-menu-btn" href="index.html">
-          SALIR AL MENÚ PRINCIPAL
-        </a>
+          <a class="win-menu-btn" href="index.html">
+            SALIR AL MENÚ PRINCIPAL
+          </a>
+        </div>
       </div>
     </div>
 
