@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>Bubble Kick 26 — Tutorial Rush Match</title>
+    <title>Bubble Kick — Tutorial Rush Match</title>
 
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700;900&display=swap");
@@ -1142,14 +1142,14 @@
         tutorialCompleteScreen?.classList.add("hidden");
         const step = steps[currentStepIndex];
 
-        stepKicker.textContent = `Paso ${currentStepIndex + 1} de ${
+        stepKicker.textContent = `Step ${currentStepIndex + 1} of ${
           steps.length
         }`;
         stepTitle.textContent = step.title;
         stepText.textContent = step.text;
         floatingHint.textContent = step.hint;
         prevStepBtn.disabled = currentStepIndex === 0;
-        nextStepBtn.textContent = "Siguiente";
+        nextStepBtn.textContent = "Next";
         nextStepBtn.style.display = "none";
 
         [...progressDots.children].forEach((dot, dotIndex) => {

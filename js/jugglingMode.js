@@ -275,14 +275,7 @@ function updateLandingPredictor(dt) {
     return;
   }
 
-  const land = predictLanding(
-    bPos.x,
-    bPos.y,
-    bPos.z,
-    bVel.x,
-    bVel.y,
-    bVel.z
-  );
+  const land = predictLanding(bPos.x, bPos.y, bPos.z, bVel.x, bVel.y, bVel.z);
 
   const urgency = Math.max(0, Math.min(1, 1 - land.t / 1.8));
   const alpha = 0.25 + urgency * 0.7;
@@ -292,11 +285,7 @@ function updateLandingPredictor(dt) {
   predictRing.position.z = land.z;
   predictRing.scale.setScalar(pulse);
   predictRingMat.opacity = alpha;
-  predictRingMat.color.setRGB(
-    0.9,
-    0.22 + urgency * 0.55,
-    0.08 + urgency * 0.1
-  );
+  predictRingMat.color.setRGB(0.9, 0.22 + urgency * 0.55, 0.08 + urgency * 0.1);
 
   predictDot.position.x = land.x;
   predictDot.position.z = land.z;
@@ -332,6 +321,183 @@ const charModels = {};
 const charMixers = {};
 let activeAnimKey = null;
 const anims = {}; // { move, leftJug, rightJug }
+
+const DEFAULT_PLAYER_COLORS = {
+  shirt: 0xf7d51f,
+  shorts: 0x16a06d,
+  socks: 0xffffff,
+  skin: 0xd8a15f,
+  shoes: 0x111111,
+};
+
+function hexToNumber(hex, fallback) {
+  if (!hex || typeof hex !== "string") return fallback;
+
+  const parsed = Number.parseInt(hex.replace("#", ""), 16);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readSelectedTeam(storageKey, fallback) {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    console.log("[JUGGLING] localStorage raw", storageKey, raw);
+    if (!raw) return fallback;
+
+    const team = JSON.parse(raw);
+    console.log("[JUGGLING] parsed team", storageKey, team);
+
+    if (!team?.colors || !Array.isArray(team.colors)) {
+      return fallback;
+    }
+
+    const normalizedTeam = {
+      ...team,
+      color: team.color ?? team.colors[0],
+      colors: team.colors,
+      shirt: hexToNumber(team.colors[0], fallback.shirt),
+      shorts: hexToNumber(team.colors[1], fallback.shorts),
+      socks: hexToNumber(team.colors[2], fallback.socks),
+      skin: fallback.skin,
+      shoes: fallback.shoes,
+    };
+
+    console.log("[JUGGLING] normalized team colors", storageKey, normalizedTeam);
+
+    return normalizedTeam;
+  } catch {
+    return fallback;
+  }
+}
+
+function readJugglingPlayerKitColors() {
+  return readSelectedTeam("bubbleKickP1Team", DEFAULT_PLAYER_COLORS);
+}
+
+let playerKitColors = readJugglingPlayerKitColors();
+
+function applyKitColorsToCharacter(root, kitColors) {
+  if (!root || !kitColors) return;
+
+  root.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+
+    materials.forEach((material) => {
+      if (!material?.color) return;
+
+      const rawMaterialName = material.name || "";
+      const materialName = `${child.name || ""} ${rawMaterialName}`.toLowerCase();
+      const color = material.color;
+
+      const looksLikeShirtByName =
+        materialName.includes("shirt") ||
+        materialName.includes("jersey") ||
+        materialName.includes("body") ||
+        materialName.includes("torso") ||
+        materialName.includes("uniform") ||
+        materialName.includes("camisa") ||
+        materialName.includes("player_top");
+
+      const looksLikeShortsByName =
+        materialName.includes("short") ||
+        materialName.includes("pants") ||
+        materialName.includes("trouser") ||
+        materialName.includes("bottom") ||
+        materialName.includes("pantalon");
+
+      const looksLikeSocksByName =
+        materialName.includes("sock") ||
+        materialName.includes("leg") ||
+        materialName.includes("media");
+
+      const looksLikeShoesByName =
+        materialName.includes("shoe") ||
+        materialName.includes("boot") ||
+        materialName.includes("cleat") ||
+        materialName.includes("zapato");
+
+      const looksLikeSkinByName =
+        materialName.includes("skin") ||
+        materialName.includes("head") ||
+        materialName.includes("arm") ||
+        materialName.includes("hand") ||
+        materialName.includes("face");
+
+      const looksRedUniform =
+        color.r > 0.55 && color.g < 0.35 && color.b < 0.35;
+      const looksBlueUniform = color.b > 0.45 && color.r < 0.35;
+      const looksGreenUniform = color.g > 0.45 && color.r < 0.45;
+      const looksYellowUniform =
+        color.r > 0.55 && color.g > 0.45 && color.b < 0.35;
+      const looksBlackUniform = color.r < 0.12 && color.g < 0.12 && color.b < 0.12;
+      const looksSkinTone = color.r > 0.5 && color.g > 0.28 && color.g < 0.72 && color.b > 0.12 && color.b < 0.55;
+
+      const normalizedMaterialName = rawMaterialName.toLowerCase();
+      const explicitRole = normalizedMaterialName.includes("m_firstcolor")
+        ? "shirt"
+        : normalizedMaterialName.includes("m_secondcolor")
+        ? "shorts"
+        : normalizedMaterialName.includes("m_thirdcolor")
+        ? "socks"
+        : normalizedMaterialName.includes("m_shoe")
+        ? "shoes"
+        : normalizedMaterialName.includes("m_skin")
+        ? "skin"
+        : null;
+
+      let role = explicitRole ?? material.userData?.jugglingKitRole ?? null;
+
+      if (!role) {
+        if (looksLikeShoesByName || looksBlackUniform) {
+          role = "shoes";
+        } else if (looksLikeSkinByName || looksSkinTone) {
+          role = "skin";
+        } else if (looksLikeShortsByName || looksGreenUniform) {
+          role = "shorts";
+        } else if (looksLikeSocksByName || looksBlueUniform) {
+          role = "socks";
+        } else if (looksLikeShirtByName || looksYellowUniform || looksRedUniform) {
+          role = "shirt";
+        }
+      }
+
+      if (!role) return;
+
+      const materialToPaint = material.userData?.jugglingMaterialClone
+        ? material
+        : material.clone();
+
+      materialToPaint.userData.jugglingMaterialClone = true;
+      materialToPaint.userData.jugglingKitRole = role;
+      materialToPaint.userData.jugglingExplicitRole = explicitRole;
+      materialToPaint.color.setHex(kitColors[role]);
+      materialToPaint.needsUpdate = true;
+
+      if (Array.isArray(child.material)) {
+        const materialIndex = child.material.indexOf(material);
+        child.material[materialIndex] = materialToPaint;
+      } else {
+        child.material = materialToPaint;
+      }
+    });
+  });
+}
+
+function refreshPlayerKitColors() {
+  playerKitColors = readJugglingPlayerKitColors();
+  console.log("[JUGGLING] active playerKitColors", playerKitColors);
+
+  Object.values(charModels).forEach((model) => {
+    applyKitColorsToCharacter(model, playerKitColors);
+  });
+
+  if (character) {
+    applyKitColorsToCharacter(character, playerKitColors);
+  }
+}
 let curAction = null;
 let kickCooldown = 0;
 let isKicking = false;
@@ -419,7 +585,7 @@ loader.load(
     ball.add(model);
   },
   undefined,
-  (err) => console.warn("Ball_Model.glb no pudo cargarse", err)
+  (err) => console.warn("Ball_Model.glb could not be loaded", err)
 );
 const loadBar = document.getElementById("loading-bar-fill");
 const loadWrap = document.getElementById("loading-bar-wrap");
@@ -448,8 +614,35 @@ async function tryLoadGLB(filename, key) {
     const gltf = await loader.loadAsync(filename);
     const model = gltf.scene;
 
+    model.traverse((child) => {
+      if (!child.isMesh || !child.material) return;
+
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      materials.forEach((material) => {
+        console.log(
+          `[JUGGLING MATERIAL] ${key} | mesh: ${child.name || "(no mesh name)"} | material: ${material.name || "(no material name)"} | hex: ${material.color?.getHexString?.() ?? "no-color"} | role: ${
+            (material.name || "").toLowerCase().includes("m_firstcolor")
+              ? "shirt"
+              : (material.name || "").toLowerCase().includes("m_secondcolor")
+              ? "shorts"
+              : (material.name || "").toLowerCase().includes("m_thirdcolor")
+              ? "socks"
+              : (material.name || "").toLowerCase().includes("m_shoe")
+              ? "shoes"
+              : (material.name || "").toLowerCase().includes("m_skin")
+              ? "skin"
+              : "auto"
+          }`
+        );
+      });
+    });
+
     model.visible = false;
     model.scale.setScalar(1.15);
+    applyKitColorsToCharacter(model, playerKitColors);
 
     charModels[key] = model;
 
@@ -473,7 +666,7 @@ async function tryLoadGLB(filename, key) {
 
     onOneLoaded();
   } catch (error) {
-    console.warn(`No se pudo cargar ${filename}`, error);
+    console.warn(`Could not load ${filename}`, error);
     onOneLoaded();
   }
 }
@@ -494,6 +687,7 @@ function buildCharacter() {
     const model = charModels[key];
     model.visible = false;
     model.position.set(0, 0, 0);
+    applyKitColorsToCharacter(model, playerKitColors);
     character.add(model);
   });
 
@@ -509,6 +703,10 @@ function playAnim(name, onFinish) {
   Object.entries(charModels).forEach(([key, model]) => {
     model.visible = key === name;
   });
+
+  if (charModels[name]) {
+    applyKitColorsToCharacter(charModels[name], playerKitColors);
+  }
 
   const next = anims[name];
   if (!next) return;
@@ -639,11 +837,11 @@ function addTouch() {
   }
   if (touches > 0 && touches % 10 === 0) {
     const msgs = [
-      "¡COMBO!",
-      "¡INCREÍBLE!",
-      "¡BESTIAL!",
-      "¡IMPARABLE!",
-      "¡LEYENDA!",
+      "COMBO!",
+      "INCREDIBLE!",
+      "BEAST MODE!",
+      "UNSTOPPABLE!",
+      "LEGEND!",
     ];
     comboText.textContent =
       msgs[Math.min(Math.floor(touches / 10) - 1, msgs.length - 1)];
@@ -775,6 +973,9 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05);
 
   if (!isPlaying) {
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
+    }
     composer.render();
     return;
   }
@@ -790,6 +991,10 @@ function loop() {
       mixer.update(dt);
     }
 
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
+    }
+
     composer.render();
     return;
   }
@@ -803,6 +1008,10 @@ function loop() {
       Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
     } else if (mixer) {
       mixer.update(dt);
+    }
+
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
     }
 
     composer.render();
@@ -908,11 +1117,16 @@ function loop() {
   } else if (mixer) {
     mixer.update(dt);
   }
+
+  if (activeAnimKey && charModels[activeAnimKey]) {
+    applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
+  }
   composer.render();
 }
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 function beginJugglingRun() {
+  refreshPlayerKitColors();
   touches = 0;
   counterEl.textContent = "0";
 
@@ -947,6 +1161,7 @@ function beginJugglingRun() {
 }
 
 function startGame() {
+  refreshPlayerKitColors();
   loadWrap.classList.add("show");
   isPlaying = false;
   ballReady = false;

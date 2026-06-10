@@ -5,29 +5,29 @@ const KEEPER_WALK_MODEL_PATH = "models/Character_GoalKeeper_Walk.glb";
 
 const EDIT_TEAM_MUSIC_PATH = "audio/Rural Ride Loop_Music.mp3";
 
-    const DEFAULT_P1 = ["Capitán", "Extremo", "Defensa", "Portero"];
-    const DEFAULT_P2 = ["Capitán IA", "Atacante IA", "Defensa IA", "Portero IA"];
-    const ROLES = ["Capitán", "Extremo", "Defensa", "Portero"];
-    const DEFAULT_SKIN = "#f0b66a";
+const DEFAULT_P1 = ["Captain", "Winger", "Defender", "Goalkeeper"];
+const DEFAULT_P2 = ["AI Captain", "AI Striker", "AI Defender", "AI Goalkeeper"];
+const ROLES = ["Captain", "Winger", "Defender", "Goalkeeper"];
+const DEFAULT_SKIN = "#f0b66a";
 
-    const TEAM_KEYS = {
-      1: {
-        team: "bubbleKickP1Team",
-        roster: "bubbleKickP1Roster",
-        skin: "bubbleKickP1SkinColor",
-        fallbackColors: ["#ff4444", "#ffffff", "#ffcc00"],
-        fallbackRoster: DEFAULT_P1,
-        label: "LOCAL",
-      },
-      2: {
-        team: "bubbleKickP2Team",
-        roster: "bubbleKickP2Roster",
-        skin: "bubbleKickP2SkinColor",
-        fallbackColors: ["#3388ff", "#ffffff", "#00eebb"],
-        fallbackRoster: DEFAULT_P2,
-        label: "VISITANTE / IA",
-      },
-    };
+const TEAM_KEYS = {
+  1: {
+    team: "bubbleKickP1Team",
+    roster: "bubbleKickP1Roster",
+    skin: "bubbleKickP1SkinColor",
+    fallbackColors: ["#ff4444", "#ffffff", "#ffcc00"],
+    fallbackRoster: DEFAULT_P1,
+    label: "HOME",
+  },
+  2: {
+    team: "bubbleKickP2Team",
+    roster: "bubbleKickP2Roster",
+    skin: "bubbleKickP2SkinColor",
+    fallbackColors: ["#3388ff", "#ffffff", "#00eebb"],
+    fallbackRoster: DEFAULT_P2,
+    label: "AWAY / AI",
+  },
+};
 
 let activeTeam = 1;
 let activePlayerIndex = 0;
@@ -62,66 +62,70 @@ function setupEditTeamMusicAutoplay() {
   window.addEventListener("touchstart", unlockMusic, { once: true });
 }
 
-    const state = {
-      1: loadTeamState(1),
-      2: loadTeamState(2),
-    };
+const state = {
+  1: loadTeamState(1),
+  2: loadTeamState(2),
+};
 
-    const canvas = document.getElementById("teamCanvas");
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    let composer = null;
-    let bloomPass = null;
-    const previewGroup = new THREE.Group();
-    const mixers = [];
-    const clock = new THREE.Clock();
+const canvas = document.getElementById("teamCanvas");
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+});
+let composer = null;
+let bloomPass = null;
+const previewGroup = new THREE.Group();
+const mixers = [];
+const clock = new THREE.Clock();
 
-    let previewGeneration = 0;
+let previewGeneration = 0;
 
-    function isMobilePreview() {
-      const rect = canvas?.parentElement?.getBoundingClientRect?.();
-      const width = rect?.width || window.innerWidth;
-      return width < 620 || window.innerWidth < 700;
-    }
-    
-    function updatePreviewCamera() {
-      const mobile = isMobilePreview();
-    
-      if (mobile) {
-        camera.position.set(0, 5.8, 13.4);
-        camera.fov = 46;
-      } else {
-        camera.position.set(0, 4.55, 9.4);
-        camera.fov = 38;
-      }
-    
-      camera.lookAt(0, 1.15, 0);
-      camera.updateProjectionMatrix();
-    }
+function isMobilePreview() {
+  const rect = canvas?.parentElement?.getBoundingClientRect?.();
+  const width = rect?.width || window.innerWidth;
+  return width < 620 || window.innerWidth < 700;
+}
 
-    const playersList = document.getElementById("playersList");
-    const skinColorInput = document.getElementById("skinColorInput");
-    const skinSwatch = document.getElementById("skinSwatch");
+function updatePreviewCamera() {
+  const mobile = isMobilePreview();
 
-    function safeJsonParse(value, fallback) {
-      try {
-        return value ? JSON.parse(value) : fallback;
-      } catch (_) {
-        return fallback;
-      }
-    }
+  if (mobile) {
+    camera.position.set(0, 5.8, 13.4);
+    camera.fov = 46;
+  } else {
+    camera.position.set(0, 4.55, 9.4);
+    camera.fov = 38;
+  }
 
-    function sanitizeColor(color, fallback = DEFAULT_SKIN) {
-      return typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)
-        ? color
-        : fallback;
-    }
+  camera.lookAt(0, 1.15, 0);
+  camera.updateProjectionMatrix();
+}
 
-    function sanitizeColors(colors, fallback) {
-      const list = Array.isArray(colors) ? colors : [];
-      return [0, 1, 2].map((index) => sanitizeColor(list[index], fallback[index]));
-    }
+const playersList = document.getElementById("playersList");
+const skinColorInput = document.getElementById("skinColorInput");
+const skinSwatch = document.getElementById("skinSwatch");
+
+function safeJsonParse(value, fallback) {
+  try {
+    return value ? JSON.parse(value) : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function sanitizeColor(color, fallback = DEFAULT_SKIN) {
+  return typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)
+    ? color
+    : fallback;
+}
+
+function sanitizeColors(colors, fallback) {
+  const list = Array.isArray(colors) ? colors : [];
+  return [0, 1, 2].map((index) => sanitizeColor(list[index], fallback[index]));
+}
 
 function loadTeamState(playerNumber) {
   const config = TEAM_KEYS[playerNumber];
@@ -162,284 +166,301 @@ function saveTeamState(playerNumber) {
   localStorage.setItem(config.skin, JSON.stringify(data.skinColors));
 }
 
-    function loadExternalScript(src) {
-      return new Promise((resolve, reject) => {
-        const existingScript = document.querySelector(`script[src="${src}"]`);
-        if (existingScript) {
-          existingScript.addEventListener("load", resolve, { once: true });
-          existingScript.addEventListener("error", reject, { once: true });
-          if (existingScript.dataset.loaded === "true") resolve();
-          return;
-        }
-
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = () => {
-          script.dataset.loaded = "true";
-          resolve();
-        };
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
+function loadExternalScript(src) {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${src}"]`);
+    if (existingScript) {
+      existingScript.addEventListener("load", resolve, { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+      if (existingScript.dataset.loaded === "true") resolve();
+      return;
     }
 
-    async function loadPostProcessingScripts() {
-      const baseUrl = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js";
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
-      await loadExternalScript(`${baseUrl}/postprocessing/EffectComposer.js`);
-      await loadExternalScript(`${baseUrl}/postprocessing/RenderPass.js`);
-      await loadExternalScript(`${baseUrl}/postprocessing/ShaderPass.js`);
-      await loadExternalScript(`${baseUrl}/shaders/CopyShader.js`);
-      await loadExternalScript(`${baseUrl}/shaders/LuminosityHighPassShader.js`);
-      await loadExternalScript(`${baseUrl}/postprocessing/UnrealBloomPass.js`);
-    }
+async function loadPostProcessingScripts() {
+  const baseUrl = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js";
 
-    function initPostProcessing() {
-      const canUseComposer =
-        typeof THREE.EffectComposer === "function" &&
-        typeof THREE.RenderPass === "function" &&
-        typeof THREE.UnrealBloomPass === "function";
+  await loadExternalScript(`${baseUrl}/postprocessing/EffectComposer.js`);
+  await loadExternalScript(`${baseUrl}/postprocessing/RenderPass.js`);
+  await loadExternalScript(`${baseUrl}/postprocessing/ShaderPass.js`);
+  await loadExternalScript(`${baseUrl}/shaders/CopyShader.js`);
+  await loadExternalScript(`${baseUrl}/shaders/LuminosityHighPassShader.js`);
+  await loadExternalScript(`${baseUrl}/postprocessing/UnrealBloomPass.js`);
+}
 
-      if (!canUseComposer) {
-        composer = null;
-        bloomPass = null;
-        return;
-      }
+function initPostProcessing() {
+  const canUseComposer =
+    typeof THREE.EffectComposer === "function" &&
+    typeof THREE.RenderPass === "function" &&
+    typeof THREE.UnrealBloomPass === "function";
 
-      const rect = canvas.parentElement.getBoundingClientRect();
+  if (!canUseComposer) {
+    composer = null;
+    bloomPass = null;
+    return;
+  }
 
-      composer = new THREE.EffectComposer(renderer);
-      composer.setSize(rect.width, rect.height);
-      composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const rect = canvas.parentElement.getBoundingClientRect();
 
-      const renderPass = new THREE.RenderPass(scene, camera);
-      composer.addPass(renderPass);
+  composer = new THREE.EffectComposer(renderer);
+  composer.setSize(rect.width, rect.height);
+  composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-      bloomPass = new THREE.UnrealBloomPass(
-        new THREE.Vector2(rect.width, rect.height),
-        0.28,
-        0.24,
-        0.82
-      );
-      bloomPass.renderToScreen = true;
-      composer.addPass(bloomPass);
-    }
+  const renderPass = new THREE.RenderPass(scene, camera);
+  composer.addPass(renderPass);
 
-    function initScene() {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.outputEncoding = THREE.sRGBEncoding;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  bloomPass = new THREE.UnrealBloomPass(
+    new THREE.Vector2(rect.width, rect.height),
+    0.28,
+    0.24,
+    0.82
+  );
+  bloomPass.renderToScreen = true;
+  composer.addPass(bloomPass);
+}
 
-      // Con EffectComposer el fondo transparente puede verse negro.
-      // Usamos un azul claro para mantener el look del panel sin oscurecer la escena.
-      scene.background = new THREE.Color(0x4f8dff);
-      scene.fog = null;
+function initScene() {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      updatePreviewCamera();
+  // Con EffectComposer el fondo transparente puede verse negro.
+  // Usamos un azul claro para mantener el look del panel sin oscurecer la escena.
+  scene.background = new THREE.Color(0x4f8dff);
+  scene.fog = null;
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  updatePreviewCamera();
 
-      const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
-      keyLight.position.set(-5, 8, 7);
-      keyLight.castShadow = true;
-      scene.add(keyLight);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-      const cyanFill = new THREE.DirectionalLight(0x65ffe7, 0.3);
-      cyanFill.position.set(6, 4, 5);
-      scene.add(cyanFill);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  keyLight.position.set(-5, 8, 7);
+  keyLight.castShadow = true;
+  scene.add(keyLight);
 
-      const floor = new THREE.Mesh(
-        new THREE.CircleGeometry(4.1, 64),
-        new THREE.MeshBasicMaterial({
-          color: 0xbee8ff,
-          transparent: true,
-          opacity: 0.34,
-        })
-      );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -0.03;
-      scene.add(floor);
+  const cyanFill = new THREE.DirectionalLight(0x65ffe7, 0.3);
+  cyanFill.position.set(6, 4, 5);
+  scene.add(cyanFill);
 
-      scene.add(previewGroup);
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(4.1, 64),
+    new THREE.MeshBasicMaterial({
+      color: 0xbee8ff,
+      transparent: true,
+      opacity: 0.34,
+    })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.03;
+  scene.add(floor);
 
-      loadPostProcessingScripts()
-        .then(() => {
-          initPostProcessing();
-          resizeScene();
-        })
-        .catch(() => {
-          composer = null;
-          bloomPass = null;
-        });
+  scene.add(previewGroup);
 
-      window.addEventListener("resize", resizeScene);
+  loadPostProcessingScripts()
+    .then(() => {
+      initPostProcessing();
       resizeScene();
-      animate();
+    })
+    .catch(() => {
+      composer = null;
+      bloomPass = null;
+    });
+
+  window.addEventListener("resize", resizeScene);
+  resizeScene();
+  animate();
+}
+
+function resizeScene() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(rect.width, rect.height, false);
+
+  if (composer) {
+    composer.setSize(rect.width, rect.height);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  }
+
+  if (bloomPass) {
+    bloomPass.resolution.set(rect.width, rect.height);
+  }
+
+  camera.aspect = rect.width / rect.height;
+  updatePreviewCamera();
+}
+
+function clearPreviewGroup() {
+  mixers.length = 0;
+
+  while (previewGroup.children.length) {
+    previewGroup.remove(previewGroup.children[0]);
+  }
+}
+
+function createFallbackCharacter(isKeeper, colors, skinColor) {
+  const group = new THREE.Group();
+
+  const bodyColor = isKeeper ? colors[2] : colors[0];
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: bodyColor,
+    roughness: 0.55,
+  });
+  const headMat = new THREE.MeshStandardMaterial({
+    color: skinColor,
+    roughness: 0.65,
+  });
+  const shortsMat = new THREE.MeshStandardMaterial({
+    color: colors[1],
+    roughness: 0.58,
+  });
+
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.22, 0.62, 8, 16),
+    bodyMat
+  );
+  body.position.y = 1.05;
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 12), headMat);
+  head.position.y = 1.58;
+
+  const shorts = new THREE.Mesh(
+    new THREE.BoxGeometry(0.46, 0.24, 0.28),
+    shortsMat
+  );
+  shorts.position.y = 0.66;
+
+  group.add(body, head, shorts);
+  return group;
+}
+
+function normalizeModel(model, targetHeight = 2.25) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+
+  box.getSize(size);
+  box.getCenter(center);
+
+  model.position.sub(center);
+  model.position.y += size.y / 2;
+
+  if (size.y > 0) {
+    model.scale.setScalar(targetHeight / size.y);
+  }
+}
+
+function tintModel(model, colors, isKeeper, skinColor) {
+  model.traverse((child) => {
+    if (!child.isMesh && !child.isSkinnedMesh) return;
+
+    child.castShadow = true;
+    child.receiveShadow = true;
+    child.frustumCulled = false;
+
+    const originalMaterial = child.material;
+    const material = originalMaterial
+      ? originalMaterial.clone()
+      : new THREE.MeshStandardMaterial();
+
+    const key = `${originalMaterial?.name || ""} ${
+      child.name || ""
+    }`.toLowerCase();
+
+    if (key.includes("m_skin") || key.includes("skin")) {
+      material.color = new THREE.Color(skinColor);
+    } else if (
+      key.includes("m_firstcolor") ||
+      key.includes("firstcolor") ||
+      key.includes("first_color")
+    ) {
+      material.color = new THREE.Color(isKeeper ? colors[2] : colors[0]);
+    } else if (
+      key.includes("m_secondcolor") ||
+      key.includes("secondcolor") ||
+      key.includes("second_color")
+    ) {
+      material.color = new THREE.Color(colors[1]);
+    } else if (
+      key.includes("m_thirdcolor") ||
+      key.includes("thirdcolor") ||
+      key.includes("third_color")
+    ) {
+      material.color = new THREE.Color(isKeeper ? colors[0] : colors[2]);
     }
 
-    function resizeScene() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      renderer.setSize(rect.width, rect.height, false);
+    material.skinning = true;
+    material.needsUpdate = true;
+    child.material = material;
+  });
+}
 
-      if (composer) {
-        composer.setSize(rect.width, rect.height);
-        composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      }
+function addNameLabel(parent, text, borderColor) {
+  const labelCanvas = document.createElement("canvas");
+  labelCanvas.width = 512;
+  labelCanvas.height = 128;
 
-      if (bloomPass) {
-        bloomPass.resolution.set(rect.width, rect.height);
-      }
+  const ctx = labelCanvas.getContext("2d");
+  const safeText = (text || "Player").slice(0, 18);
 
-      camera.aspect = rect.width / rect.height;
-      updatePreviewCamera();
-    }
+  ctx.font = "900 42px Segoe UI, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
-    function clearPreviewGroup() {
-      mixers.length = 0;
+  const metrics = ctx.measureText(safeText);
+  const boxW = Math.min(labelCanvas.width - 24, metrics.width + 70);
+  const boxH = 66;
+  const x = (labelCanvas.width - boxW) / 2;
+  const y = 31;
+  const r = 28;
 
-      while (previewGroup.children.length) {
-        previewGroup.remove(previewGroup.children[0]);
-      }
-    }
+  ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + boxW - r, y);
+  ctx.quadraticCurveTo(x + boxW, y, x + boxW, y + r);
+  ctx.lineTo(x + boxW, y + boxH - r);
+  ctx.quadraticCurveTo(x + boxW, y + boxH, x + boxW - r, y + boxH);
+  ctx.lineTo(x + r, y + boxH);
+  ctx.quadraticCurveTo(x, y + boxH, x, y + boxH - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
 
-    function createFallbackCharacter(isKeeper, colors, skinColor) {
-      const group = new THREE.Group();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = borderColor;
+  ctx.stroke();
 
-      const bodyColor = isKeeper ? colors[2] : colors[0];
-      const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55 });
-      const headMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.65 });
-      const shortsMat = new THREE.MeshStandardMaterial({ color: colors[1], roughness: 0.58 });
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.7)";
+  ctx.shadowBlur = 6;
+  ctx.fillText(safeText, labelCanvas.width / 2, labelCanvas.height / 2 + 1);
 
-      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.62, 8, 16), bodyMat);
-      body.position.y = 1.05;
+  const texture = new THREE.CanvasTexture(labelCanvas);
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    })
+  );
 
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 12), headMat);
-      head.position.y = 1.58;
-
-      const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 0.28), shortsMat);
-      shorts.position.y = 0.66;
-
-      group.add(body, head, shorts);
-      return group;
-    }
-
-    function normalizeModel(model, targetHeight = 2.25) {
-      const box = new THREE.Box3().setFromObject(model);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-
-      box.getSize(size);
-      box.getCenter(center);
-
-      model.position.sub(center);
-      model.position.y += size.y / 2;
-
-      if (size.y > 0) {
-        model.scale.setScalar(targetHeight / size.y);
-      }
-    }
-
-    function tintModel(model, colors, isKeeper, skinColor) {
-      model.traverse((child) => {
-        if (!child.isMesh && !child.isSkinnedMesh) return;
-
-        child.castShadow = true;
-        child.receiveShadow = true;
-        child.frustumCulled = false;
-
-        const originalMaterial = child.material;
-        const material = originalMaterial
-          ? originalMaterial.clone()
-          : new THREE.MeshStandardMaterial();
-
-        const key = `${originalMaterial?.name || ""} ${child.name || ""}`.toLowerCase();
-
-        if (key.includes("m_skin") || key.includes("skin")) {
-          material.color = new THREE.Color(skinColor);
-        } else if (
-          key.includes("m_firstcolor") ||
-          key.includes("firstcolor") ||
-          key.includes("first_color")
-        ) {
-          material.color = new THREE.Color(isKeeper ? colors[2] : colors[0]);
-        } else if (
-          key.includes("m_secondcolor") ||
-          key.includes("secondcolor") ||
-          key.includes("second_color")
-        ) {
-          material.color = new THREE.Color(colors[1]);
-        } else if (
-          key.includes("m_thirdcolor") ||
-          key.includes("thirdcolor") ||
-          key.includes("third_color")
-        ) {
-          material.color = new THREE.Color(isKeeper ? colors[0] : colors[2]);
-        }
-
-        material.skinning = true;
-        material.needsUpdate = true;
-        child.material = material;
-      });
-    }
-
-    function addNameLabel(parent, text, borderColor) {
-      const labelCanvas = document.createElement("canvas");
-      labelCanvas.width = 512;
-      labelCanvas.height = 128;
-
-      const ctx = labelCanvas.getContext("2d");
-      const safeText = (text || "Jugador").slice(0, 18);
-
-      ctx.font = "900 42px Segoe UI, Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      const metrics = ctx.measureText(safeText);
-      const boxW = Math.min(labelCanvas.width - 24, metrics.width + 70);
-      const boxH = 66;
-      const x = (labelCanvas.width - boxW) / 2;
-      const y = 31;
-      const r = 28;
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + boxW - r, y);
-      ctx.quadraticCurveTo(x + boxW, y, x + boxW, y + r);
-      ctx.lineTo(x + boxW, y + boxH - r);
-      ctx.quadraticCurveTo(x + boxW, y + boxH, x + boxW - r, y + boxH);
-      ctx.lineTo(x + r, y + boxH);
-      ctx.quadraticCurveTo(x, y + boxH, x, y + boxH - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = borderColor;
-      ctx.stroke();
-
-      ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = "rgba(0,0,0,0.7)";
-      ctx.shadowBlur = 6;
-      ctx.fillText(safeText, labelCanvas.width / 2, labelCanvas.height / 2 + 1);
-
-      const texture = new THREE.CanvasTexture(labelCanvas);
-      const sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: texture,
-          transparent: true,
-          depthTest: false,
-          depthWrite: false,
-        })
-      );
-
-      sprite.scale.set(1.55, 0.4, 1);
-      sprite.position.y = 2.62;
-      parent.add(sprite);
-    }
+  sprite.scale.set(1.55, 0.4, 1);
+  sprite.position.y = 2.62;
+  parent.add(sprite);
+}
 
 function loadPreviewTeam(playerNumber) {
   const currentGeneration = ++previewGeneration;
@@ -450,18 +471,18 @@ function loadPreviewTeam(playerNumber) {
   const skinColors = state[playerNumber].skinColors;
 
   const positions = isMobilePreview()
-  ? [
-      [-1.55, 0, 0.72],
-      [-0.45, 0, -0.38],
-      [0.58, 0, 0.46],
-      [1.58, 0, -0.12],
-    ]
-  : [
-      [-2.55, 0, 0.75],
-      [-0.85, 0, -0.45],
-      [0.85, 0, 0.55],
-      [2.5, 0, -0.15],
-    ];
+    ? [
+        [-1.55, 0, 0.72],
+        [-0.45, 0, -0.38],
+        [0.58, 0, 0.46],
+        [1.58, 0, -0.12],
+      ]
+    : [
+        [-2.55, 0, 0.75],
+        [-0.85, 0, -0.45],
+        [0.85, 0, 0.55],
+        [2.5, 0, -0.15],
+      ];
 
   positions.forEach((position, index) => {
     const isKeeper = index === 3;
@@ -492,8 +513,8 @@ function loadPreviewTeam(playerNumber) {
         ? KEEPER_WALK_MODEL_PATH
         : KEEPER_IDLE_MODEL_PATH
       : isSelected
-        ? PLAYER_RUN_MODEL_PATH
-        : PLAYER_IDLE_MODEL_PATH;
+      ? PLAYER_RUN_MODEL_PATH
+      : PLAYER_IDLE_MODEL_PATH;
     const loader = new THREE.GLTFLoader();
 
     loader.load(
@@ -534,13 +555,15 @@ function renderForm() {
   const data = state[activeTeam];
   const config = TEAM_KEYS[activeTeam];
 
-  document.getElementById("previewTitle").textContent =
-    `Plantilla ${activeTeam === 1 ? "Jugador 1" : "Jugador 2 / IA"}`;
+  document.getElementById("previewTitle").textContent = `Plantilla ${
+    `${activeTeam === 1 ? "Player 1" : "Player 2 / AI"} Roster`
+  }`;
 
   document.getElementById("teamPill").textContent = config.label;
   document.getElementById("editingPill").textContent = config.label;
 
-  const selectedName = data.roster[activePlayerIndex] || config.fallbackRoster[activePlayerIndex];
+  const selectedName =
+    data.roster[activePlayerIndex] || config.fallbackRoster[activePlayerIndex];
 
   playersList.innerHTML = `
     <div class="player-selector-grid">
@@ -548,7 +571,9 @@ function renderForm() {
         .map(
           (name, index) => `
             <button
-              class="player-select-card ${index === activePlayerIndex ? "active" : ""}"
+              class="player-select-card ${
+                index === activePlayerIndex ? "active" : ""
+              }"
               type="button"
               data-index="${index}"
             >
@@ -561,9 +586,11 @@ function renderForm() {
     </div>
 
     <div class="selected-player-editor">
-      <div class="role-chip selected-role-chip">${ROLES[activePlayerIndex]}</div>
+      <div class="role-chip selected-role-chip">${
+        ROLES[activePlayerIndex]
+      }</div>
       <div class="input-wrap">
-        <label>Editando jugador</label>
+        <label>Editing player</label>
         <input
           class="name-input"
           data-index="${activePlayerIndex}"
@@ -589,91 +616,102 @@ function renderForm() {
       const index = Number(input.dataset.index);
       const fallback = TEAM_KEYS[activeTeam].fallbackRoster[index];
 
-      state[activeTeam].roster[index] =
-        (input.value.trim() || fallback).slice(0, 18);
+      state[activeTeam].roster[index] = (input.value.trim() || fallback).slice(
+        0,
+        18
+      );
 
       loadPreviewTeam(activeTeam);
     });
   });
 
-  const activeSkinColor = sanitizeColor(data.skinColors[activePlayerIndex], DEFAULT_SKIN);
+  const activeSkinColor = sanitizeColor(
+    data.skinColors[activePlayerIndex],
+    DEFAULT_SKIN
+  );
   skinColorInput.value = activeSkinColor;
   skinSwatch.style.setProperty("--skin-color", activeSkinColor);
 
   skinColorInput.oninput = () => {
-    state[activeTeam].skinColors[activePlayerIndex] = sanitizeColor(skinColorInput.value, DEFAULT_SKIN);
-    skinSwatch.style.setProperty("--skin-color", state[activeTeam].skinColors[activePlayerIndex]);
+    state[activeTeam].skinColors[activePlayerIndex] = sanitizeColor(
+      skinColorInput.value,
+      DEFAULT_SKIN
+    );
+    skinSwatch.style.setProperty(
+      "--skin-color",
+      state[activeTeam].skinColors[activePlayerIndex]
+    );
     loadPreviewTeam(activeTeam);
   };
 
   loadPreviewTeam(activeTeam);
 }
 
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.classList.add("show");
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
 
-      clearTimeout(showToast._timer);
-      showToast._timer = setTimeout(() => {
-        toast.classList.remove("show");
-      }, 1700);
-    }
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1700);
+}
 
-    function animate() {
-      requestAnimationFrame(animate);
+function animate() {
+  requestAnimationFrame(animate);
 
-      const dt = Math.min(clock.getDelta(), 0.05);
+  const dt = Math.min(clock.getDelta(), 0.05);
 
-      mixers.forEach((mixer) => mixer.update(dt));
+  mixers.forEach((mixer) => mixer.update(dt));
 
-      previewGroup.rotation.y = Math.sin(performance.now() * 0.0004) * 0.05;
+  previewGroup.rotation.y = Math.sin(performance.now() * 0.0004) * 0.05;
 
-      if (composer) {
-        composer.render();
-      } else {
-        renderer.render(scene, camera);
-      }
-    }
+  if (composer) {
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+}
 
-    document.querySelectorAll(".team-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        activeTeam = Number(tab.dataset.team);
-        activePlayerIndex = 0;
+document.querySelectorAll(".team-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    activeTeam = Number(tab.dataset.team);
+    activePlayerIndex = 0;
 
-        document.querySelectorAll(".team-tab").forEach((button) => {
-          button.classList.remove("active");
-        });
-
-        tab.classList.add("active");
-        renderForm();
-      });
+    document.querySelectorAll(".team-tab").forEach((button) => {
+      button.classList.remove("active");
     });
 
-    document.getElementById("saveBtn").addEventListener("click", () => {
-      saveTeamState(1);
-      saveTeamState(2);
-      showToast("Cambios guardados");
-    });
+    tab.classList.add("active");
+    renderForm();
+  });
+});
 
-    document.getElementById("resetNamesBtn").addEventListener("click", () => {
-      state[activeTeam].roster = [...TEAM_KEYS[activeTeam].fallbackRoster];
-      renderForm();
-    });
+document.getElementById("saveBtn").addEventListener("click", () => {
+  saveTeamState(1);
+  saveTeamState(2);
+  showToast("Changes saved");
+});
 
-    document.getElementById("resetSkinBtn").addEventListener("click", () => {
-      state[activeTeam].skinColors[activePlayerIndex] = DEFAULT_SKIN;
-      renderForm();
-    });
+document.getElementById("resetNamesBtn").addEventListener("click", () => {
+  state[activeTeam].roster = [...TEAM_KEYS[activeTeam].fallbackRoster];
+  renderForm();
+});
+
+document.getElementById("resetSkinBtn").addEventListener("click", () => {
+  state[activeTeam].skinColors[activePlayerIndex] = DEFAULT_SKIN;
+  renderForm();
+});
 
 setupEditTeamMusicAutoplay();
 initScene();

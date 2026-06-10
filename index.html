@@ -65,6 +65,49 @@
         pointer-events: none;
       }
 
+      .jobbin-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.75s ease, visibility 0.75s ease;
+      }
+
+      .jobbin-splash.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .jobbin-splash-logo {
+        width: min(430px, 72vw);
+        height: auto;
+        opacity: 0;
+        transform: translateY(16px) scale(0.92);
+        filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.16));
+        animation: jobbinLogoIntro 1.35s cubic-bezier(0.2, 0.85, 0.18, 1) forwards;
+      }
+
+      @keyframes jobbinLogoIntro {
+        0% {
+          opacity: 0;
+          transform: translateY(18px) scale(0.9);
+        }
+        58% {
+          opacity: 1;
+          transform: translateY(0) scale(1.03);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
       .menu-vignette {
         position: fixed;
         inset: 0;
@@ -187,7 +230,7 @@
         position: relative;
         width: 100%;
         min-height: 56px;
-        padding: 10px 16px 10px 66px;
+        padding: 10px 18px;
         border: 0;
         border-radius: 0 24px 24px 0;
         color: #fff;
@@ -308,19 +351,6 @@
         text-transform: uppercase;
       }
 
-      .btn-icon {
-        position: absolute;
-        left: 36px;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-        width: 32px;
-        height: 32px;
-        display: grid;
-        place-items: center;
-        font-size: 21px;
-        filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.35));
-      }
       @media (min-width: 901px) {
         .actions {
           transform: translateY(38px);
@@ -453,6 +483,23 @@
         text-transform: uppercase;
       }
 
+      .credits-message {
+        margin: 0 0 18px;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.5;
+      }
+
+      .credits-signoff {
+        margin-bottom: 14px;
+        color: #b8ea00;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
       .credits-list {
         display: grid;
         gap: 14px;
@@ -522,7 +569,7 @@
 
         .play-btn {
           min-height: 58px;
-          padding: 9px 16px 9px 68px;
+          padding: 9px 16px;
           border-radius: 0 22px 22px 0;
         }
 
@@ -607,7 +654,7 @@
 
         .play-btn {
           min-height: 54px;
-          padding: 8px 14px 8px 64px;
+          padding: 8px 14px;
           border-radius: 0 20px 20px 0;
         }
 
@@ -615,12 +662,6 @@
           transform: translateX(0);
         }
 
-        .btn-icon {
-          left: 35px;
-          width: 30px;
-          height: 30px;
-          font-size: 20px;
-        }
 
         .btn-title {
           font-size: 21px;
@@ -665,6 +706,13 @@
       loop
       preload="auto"
     ></audio>
+    <div id="jobbin-splash" class="jobbin-splash" aria-label="JOBBIN">
+      <img
+        class="jobbin-splash-logo"
+        src="img/Jobbin_Logo_NV1.png"
+        alt="JOBBIN"
+      />
+    </div>
     <canvas id="menu-stage-canvas" aria-hidden="true"></canvas>
     <div class="menu-vignette" aria-hidden="true"></div>
     <div class="menu-pattern" aria-hidden="true"></div>
@@ -679,9 +727,8 @@
         <a class="play-btn tutorial" href="tutorial_Rush.html">
           <span class="btn-copy">
             <span class="btn-title">Tutorial</span>
-            <span class="btn-desc">Aprende Rush Match</span>
+            <span class="btn-desc">Learn Rush Match</span>
           </span>
-          <span class="btn-icon">🎓</span>
         </a>
         <a
           class="play-btn ai"
@@ -690,25 +737,22 @@
         >
           <span class="btn-copy">
             <span class="btn-title">Rush<br />Match</span>
-            <span class="btn-desc">Partido principal 4v4</span>
+            <span class="btn-desc">Main 4v4 match</span>
           </span>
-          <span class="btn-icon">⚽</span>
         </a>
 
         <a class="play-btn local" href="football_penalties.html">
           <span class="btn-copy">
             <span class="btn-title">Penalties</span>
-            <span class="btn-desc">Tanda de penales</span>
+            <span class="btn-desc">Penalty shootout</span>
           </span>
-          <span class="btn-icon">🥅</span>
         </a>
 
         <a class="play-btn ai" href="football_juggling.html">
           <span class="btn-copy">
             <span class="btn-title">Juggling</span>
-            <span class="btn-desc">Mantén el balón en el aire</span>
+            <span class="btn-desc">Keep the ball in the air</span>
           </span>
-          <span class="btn-icon">🤹</span>
         </a>
 
         <a
@@ -721,15 +765,13 @@
             <span class="btn-title">Rush World<br />Tournament</span>
             <span class="btn-desc">Coming soon</span>
           </span>
-          <span class="btn-icon">🏆</span>
         </a>
 
-        <a class="play-btn ai" href="football_streetSurvival.html">
+        <a class="play-btn ai" href="football_keepAway.html">
           <span class="btn-copy">
-            <span class="btn-title">Street<br />Survival</span>
-            <span class="btn-desc">Modo arcade callejero</span>
+            <span class="btn-title">Keep Away<br />Triangles</span>
+            <span class="btn-desc">Keep possession of the ball</span>
           </span>
-          <span class="btn-icon">🔥</span>
         </a>
       </section>
     </main>
@@ -737,7 +779,7 @@
     <div class="menu-footer">
       <span>© 2026 Jobbin. All Rights Reserved.</span>
       <button id="credits-open-btn" class="credits-trigger" type="button">
-        Créditos
+        Credits
       </button>
     </div>
 
@@ -747,24 +789,25 @@
           ×
         </button>
 
-        <div class="credits-eyebrow">Primera versión</div>
-        <h2 id="credits-title" class="credits-title">Créditos</h2>
-        <div class="credits-version">Bubble Kick 26 · Versión inicial</div>
+        <div class="credits-eyebrow">Thank you</div>
+        <h2 id="credits-title" class="credits-title">Credits</h2>
+        <div class="credits-version">Bubble Kick 26 · JOBBIN Team</div>
+
+        <p class="credits-message">
+          Thank you for trying our game. This is one of many; never give up on your dreams.
+        </p>
+
+        <div class="credits-signoff">Sincerely, the JOBBIN Team:</div>
 
         <div class="credits-list">
           <div class="credits-role">
-            <strong>Programación</strong>
-            <span>Gerardo Arias</span>
-          </div>
-
-          <div class="credits-role">
-            <strong>Arte y Animación 3D</strong>
-            <span>Gerardo Arias</span>
-          </div>
-
-          <div class="credits-role">
-            <strong>Rigging</strong>
-            <span>Gerardo Arias<br />Josué Moncada</span>
+            <strong>JOBBIN</strong>
+            <span>
+              Gerardo Arias<br />
+              Josué Moncada<br />
+              Jan Ochoa<br />
+              Jahir Gonzalez
+            </span>
           </div>
         </div>
       </div>
@@ -807,6 +850,7 @@
       });
 
       const menuMusic = document.getElementById("menu-music");
+      const jobbinSplash = document.getElementById("jobbin-splash");
       let menuMusicStarted = false;
 
       function startMenuMusic() {
@@ -827,6 +871,12 @@
       window.addEventListener("keydown", startMenuMusic, { once: true });
 
       startMenuMusic();
+
+      window.addEventListener("load", () => {
+        window.setTimeout(() => {
+          jobbinSplash?.classList.add("is-hidden");
+        }, 2300);
+      });
 
       const canvas = document.getElementById("menu-stage-canvas");
       const scene = new THREE.Scene();

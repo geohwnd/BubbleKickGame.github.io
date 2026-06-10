@@ -1,12 +1,12 @@
 
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
     <link rel="icon" href="img/favicon.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bubble Kick — Selección de equipos</title>
+    <title>Bubble Kick — Team Selection</title>
 
     <style>
       * {
@@ -664,91 +664,91 @@
   <body>
     <div class="page">
       <header class="topbar">
-        <a class="back-link" href="index.html">← Menú</a>
+        <a class="back-link" href="index.html">← Menu</a>
 
         <div class="brand">
           <div class="brand-badge"><span class="brand-dot"></span> 4v4 Rush Match</div>
-          <h1>Elige equipos</h1>
+          <h1>Choose Teams</h1>
         </div>
 
-        <p class="hint">Selecciona local y visitante desde la barra inferior</p>
+        <p class="hint">Select home and away teams from the bottom bar</p>
       </header>
 
       <main class="versus-stage">
-        <section class="player-panel p1" aria-label="Equipo local">
+        <section class="player-panel p1" aria-label="Home team">
           <div class="player-header">
-            <span class="player-title">Jugador 1</span>
-            <span id="p1Ready" class="ready-label">Sin equipo</span>
+            <span class="player-title">Player 1</span>
+            <span id="p1Ready" class="ready-label">No Team</span>
           </div>
 
           <div class="preview-wrap">
             <canvas id="p1Preview" class="preview-canvas"></canvas>
-            <div id="p1Empty" class="empty-player">Elige local</div>
+            <div id="p1Empty" class="empty-player">Choose Home</div>
           </div>
 
           <div class="team-nameplate" id="p1Frame">
-            <div class="country"><span>＋</span><span>Local</span></div>
+            <div class="country"><span>＋</span><span>Home</span></div>
           </div>
 
           <div class="panel-actions">
-            <button id="clearP1" class="ghost-btn" type="button">Limpiar</button>
-            <button id="editP1" class="edit-team-btn" type="button">Editar equipo</button>
+            <button id="clearP1" class="ghost-btn" type="button">Clear</button>
+            <button id="editP1" class="edit-team-btn" type="button">Edit Team</button>
           </div>
 
           <div class="roster-hidden-inputs">
-            <input id="p1Player0" type="hidden" value="Capitán" />
-            <input id="p1Player1" type="hidden" value="Extremo" />
-            <input id="p1Player2" type="hidden" value="Defensa" />
-            <input id="p1Player3" type="hidden" value="Portero" />
+            <input id="p1Player0" type="hidden" value="Captain" />
+            <input id="p1Player1" type="hidden" value="Winger" />
+            <input id="p1Player2" type="hidden" value="Defender" />
+            <input id="p1Player3" type="hidden" value="Goalkeeper" />
           </div>
         </section>
 
         <section class="vs-block">
           <div class="vs-text">VS.</div>
-          <button id="startButton" class="start-btn" type="button" disabled>Iniciar partido</button>
+          <button id="startButton" class="start-btn" type="button" disabled>Start Match</button>
         </section>
 
-        <section class="player-panel p2" aria-label="Equipo visitante">
+        <section class="player-panel p2" aria-label="Away team">
           <div class="player-header">
-            <span id="p2Ready" class="ready-label">Sin equipo</span>
-            <span class="player-title">Jugador 2</span>
+            <span id="p2Ready" class="ready-label">No Team</span>
+            <span class="player-title">Player 2</span>
           </div>
 
           <div class="preview-wrap">
             <canvas id="p2Preview" class="preview-canvas"></canvas>
-            <div id="p2Empty" class="empty-player">Elige visitante</div>
+            <div id="p2Empty" class="empty-player">Choose Away</div>
           </div>
 
           <div class="team-nameplate" id="p2Frame">
-            <div class="country"><span>＋</span><span>Visitante</span></div>
+            <div class="country"><span>＋</span><span>Away</span></div>
           </div>
 
           <div class="panel-actions">
-            <button id="clearP2" class="ghost-btn" type="button">Limpiar</button>
-            <button id="editP2" class="edit-team-btn" type="button">Editar equipo</button>
+            <button id="clearP2" class="ghost-btn" type="button">Clear</button>
+            <button id="editP2" class="edit-team-btn" type="button">Edit Team</button>
           </div>
 
           <div class="roster-hidden-inputs">
-            <input id="p2Player0" type="hidden" value="Capitán IA" />
-            <input id="p2Player1" type="hidden" value="Atacante IA" />
-            <input id="p2Player2" type="hidden" value="Defensa IA" />
-            <input id="p2Player3" type="hidden" value="Portero IA" />
+            <input id="p2Player0" type="hidden" value="AI Captain" />
+            <input id="p2Player1" type="hidden" value="AI Striker" />
+            <input id="p2Player2" type="hidden" value="AI Defender" />
+            <input id="p2Player3" type="hidden" value="AI Goalkeeper" />
           </div>
         </section>
       </main>
 
-      <section class="bottom-selector" aria-label="Selector de equipos">
+      <section class="bottom-selector" aria-label="Team selector">
         <div class="selector-top">
           <label class="search-wrap" for="searchInput">
             <span>🔎</span>
-            <input id="searchInput" type="search" placeholder="Buscar selección, país o código..." autocomplete="off" />
+            <input id="searchInput" type="search" placeholder="Search team, country, or code..." autocomplete="off" />
           </label>
-          <div id="turnPill" class="turn-pill">Turno: Local</div>
+          <div id="turnPill" class="turn-pill">Turn: Home</div>
         </div>
 
         <div class="teams-strip-wrap">
           <div id="teamsGrid" class="teams-strip"></div>
-          <div id="emptyState" class="empty-state">No encontramos equipos con esa búsqueda.</div>
+          <div id="emptyState" class="empty-state">No teams found for that search.</div>
         </div>
       </section>
     </div>
@@ -898,8 +898,8 @@
       const emptyState = document.getElementById("emptyState");
       const toast = document.getElementById("toast");
       const turnPill = document.getElementById("turnPill");
-      const defaultP1Roster = ["Capitán", "Extremo", "Defensa", "Portero"];
-      const defaultP2Roster = ["Capitán IA", "Atacante IA", "Defensa IA", "Portero IA"];
+      const defaultP1Roster = ["Captain", "Winger", "Defender", "Goalkeeper"];
+      const defaultP2Roster = ["AI Captain", "AI Striker", "AI Defender", "AI Goalkeeper"];
 
       function teamKey(team) {
         return `${team.code}-${team.name}`;
@@ -1000,8 +1000,8 @@
           card.innerHTML = `
             <span class="team-flag">${team.flag}</span>
             <span class="team-code">${team.code}</span>
-            ${isP1 ? '<span class="pick-badge">J1</span>' : ''}
-            ${isP2 ? '<span class="pick-badge">J2</span>' : ''}
+            ${isP1 ? '<span class="pick-badge">P1</span>' : ''}
+            ${isP2 ? '<span class="pick-badge">P2</span>' : ''}
           `;
           card.addEventListener("click", () => selectTeam(team));
           teamsGrid.appendChild(card);
@@ -1012,23 +1012,23 @@
 
       function selectTeam(team) {
         if (selectedP1 && teamKey(selectedP1) === teamKey(team)) {
-          showToast("Ese equipo ya lo eligió el local");
+          showToast("The home player already picked that team");
           return;
         }
 
         if (selectedP2 && teamKey(selectedP2) === teamKey(team)) {
-          showToast("Ese equipo ya lo eligió el visitante");
+          showToast("The away player already picked that team");
           return;
         }
 
         if (nextPlayer === 1) {
           selectedP1 = withTeamStyle(team);
           nextPlayer = selectedP2 ? 1 : 2;
-          showToast(`Local eligió ${team.name}`);
+          showToast(`Home picked ${team.name}`);
         } else {
           selectedP2 = withTeamStyle(team);
           nextPlayer = selectedP1 ? 2 : 1;
-          showToast(`Visitante eligió ${team.name}`);
+          showToast(`Away picked ${team.name}`);
         }
 
         updateSelectionUI();
@@ -1076,16 +1076,16 @@
       }
 
       function updateSelectionUI() {
-        document.getElementById("p1Frame").innerHTML = renderFrame(selectedP1, "Local");
-        document.getElementById("p2Frame").innerHTML = renderFrame(selectedP2, "Visitante");
-        document.getElementById("p1Ready").textContent = selectedP1 ? "Ready!" : "Sin equipo";
-        document.getElementById("p2Ready").textContent = selectedP2 ? "Ready!" : "Sin equipo";
+        document.getElementById("p1Frame").innerHTML = renderFrame(selectedP1, "Home");
+        document.getElementById("p2Frame").innerHTML = renderFrame(selectedP2, "Away");
+        document.getElementById("p1Ready").textContent = selectedP1 ? "Ready!" : "No Team";
+        document.getElementById("p2Ready").textContent = selectedP2 ? "Ready!" : "No Team";
         document.getElementById("p1Ready").classList.toggle("ready", !!selectedP1);
         document.getElementById("p2Ready").classList.toggle("ready", !!selectedP2);
         document.getElementById("p1Empty").style.display = selectedP1 ? "none" : "grid";
         document.getElementById("p2Empty").style.display = selectedP2 ? "none" : "grid";
         startButton.disabled = !(selectedP1 && selectedP2);
-        turnPill.textContent = nextPlayer === 1 ? "Turno: Local" : "Turno: Visitante";
+        turnPill.textContent = nextPlayer === 1 ? "Turn: Home" : "Turn: Away";
 
         p1Preview.setTeam(selectedP1);
         p2Preview.setTeam(selectedP2);
@@ -1099,7 +1099,7 @@
 
       function startMatch() {
         if (!selectedP1 || !selectedP2) {
-          showToast("Selecciona equipo local y visitante");
+          showToast("Select both home and away teams");
           return;
         }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
-    <link rel="icon" href="img/favicon.png">
+    <link rel="icon" href="img/favicon.png" />
     <meta charset="UTF-8" />
     <meta
       name="viewport"
@@ -504,62 +504,63 @@
       <div class="pill">THE WORLD MATCH</div>
       <div id="score-box">
         <div id="score-num">0</div>
-        <div id="score-lbl">GOLES</div>
+        <div id="score-lbl">GOALS</div>
       </div>
       <div id="streak-box">
         <div id="streak-num">0</div>
-        <div id="streak-lbl">RACHA</div>
+        <div id="streak-lbl">STREAK</div>
       </div>
     </div>
 
     <div class="top-left">
-      <a class="pill-btn" href="index.html">← Menú</a>
-      <button id="restart-btn" class="pill-btn" type="button">
-        ↻ Reiniciar
-      </button>
+      <a class="pill-btn" href="index.html">← Menu</a>
+      <button id="restart-btn" class="pill-btn" type="button">↻ Restart</button>
     </div>
 
     <div id="kbar-wrap">
       <div id="kbar-track"><div id="kdot"></div></div>
-      <div id="kbar-lbl">PORTERO</div>
+      <div id="kbar-lbl">GOALKEEPER</div>
     </div>
 
     <div id="result"></div>
-    <div id="hint">DESLIZA HACIA LA PORTERÍA ⚽</div>
+    <div id="hint">SWIPE TOWARD THE GOAL ⚽</div>
 
     <div id="overlay">
       <div class="penalty-panel">
-        <div class="ov-tag">THE WORLD MATCH · MODO PENALES</div>
+        <div class="ov-tag">THE WORLD MATCH · PENALTY MODE</div>
         <div class="ov-title">BUBBLE<br />KICK <span>26</span></div>
 
         <div class="final-goals-wrap">
-          <div class="final-goals-label">Tus goles</div>
+          <div class="final-goals-label">Your Goals</div>
           <div id="final-goals-num" class="final-goals-number">0</div>
         </div>
 
         <div class="ov-sub">
-          Comienza a tirar. Desliza tu dedo por la pantalla para simular la
-          trayectoria del balón y anotar la mayor cantidad de goles posibles antes
-          de que el arquero te detenga uno.
+          Start shooting. Swipe across the screen to simulate the ball's
+          trajectory and score as many goals as possible before the goalkeeper
+          saves one.
         </div>
 
         <div class="penalty-actions">
-          <button id="play-btn">¡JUGAR!</button>
-          <a id="penalty-menu-btn" class="menu-btn" href="index.html">MENÚ PRINCIPAL</a>
+          <button id="play-btn">PLAY!</button>
+          <a id="penalty-menu-btn" class="menu-btn" href="index.html"
+            >MAIN MENU</a
+          >
+          >
         </div>
 
         <div class="ov-steps">
           <div class="ov-step">
             <div class="ov-icon">👆</div>
-            <div class="ov-slbl">DESLIZA</div>
+            <div class="ov-slbl">SWIPE</div>
           </div>
           <div class="ov-step">
             <div class="ov-icon">🎯</div>
-            <div class="ov-slbl">APUNTA</div>
+            <div class="ov-slbl">AIM</div>
           </div>
           <div class="ov-step">
             <div class="ov-icon">⚽</div>
-            <div class="ov-slbl">¡GOL!</div>
+            <div class="ov-slbl">SCORE!</div>
           </div>
         </div>
       </div>
@@ -1353,10 +1354,10 @@
 
           const msg =
             streak >= 5
-              ? `¡${streak}x COMBO! 🔥`
+              ? `${streak}x COMBO! 🔥`
               : streak >= 3
-              ? `¡RACHA! ${streak}🔥`
-              : "¡GOOOL! ⚽";
+              ? `STREAK! ${streak}🔥`
+              : "GOAL! ⚽";
 
           showResult(msg, "goal", prepareNextPenalty);
           return;
@@ -1373,12 +1374,12 @@
             0xff6200,
             18
           );
-          showResult("¡ATAJADO! 🧤", "saved", endPenaltyRun);
+          showResult("SAVED! 🧤", "saved", endPenaltyRun);
           return;
         }
 
         spawnParticles(bp.x, Math.max(bp.y, 0.5), bp.z + 1, 0xffaa00, 12);
-        showResult("AFUERA 😅", "miss", endPenaltyRun);
+        showResult("MISS 😅", "miss", endPenaltyRun);
       }
 
       function endPenaltyRun() {
@@ -1396,11 +1397,11 @@
         overlayEl.classList.add("penalty-ended");
         if (finalGoalsNumEl) finalGoalsNumEl.textContent = goals;
 
-        if (title) title.textContent = "FIN DE TANDA · MODO PENALES";
+        if (title) title.textContent = "END OF ROUND · PENALTY MODE";
         if (subtitle) {
           subtitle.innerHTML = "";
         }
-        if (playButton) playButton.textContent = "REVANCHA";
+        if (playButton) playButton.textContent = "REMATCH";
 
         setTimeout(() => {
           overlayEl.classList.remove("hidden");
@@ -1534,12 +1535,12 @@
         const subtitle = overlayEl.querySelector(".ov-sub");
         const playButton = document.getElementById("play-btn");
 
-        if (title) title.textContent = "THE WORLD MATCH · MODO PENALES";
+        if (title) title.textContent = "THE WORLD MATCH · PENALTY MODE";
         if (subtitle) {
           subtitle.innerHTML =
-            "Comienza a tirar. Desliza tu dedo por la pantalla para simular la trayectoria del balón y anotar la mayor cantidad de goles posibles antes de que el arquero te detenga uno.";
+            "Start shooting. Swipe across the screen to simulate the ball's trajectory and score as many goals as possible before the goalkeeper saves one.";
         }
-        if (playButton) playButton.textContent = "¡JUGAR!";
+        if (playButton) playButton.textContent = "PLAY!";
         gameActive = true;
         kPhase = 0;
         kSpeed = 2.25;
