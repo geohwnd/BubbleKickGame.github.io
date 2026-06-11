@@ -128,6 +128,12 @@
         background: rgba(0, 0, 0, 0.36);
       }
 
+      body.force-mobile-controls #mobile-dash-btn,
+      body.force-mobile-controls #mobile-switch-defense-btn,
+      body.force-mobile-controls #mobile-shoot-btn {
+        display: flex !important;
+      }
+
       #pause-overlay {
         position: fixed;
         inset: 0;
@@ -490,6 +496,10 @@
         <div class="pause-actions">
           <button id="resume-btn" class="pause-action-btn" type="button">
             Resume
+          </button>
+
+          <button id="toggle-mobile-controls-btn" class="pause-action-btn secondary" type="button">
+            Show Mobile Controls
           </button>
 
           <a class="pause-action-btn secondary" href="index.html">

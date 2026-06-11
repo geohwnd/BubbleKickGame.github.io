@@ -1406,8 +1406,24 @@ const mobileContextLabel = document.getElementById("mobile-context-label");
 const pauseButton = document.getElementById("pause-btn");
 const pauseOverlay = document.getElementById("pause-overlay");
 const resumeButton = document.getElementById("resume-btn");
+const toggleMobileControlsButton = document.getElementById(
+  "toggle-mobile-controls-btn"
+);
+const FORCE_MOBILE_CONTROLS_KEY = "bubbleKickForceMobileControls";
+let forceMobileControls =
+  localStorage.getItem(FORCE_MOBILE_CONTROLS_KEY) === "true";
 
 let isRushPaused = false;
+
+function updateForcedMobileControlsUI() {
+  document.body.classList.toggle("force-mobile-controls", forceMobileControls);
+
+  if (toggleMobileControlsButton) {
+    toggleMobileControlsButton.textContent = forceMobileControls
+      ? "Hide Mobile Controls"
+      : "Show Mobile Controls";
+  }
+}
 
 function setRushPaused(isPaused) {
   isRushPaused = isPaused;
@@ -1416,7 +1432,7 @@ function setRushPaused(isPaused) {
   pauseOverlay?.setAttribute("aria-hidden", isRushPaused ? "false" : "true");
 
   if (pauseButton) {
-    pauseButton.innerHTML = isRushPaused ? "▶ Reanudar" : "⏸ Pausa";
+    pauseButton.innerHTML = isRushPaused ? "▶ Resume" : "⏸ Pause";
   }
 }
 
@@ -1426,6 +1442,15 @@ function toggleRushPause() {
 
 pauseButton?.addEventListener("click", toggleRushPause);
 resumeButton?.addEventListener("click", () => setRushPaused(false));
+
+toggleMobileControlsButton?.addEventListener("click", () => {
+  forceMobileControls = !forceMobileControls;
+  localStorage.setItem(FORCE_MOBILE_CONTROLS_KEY, String(forceMobileControls));
+  updateForcedMobileControlsUI();
+  updateMobileActionButtonsVisibility();
+});
+
+updateForcedMobileControlsUI();
 
 function setMobileActionButtonsVisible(isVisible) {
   [mobileShootButton, mobileDashButton, mobileContextButton].forEach(
@@ -1437,7 +1462,10 @@ function setMobileActionButtonsVisible(isVisible) {
 }
 
 function updateMobileActionButtonsVisibility() {
-  setMobileActionButtonsVisible(gameState.gamePhase !== GAME_PHASES.WIN);
+  const shouldShowControls =
+    forceMobileControls || gameState.gamePhase !== GAME_PHASES.WIN;
+
+  setMobileActionButtonsVisible(shouldShowControls);
 }
 
 function updateMobileContextButton() {
@@ -1449,7 +1477,7 @@ function updateMobileContextButton() {
   mobileContextButton.classList.toggle("is-attack", !isDefending);
   mobileContextButton.setAttribute(
     "aria-label",
-    isDefending ? "Cambiar defensa" : "Pase"
+    isDefending ? "Switch Defender" : "Pass"
   );
 
   if (mobileContextIcon) {
@@ -1457,7 +1485,7 @@ function updateMobileContextButton() {
   }
 
   if (mobileContextLabel) {
-    mobileContextLabel.textContent = isDefending ? "DEFENSA" : "PASE";
+    mobileContextLabel.textContent = isDefending ? "DEFENDER" : "PASS";
   }
 }
 
