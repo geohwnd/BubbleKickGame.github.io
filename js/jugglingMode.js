@@ -8,7 +8,33 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 const canvas = document.getElementById("game-canvas");
 const countdownScreen = document.getElementById("countdown-screen");
 const countdownNumber = document.getElementById("countdown-number");
-let countdownActive = true;
+const jugglingIntroScreen = document.getElementById("juggling-intro");
+const startJugglingBtn = document.getElementById("start-juggling-btn");
+const jugglingMusic = new Audio("audio/Brazil Football Samba.mp3");
+jugglingMusic.loop = true;
+jugglingMusic.preload = "auto";
+jugglingMusic.volume = 0.42;
+
+let jugglingMusicStarted = false;
+
+const juggleHitSound = new Audio("audio/Combo Hit 05.wav");
+juggleHitSound.preload = "auto";
+juggleHitSound.volume = 0.72;
+
+function playJuggleHitSound() {
+  juggleHitSound.currentTime = 0;
+  juggleHitSound.play().catch(() => {});
+}
+
+function startJugglingMusic() {
+  if (jugglingMusicStarted) return;
+  jugglingMusicStarted = true;
+
+  jugglingMusic.play().catch(() => {
+    jugglingMusicStarted = false;
+  });
+}
+let countdownActive = false;
 let countdownTimeouts = [];
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -72,57 +98,22 @@ limeRim.position.set(-7, 4, -5);
 scene.add(limeRim);
 
 // ─── Field ───────────────────────────────────────────────────────────────────
-const field = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({
-    color: 0x4bbcff,
-    roughness: 0.86,
-    metalness: 0.02,
-  })
-);
-field.rotation.x = -Math.PI / 2;
-field.receiveShadow = true;
-scene.add(field);
+// Plano azul removido temporalmente para probar el look sin suelo base.
+// const field = new THREE.Mesh(
+//   new THREE.PlaneGeometry(20, 20),
+//   new THREE.MeshStandardMaterial({
+//     color: 0x4bbcff,
+//     roughness: 0.86,
+//     metalness: 0.02,
+//   })
+// );
+// field.rotation.x = -Math.PI / 2;
+// field.receiveShadow = true;
+// scene.add(field);
 
-// Stripes
-const stripeMat = new THREE.MeshBasicMaterial({
-  color: 0x315dff,
-  transparent: true,
-  opacity: 0.12,
-});
-for (let i = -4; i <= 4; i += 2) {
-  const sm = new THREE.Mesh(new THREE.PlaneGeometry(2, 20), stripeMat);
-  sm.rotation.x = -Math.PI / 2;
-  sm.position.set(i, 0.002, 0);
-  scene.add(sm);
-}
+// Franjas azules removidas: se dejan únicamente las líneas de la cancha.
 
-// Bubble Kick style glow/depth
-const aquaGlow = new THREE.Mesh(
-  new THREE.CircleGeometry(5.7, 96),
-  new THREE.MeshBasicMaterial({
-    color: 0x5df0d6,
-    transparent: true,
-    opacity: 0.28,
-    depthWrite: false,
-  })
-);
-aquaGlow.rotation.x = -Math.PI / 2;
-aquaGlow.position.set(2.8, 0.012, 0.2);
-scene.add(aquaGlow);
-
-const limeGlow = new THREE.Mesh(
-  new THREE.CircleGeometry(2.2, 96),
-  new THREE.MeshBasicMaterial({
-    color: 0xb9ff22,
-    transparent: true,
-    opacity: 0.08,
-    depthWrite: false,
-  })
-);
-limeGlow.rotation.x = -Math.PI / 2;
-limeGlow.position.set(-1.8, 0.014, -1.4);
-scene.add(limeGlow);
+// Glows/círculos de fondo removidos: se dejan únicamente las líneas de la cancha.
 
 // Lines
 function line(x1, z1, x2, z2) {
@@ -177,6 +168,136 @@ ballShadow.rotation.x = -Math.PI / 2;
 ballShadow.position.y = 0.005;
 scene.add(ballShadow);
 
+// ─── Landing Predictor ────────────────────────────────────────────────────────
+const predictRingMat = new THREE.MeshBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+  side: THREE.DoubleSide,
+});
+
+const predictRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.28, 0.38, 36),
+  predictRingMat
+);
+predictRing.rotation.x = -Math.PI / 2;
+predictRing.position.y = 0.012;
+scene.add(predictRing);
+
+const predictDotMat = new THREE.MeshBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+  side: THREE.DoubleSide,
+});
+
+const predictDot = new THREE.Mesh(
+  new THREE.CircleGeometry(0.12, 32),
+  predictDotMat
+);
+predictDot.rotation.x = -Math.PI / 2;
+predictDot.position.y = 0.011;
+scene.add(predictDot);
+
+const crossMat = new THREE.LineBasicMaterial({
+  color: 0xe63946,
+  transparent: true,
+  opacity: 0,
+});
+
+function makeCrossLine(x1, z1, x2, z2) {
+  const g = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(x1, 0.013, z1),
+    new THREE.Vector3(x2, 0.013, z2),
+  ]);
+  return new THREE.Line(g, crossMat);
+}
+
+const cross1 = makeCrossLine(-0.55, 0, 0.55, 0);
+const cross2 = makeCrossLine(0, -0.55, 0, 0.55);
+scene.add(cross1);
+scene.add(cross2);
+
+let predictPulse = 0;
+
+function hideLandingPredictor() {
+  predictRingMat.opacity = 0;
+  predictDotMat.opacity = 0;
+  crossMat.opacity = 0;
+}
+
+function predictLanding(px, py, pz, vx, vy, vz) {
+  let x = px;
+  let y = py;
+  let z = pz;
+  let dx = vx;
+  let dy = vy;
+  let dz = vz;
+
+  const step = 0.016;
+  const maxSteps = 400;
+
+  for (let i = 0; i < maxSteps; i++) {
+    dy += GRAVITY * step;
+    x += dx * step;
+    z += dz * step;
+    y += dy * step;
+
+    if (Math.abs(x) > FIELD_H) {
+      dx *= -0.7;
+      x = Math.sign(x) * FIELD_H;
+    }
+
+    if (Math.abs(z) > FIELD_H) {
+      dz *= -0.7;
+      z = Math.sign(z) * FIELD_H;
+    }
+
+    if (y <= BALL_R) {
+      return { x, z, t: i * step };
+    }
+  }
+
+  return { x, z, t: maxSteps * step };
+}
+
+function updateLandingPredictor(dt) {
+  predictPulse += dt * 3.5;
+
+  if (
+    !isPlaying ||
+    countdownActive ||
+    !ballReady ||
+    !ball.visible ||
+    bPos.y <= 0.5
+  ) {
+    hideLandingPredictor();
+    return;
+  }
+
+  const land = predictLanding(bPos.x, bPos.y, bPos.z, bVel.x, bVel.y, bVel.z);
+
+  const urgency = Math.max(0, Math.min(1, 1 - land.t / 1.8));
+  const alpha = 0.25 + urgency * 0.7;
+  const pulse = 1 + Math.sin(predictPulse) * 0.12 * urgency;
+
+  predictRing.position.x = land.x;
+  predictRing.position.z = land.z;
+  predictRing.scale.setScalar(pulse);
+  predictRingMat.opacity = alpha;
+  predictRingMat.color.setRGB(0.9, 0.22 + urgency * 0.55, 0.08 + urgency * 0.1);
+
+  predictDot.position.x = land.x;
+  predictDot.position.z = land.z;
+  predictDotMat.opacity = alpha * 0.35;
+
+  cross1.position.x = land.x;
+  cross1.position.z = land.z;
+  cross2.position.x = land.x;
+  cross2.position.z = land.z;
+  crossMat.opacity = alpha * 0.6;
+}
+
 // ─── Ball State ───────────────────────────────────────────────────────────────
 const bPos = new THREE.Vector3(0, 2, 0);
 const bVel = new THREE.Vector3(0.02, 0, 0.01);
@@ -190,6 +311,9 @@ const charPos = new THREE.Vector3(0, 0, 1);
 const charTgt = new THREE.Vector3(0, 0, 1);
 const SPEED = 5.5;
 const KICK_R = 0.85;
+const BALL_DRIFT_BASE = 0.75;
+const BALL_DRIFT_MAX = 2.45;
+const BALL_DIFFICULTY_TOUCHES = 26;
 
 let character = null;
 let mixer = null;
@@ -197,6 +321,183 @@ const charModels = {};
 const charMixers = {};
 let activeAnimKey = null;
 const anims = {}; // { move, leftJug, rightJug }
+
+const DEFAULT_PLAYER_COLORS = {
+  shirt: 0xf7d51f,
+  shorts: 0x16a06d,
+  socks: 0xffffff,
+  skin: 0xd8a15f,
+  shoes: 0x111111,
+};
+
+function hexToNumber(hex, fallback) {
+  if (!hex || typeof hex !== "string") return fallback;
+
+  const parsed = Number.parseInt(hex.replace("#", ""), 16);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readSelectedTeam(storageKey, fallback) {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    console.log("[JUGGLING] localStorage raw", storageKey, raw);
+    if (!raw) return fallback;
+
+    const team = JSON.parse(raw);
+    console.log("[JUGGLING] parsed team", storageKey, team);
+
+    if (!team?.colors || !Array.isArray(team.colors)) {
+      return fallback;
+    }
+
+    const normalizedTeam = {
+      ...team,
+      color: team.color ?? team.colors[0],
+      colors: team.colors,
+      shirt: hexToNumber(team.colors[0], fallback.shirt),
+      shorts: hexToNumber(team.colors[1], fallback.shorts),
+      socks: hexToNumber(team.colors[2], fallback.socks),
+      skin: fallback.skin,
+      shoes: fallback.shoes,
+    };
+
+    console.log("[JUGGLING] normalized team colors", storageKey, normalizedTeam);
+
+    return normalizedTeam;
+  } catch {
+    return fallback;
+  }
+}
+
+function readJugglingPlayerKitColors() {
+  return readSelectedTeam("bubbleKickP1Team", DEFAULT_PLAYER_COLORS);
+}
+
+let playerKitColors = readJugglingPlayerKitColors();
+
+function applyKitColorsToCharacter(root, kitColors) {
+  if (!root || !kitColors) return;
+
+  root.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+
+    materials.forEach((material) => {
+      if (!material?.color) return;
+
+      const rawMaterialName = material.name || "";
+      const materialName = `${child.name || ""} ${rawMaterialName}`.toLowerCase();
+      const color = material.color;
+
+      const looksLikeShirtByName =
+        materialName.includes("shirt") ||
+        materialName.includes("jersey") ||
+        materialName.includes("body") ||
+        materialName.includes("torso") ||
+        materialName.includes("uniform") ||
+        materialName.includes("camisa") ||
+        materialName.includes("player_top");
+
+      const looksLikeShortsByName =
+        materialName.includes("short") ||
+        materialName.includes("pants") ||
+        materialName.includes("trouser") ||
+        materialName.includes("bottom") ||
+        materialName.includes("pantalon");
+
+      const looksLikeSocksByName =
+        materialName.includes("sock") ||
+        materialName.includes("leg") ||
+        materialName.includes("media");
+
+      const looksLikeShoesByName =
+        materialName.includes("shoe") ||
+        materialName.includes("boot") ||
+        materialName.includes("cleat") ||
+        materialName.includes("zapato");
+
+      const looksLikeSkinByName =
+        materialName.includes("skin") ||
+        materialName.includes("head") ||
+        materialName.includes("arm") ||
+        materialName.includes("hand") ||
+        materialName.includes("face");
+
+      const looksRedUniform =
+        color.r > 0.55 && color.g < 0.35 && color.b < 0.35;
+      const looksBlueUniform = color.b > 0.45 && color.r < 0.35;
+      const looksGreenUniform = color.g > 0.45 && color.r < 0.45;
+      const looksYellowUniform =
+        color.r > 0.55 && color.g > 0.45 && color.b < 0.35;
+      const looksBlackUniform = color.r < 0.12 && color.g < 0.12 && color.b < 0.12;
+      const looksSkinTone = color.r > 0.5 && color.g > 0.28 && color.g < 0.72 && color.b > 0.12 && color.b < 0.55;
+
+      const normalizedMaterialName = rawMaterialName.toLowerCase();
+      const explicitRole = normalizedMaterialName.includes("m_firstcolor")
+        ? "shirt"
+        : normalizedMaterialName.includes("m_secondcolor")
+        ? "shorts"
+        : normalizedMaterialName.includes("m_thirdcolor")
+        ? "socks"
+        : normalizedMaterialName.includes("m_shoe")
+        ? "shoes"
+        : normalizedMaterialName.includes("m_skin")
+        ? "skin"
+        : null;
+
+      let role = explicitRole ?? material.userData?.jugglingKitRole ?? null;
+
+      if (!role) {
+        if (looksLikeShoesByName || looksBlackUniform) {
+          role = "shoes";
+        } else if (looksLikeSkinByName || looksSkinTone) {
+          role = "skin";
+        } else if (looksLikeShortsByName || looksGreenUniform) {
+          role = "shorts";
+        } else if (looksLikeSocksByName || looksBlueUniform) {
+          role = "socks";
+        } else if (looksLikeShirtByName || looksYellowUniform || looksRedUniform) {
+          role = "shirt";
+        }
+      }
+
+      if (!role) return;
+
+      const materialToPaint = material.userData?.jugglingMaterialClone
+        ? material
+        : material.clone();
+
+      materialToPaint.userData.jugglingMaterialClone = true;
+      materialToPaint.userData.jugglingKitRole = role;
+      materialToPaint.userData.jugglingExplicitRole = explicitRole;
+      materialToPaint.color.setHex(kitColors[role]);
+      materialToPaint.needsUpdate = true;
+
+      if (Array.isArray(child.material)) {
+        const materialIndex = child.material.indexOf(material);
+        child.material[materialIndex] = materialToPaint;
+      } else {
+        child.material = materialToPaint;
+      }
+    });
+  });
+}
+
+function refreshPlayerKitColors() {
+  playerKitColors = readJugglingPlayerKitColors();
+  console.log("[JUGGLING] active playerKitColors", playerKitColors);
+
+  Object.values(charModels).forEach((model) => {
+    applyKitColorsToCharacter(model, playerKitColors);
+  });
+
+  if (character) {
+    applyKitColorsToCharacter(character, playerKitColors);
+  }
+}
 let curAction = null;
 let kickCooldown = 0;
 let isKicking = false;
@@ -284,7 +585,7 @@ loader.load(
     ball.add(model);
   },
   undefined,
-  (err) => console.warn("Ball_Model.glb no pudo cargarse", err)
+  (err) => console.warn("Ball_Model.glb could not be loaded", err)
 );
 const loadBar = document.getElementById("loading-bar-fill");
 const loadWrap = document.getElementById("loading-bar-wrap");
@@ -313,14 +614,45 @@ async function tryLoadGLB(filename, key) {
     const gltf = await loader.loadAsync(filename);
     const model = gltf.scene;
 
+    model.traverse((child) => {
+      if (!child.isMesh || !child.material) return;
+
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      materials.forEach((material) => {
+        console.log(
+          `[JUGGLING MATERIAL] ${key} | mesh: ${child.name || "(no mesh name)"} | material: ${material.name || "(no material name)"} | hex: ${material.color?.getHexString?.() ?? "no-color"} | role: ${
+            (material.name || "").toLowerCase().includes("m_firstcolor")
+              ? "shirt"
+              : (material.name || "").toLowerCase().includes("m_secondcolor")
+              ? "shorts"
+              : (material.name || "").toLowerCase().includes("m_thirdcolor")
+              ? "socks"
+              : (material.name || "").toLowerCase().includes("m_shoe")
+              ? "shoes"
+              : (material.name || "").toLowerCase().includes("m_skin")
+              ? "skin"
+              : "auto"
+          }`
+        );
+      });
+    });
+
     model.visible = false;
     model.scale.setScalar(1.15);
+    applyKitColorsToCharacter(model, playerKitColors);
 
     charModels[key] = model;
 
     if (gltf.animations?.length) {
       const modelMixer = new THREE.AnimationMixer(model);
       const action = modelMixer.clipAction(gltf.animations[0]);
+
+      if (key === "leftJug" || key === "rightJug") {
+        action.timeScale = 1.85;
+      }
 
       action.setLoop(
         key === "idle" || key === "move" ? THREE.LoopRepeat : THREE.LoopOnce
@@ -334,7 +666,7 @@ async function tryLoadGLB(filename, key) {
 
     onOneLoaded();
   } catch (error) {
-    console.warn(`No se pudo cargar ${filename}`, error);
+    console.warn(`Could not load ${filename}`, error);
     onOneLoaded();
   }
 }
@@ -355,6 +687,7 @@ function buildCharacter() {
     const model = charModels[key];
     model.visible = false;
     model.position.set(0, 0, 0);
+    applyKitColorsToCharacter(model, playerKitColors);
     character.add(model);
   });
 
@@ -370,6 +703,10 @@ function playAnim(name, onFinish) {
   Object.entries(charModels).forEach(([key, model]) => {
     model.visible = key === name;
   });
+
+  if (charModels[name]) {
+    applyKitColorsToCharacter(charModels[name], playerKitColors);
+  }
 
   const next = anims[name];
   if (!next) return;
@@ -489,6 +826,7 @@ function prepareBallSpawn() {
 
 function addTouch() {
   touches++;
+  playJuggleHitSound();
   counterEl.textContent = touches;
   counterEl.classList.remove("pulse");
   void counterEl.offsetWidth;
@@ -499,11 +837,11 @@ function addTouch() {
   }
   if (touches > 0 && touches % 10 === 0) {
     const msgs = [
-      "¡COMBO!",
-      "¡INCREÍBLE!",
-      "¡BESTIAL!",
-      "¡IMPARABLE!",
-      "¡LEYENDA!",
+      "COMBO!",
+      "INCREDIBLE!",
+      "BEAST MODE!",
+      "UNSTOPPABLE!",
+      "LEGEND!",
     ];
     comboText.textContent =
       msgs[Math.min(Math.floor(touches / 10) - 1, msgs.length - 1)];
@@ -534,10 +872,34 @@ function doKick() {
   dir.normalize();
 
   const power = 4.6 + Math.random() * 0.9;
+
+  const difficulty = Math.min(touches / BALL_DIFFICULTY_TOUCHES, 1);
+  const driftStrength = THREE.MathUtils.lerp(
+    BALL_DRIFT_BASE,
+    BALL_DRIFT_MAX,
+    difficulty
+  );
+
+  const driftAngle = Math.random() * Math.PI * 2;
+  const drift = new THREE.Vector3(
+    Math.cos(driftAngle),
+    0,
+    Math.sin(driftAngle)
+  );
+
+  const returnBias = new THREE.Vector3()
+    .subVectors(new THREE.Vector3(0, 0, 0), bPos)
+    .setY(0);
+
+  if (returnBias.lengthSq() > 0.001) {
+    returnBias.normalize();
+    drift.addScaledVector(returnBias, 0.28 + difficulty * 0.28).normalize();
+  }
+
   bVel.set(
-    dir.x * 0.7 + (Math.random() - 0.5) * 0.5,
+    dir.x * 0.35 + drift.x * driftStrength,
     power,
-    dir.z * 0.7 + (Math.random() - 0.5) * 0.5
+    dir.z * 0.35 + drift.z * driftStrength
   );
 
   addTouch();
@@ -561,6 +923,48 @@ function animateWalk(dt, moving) {
   }
 }
 
+function updateCharacterMovement(dt) {
+  const moveDir = new THREE.Vector3();
+  if (keys["w"] || keys["arrowup"]) moveDir.z -= 1;
+  if (keys["s"] || keys["arrowdown"]) moveDir.z += 1;
+  if (keys["a"] || keys["arrowleft"]) moveDir.x -= 1;
+  if (keys["d"] || keys["arrowright"]) moveDir.x += 1;
+  const usingKeys = moveDir.lengthSq() > 0;
+
+  if (usingKeys) {
+    moveDir.normalize();
+    charTgt.addScaledVector(moveDir, SPEED * dt);
+  } else if (mouseGround) {
+    const diff = new THREE.Vector3().subVectors(mouseGround, charPos).setY(0);
+    const dist = diff.length();
+    if (dist > 0.12) {
+      diff.normalize();
+      charTgt.addScaledVector(diff, Math.min(SPEED * dt, dist));
+    }
+  }
+
+  charTgt.x = Math.max(-FIELD_H + 0.5, Math.min(FIELD_H - 0.5, charTgt.x));
+  charTgt.z = Math.max(-FIELD_H + 0.5, Math.min(FIELD_H - 0.5, charTgt.z));
+  charPos.lerp(charTgt, 0.2);
+  charPos.y = 0;
+
+  if (character) {
+    const delta = new THREE.Vector3()
+      .subVectors(charTgt, character.position)
+      .setY(0);
+    if (delta.lengthSq() > 0.0001)
+      character.rotation.y = THREE.MathUtils.lerp(
+        character.rotation.y,
+        Math.atan2(delta.x, delta.z),
+        0.15
+      );
+    character.position.copy(charPos);
+  }
+
+  const isMoving = charPos.distanceTo(charTgt) > 0.04 || usingKeys;
+  animateWalk(dt, isMoving);
+}
+
 // ─── Game Loop ────────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 
@@ -569,40 +973,45 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05);
 
   if (!isPlaying) {
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
+    }
     composer.render();
     return;
   }
 
   if (countdownActive) {
+    updateCharacterMovement(dt);
     ball.visible = false;
     ballShadow.visible = false;
+
     if (Object.keys(charMixers).length > 0) {
       Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
     } else if (mixer) {
       mixer.update(dt);
     }
 
-    if (character) {
-      character.position.copy(charPos);
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
     }
-
-    ball.position.copy(bPos);
-    ballShadow.position.x = bPos.x;
-    ballShadow.position.z = bPos.z;
 
     composer.render();
     return;
   }
 
   if (!ballReady) {
+    updateCharacterMovement(dt);
+    ball.visible = false;
+    ballShadow.visible = false;
+
     if (Object.keys(charMixers).length > 0) {
       Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
     } else if (mixer) {
       mixer.update(dt);
     }
 
-    if (character) {
-      character.position.copy(charPos);
+    if (activeAnimKey && charModels[activeAnimKey]) {
+      applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
     }
 
     composer.render();
@@ -701,31 +1110,23 @@ function loop() {
   ballShadow.scale.setScalar(ss);
   shadowMat.opacity = 0.35 * ss;
 
+  updateLandingPredictor(dt);
+
   if (Object.keys(charMixers).length > 0) {
     Object.values(charMixers).forEach((modelMixer) => modelMixer.update(dt));
   } else if (mixer) {
     mixer.update(dt);
   }
+
+  if (activeAnimKey && charModels[activeAnimKey]) {
+    applyKitColorsToCharacter(charModels[activeAnimKey], playerKitColors);
+  }
   composer.render();
 }
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-function startGame() {
-  loadWrap.classList.add("show");
-  isPlaying = true;
-  bPos.set(0, 2.5, 0);
-  bVel.set(0, 0, 0);
-  charPos.set(0, 0, 1);
-  charTgt.set(0, 0, 1);
-
-  startCountdown();
-  setTimeout(prepareBallSpawn, 3400);
-  ANIM_MAP.forEach(({ file, key }) => tryLoadGLB(file, key));
-}
-
-startGame();
-
-playAgainBtn?.addEventListener("click", () => {
+function beginJugglingRun() {
+  refreshPlayerKitColors();
   touches = 0;
   counterEl.textContent = "0";
 
@@ -734,18 +1135,66 @@ playAgainBtn?.addEventListener("click", () => {
   ballReady = false;
   ball.visible = false;
   ballShadow.visible = false;
+  hideLandingPredictor();
   clearTimeout(ballSpawnTimeout);
 
   charPos.set(0, 0, 1);
   charTgt.set(0, 0, 1);
 
+  if (character) {
+    character.position.copy(charPos);
+  }
+
   kickCooldown = 0;
   isKicking = false;
+  kickTimer = 0;
+
+  countdownTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+  countdownTimeouts = [];
 
   gameOverScreen?.classList.add("hidden");
+  jugglingIntroScreen?.classList.add("hidden");
   isPlaying = true;
+
   startCountdown();
   setTimeout(prepareBallSpawn, 3400);
+}
+
+function startGame() {
+  refreshPlayerKitColors();
+  loadWrap.classList.add("show");
+  isPlaying = false;
+  ballReady = false;
+  ball.visible = false;
+  ballShadow.visible = false;
+  countdownActive = false;
+  countdownScreen?.classList.add("hidden");
+  document.body.classList.remove("is-counting-down");
+
+  bPos.set(0, 2.5, 0);
+  bVel.set(0, 0, 0);
+  charPos.set(0, 0, 1);
+  charTgt.set(0, 0, 1);
+
+  ANIM_MAP.forEach(({ file, key }) => tryLoadGLB(file, key));
+
+  if (jugglingIntroScreen && startJugglingBtn) {
+    jugglingIntroScreen.classList.remove("hidden");
+  } else {
+    beginJugglingRun();
+  }
+}
+
+startGame();
+
+startJugglingBtn?.addEventListener("click", () => {
+  startJugglingMusic();
+  beginJugglingRun();
+});
+
+playAgainBtn?.addEventListener("click", () => {
+  startJugglingMusic();
+  beginJugglingRun();
 });
 
 loop();

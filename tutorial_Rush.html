@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
-    <link rel="icon" href="img/favicon.png">
+    <link rel="icon" href="img/favicon.png" />
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>Bubble Kick 26 — Tutorial Rush Match</title>
+    <title>Bubble Kick — Tutorial Rush Match</title>
 
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700;900&display=swap");
@@ -110,6 +110,52 @@
         -webkit-backdrop-filter: blur(16px);
       }
 
+      .tutorial-card {
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+
+      .tutorial-card.is-collapsed {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50%) translateY(-18px) scale(0.96);
+      }
+
+      .step-progress-display {
+        position: fixed;
+        left: 50%;
+        top: max(104px, calc(env(safe-area-inset-top) + 92px));
+        z-index: 34;
+        transform: translateX(-50%) scale(0.94);
+        min-width: min(520px, calc(100vw - 36px));
+        padding: 16px 28px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.34);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(34px, 5vw, 62px);
+        line-height: 0.9;
+        letter-spacing: 2px;
+        text-align: center;
+        text-transform: uppercase;
+        opacity: 0;
+        pointer-events: none;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+
+      .step-progress-display.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+
+      .step-progress-display strong {
+        color: #b9ff22;
+        text-shadow: 0 0 26px rgba(185, 255, 34, 0.45);
+      }
+
       .step-kicker {
         display: inline-flex;
         align-items: center;
@@ -203,6 +249,123 @@
         display: none;
       }
 
+      .tutorial-complete-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(4, 13, 44, 0.48);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .tutorial-complete-screen.hidden {
+        display: none;
+      }
+
+      .tutorial-complete-card {
+        width: min(560px, calc(100vw - 36px));
+        padding: 34px 30px 30px;
+        border-radius: 34px;
+        text-align: center;
+        background: linear-gradient(
+          145deg,
+          rgba(4, 18, 95, 0.94),
+          rgba(8, 38, 165, 0.86) 56%,
+          rgba(8, 120, 92, 0.64)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36),
+          0 0 44px rgba(93, 240, 214, 0.16);
+      }
+
+      .tutorial-complete-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: min(430px, 100%);
+        min-height: 30px;
+        margin-bottom: 18px;
+        padding: 7px 16px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 3.2px;
+        text-transform: uppercase;
+      }
+
+      .tutorial-complete-logo {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(92px, 13vw, 138px);
+        line-height: 0.82;
+        color: #ffffff;
+        letter-spacing: 1px;
+        text-shadow: 0 7px 28px rgba(0, 0, 0, 0.4),
+          5px 5px 0 rgba(0, 0, 40, 0.22);
+      }
+
+      .tutorial-complete-logo span {
+        color: #b9ff22;
+        text-shadow: 0 0 28px rgba(185, 255, 34, 0.5),
+          0 8px 0 rgba(0, 0, 0, 0.22);
+      }
+
+      .tutorial-complete-message {
+        margin: 28px auto 26px;
+        max-width: 420px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .tutorial-complete-actions {
+        display: grid;
+        gap: 12px;
+        width: min(320px, 100%);
+        margin: 0 auto;
+      }
+
+      .tutorial-complete-primary,
+      .tutorial-complete-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 56px;
+        border-radius: 999px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 28px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .tutorial-complete-primary {
+        color: #1332cc;
+        background: linear-gradient(
+          135deg,
+          #f7fbff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        border: none;
+        box-shadow: 0 12px 30px rgba(185, 255, 34, 0.22);
+      }
+
+      .tutorial-complete-secondary {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
       .mobile-actions {
         position: fixed;
         right: max(16px, env(safe-area-inset-right));
@@ -267,7 +430,8 @@
         inset: 0;
         pointer-events: none;
         z-index: 8;
-        box-shadow: inset 0 0 0 4px rgba(185, 255, 34, 0.16), inset 0 0 80px rgba(93, 240, 214, 0.12);
+        box-shadow: inset 0 0 0 4px rgba(185, 255, 34, 0.16),
+          inset 0 0 80px rgba(93, 240, 214, 0.12);
       }
 
       @media (max-width: 760px), (pointer: coarse) {
@@ -337,6 +501,34 @@
           height: 72px;
           font-size: 24px;
         }
+
+        .tutorial-complete-card {
+          width: min(92vw, 360px);
+          padding: 28px 20px 24px;
+          border-radius: 30px;
+        }
+
+        .tutorial-complete-tag {
+          width: 100%;
+          font-size: 9px;
+          letter-spacing: 2px;
+          padding-inline: 10px;
+        }
+
+        .tutorial-complete-logo {
+          font-size: clamp(78px, 22vw, 104px);
+        }
+
+        .tutorial-complete-message {
+          margin: 22px auto 24px;
+          font-size: 13px;
+        }
+
+        .tutorial-complete-primary,
+        .tutorial-complete-secondary {
+          min-height: 50px;
+          font-size: 23px;
+        }
       }
     </style>
 
@@ -363,10 +555,41 @@
     </div>
 
     <div class="tutorial-title">Tutorial · Rush Match</div>
-    <div id="floating-hint" class="floating-hint">
-      Learn the basic controls
-    </div>
+    <div id="floating-hint" class="floating-hint">Learn the basic controls</div>
     <div id="success-badge" class="success-badge">Well done!</div>
+    <div id="step-progress-display" class="step-progress-display">
+      Progress 0/3
+    </div>
+
+    <div id="tutorial-complete-screen" class="tutorial-complete-screen hidden">
+      <div class="tutorial-complete-card">
+        <div class="tutorial-complete-tag">TUTORIAL COMPLETED · RUSH MATCH</div>
+
+        <div class="tutorial-complete-logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
+
+        <div class="tutorial-complete-message">
+          You completed the Rush Match tutorial. You are ready to move, dash,
+          shoot and steal the ball.
+        </div>
+
+        <div class="tutorial-complete-actions">
+          <button
+            id="restart-tutorial-btn"
+            class="tutorial-complete-primary"
+            type="button"
+          >
+            RESTART TUTORIAL
+          </button>
+
+          <a class="tutorial-complete-secondary" href="index.html">
+            MAIN MENU
+          </a>
+        </div>
+      </div>
+    </div>
 
     <div class="mobile-actions">
       <button id="tutorial-dash-btn" class="mobile-action-btn" type="button">
@@ -375,13 +598,20 @@
       <button id="tutorial-shoot-btn" class="mobile-action-btn" type="button">
         ⚽<span>Shoot</span>
       </button>
+      <button id="tutorial-pass-btn" class="mobile-action-btn" type="button">
+        🤝<span>Pass</span>
+      </button>
+      <button id="tutorial-switch-btn" class="mobile-action-btn" type="button">
+       🔁<span>Switch</span>
+       </button>
     </div>
 
     <section class="tutorial-card">
       <div id="step-kicker" class="step-kicker">Step 1 of 5</div>
       <h1 id="step-title" class="step-title">Move your player</h1>
       <p id="step-text" class="step-text">
-        On PC, use WASD or the arrow keys. On mobile, drag on the field to move your player.
+        On PC, use WASD or the arrow keys. On mobile, drag on the field to move
+        your player.
       </p>
 
       <div class="step-actions">
@@ -439,6 +669,18 @@
       const progressDots = document.getElementById("progress-dots");
       const tutorialDashBtn = document.getElementById("tutorial-dash-btn");
       const tutorialShootBtn = document.getElementById("tutorial-shoot-btn");
+      const tutorialPassBtn = document.getElementById("tutorial-pass-btn");
+      const tutorialSwitchBtn = document.getElementById("tutorial-switch-btn");
+      const tutorialCard = document.querySelector(".tutorial-card");
+      const stepProgressDisplay = document.getElementById(
+        "step-progress-display"
+      );
+      const tutorialCompleteScreen = document.getElementById(
+        "tutorial-complete-screen"
+      );
+      const restartTutorialBtn = document.getElementById(
+        "restart-tutorial-btn"
+      );
 
       canvas.style.touchAction = "none";
       canvas.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -449,10 +691,10 @@
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.NoToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      renderer.toneMappingExposure = 0.96;
       renderer.setClearColor(0x1730e8);
       renderer.domElement.style.filter =
-        "saturate(1.5) contrast(1.55) brightness(0.78)";
+        "saturate(1.12) contrast(1.16) brightness(0.86)";
 
       const scene = new THREE.Scene();
       scene.fog = new THREE.FogExp2(0x1730e8, 0.018);
@@ -481,7 +723,9 @@
       });
 
       const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/");
+      dracoLoader.setDecoderPath(
+        "https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/"
+      );
 
       const loader = new GLTFLoader();
       loader.setDRACOLoader(dracoLoader);
@@ -510,12 +754,15 @@
       const TUTORIAL_DUMMY_SCALE = PLAYER_VISUAL_SCALE * 1.2;
 
       const tutorialPlayerMesh = makeBobble(p1TeamColors);
+      const tutorialTeammateMesh = makeBobble(p1TeamColors);
       const tutorialDummyMesh = makeBobble(p2TeamColors);
       const playerShadow = makeShadow(scene);
+      const teammateShadow = makeShadow(scene);
       const dummyShadow = makeShadow(scene);
       const ballShadow = makeShadow(scene);
 
       applyPlayerVisualScale(tutorialPlayerMesh, TUTORIAL_PLAYER_SCALE);
+      applyPlayerVisualScale(tutorialTeammateMesh, TUTORIAL_PLAYER_SCALE * 0.96);
       applyPlayerVisualScale(tutorialDummyMesh, TUTORIAL_DUMMY_SCALE);
 
       const keys = new Set();
@@ -527,6 +774,16 @@
       let shootPulseUntil = 0;
       let ballPickupBlockedUntil = 0;
       let messageTimeout = null;
+      let autoAdvanceTimeout = null;
+      let stealResetTimeout = null;
+      let stepIntroTimeout = null;
+      let stepProgressCount = 0;
+      let stepProgressTime = 0;
+      let stealInteractionBlockedUntil = 0;
+      let pendingPassTarget = false;
+      let teammateHasBall = false;
+      let teammateReturnTimeout = null;
+      let switchedToTeammate = false;
 
       const player = {
         group: tutorialPlayerMesh,
@@ -536,6 +793,15 @@
         facing: new THREE.Vector3(1, 0, 0),
         speed: 4.4,
       };
+
+      const teammate = {
+  group: tutorialTeammateMesh,
+  velocity: new THREE.Vector3(),
+  target: new THREE.Vector3(0, 0, 0),
+  hasPointerTarget: false,
+  facing: new THREE.Vector3(-1, 0, 0),
+  speed: 4.4,
+};
 
       const ball = {
         group: new THREE.Group(),
@@ -576,7 +842,17 @@
         {
           title: "Kick forward",
           text: "Press E, Space, or the Shoot button to kick. In Rush Match, the shot goes in the direction your player is facing.",
-          hint: "Kick the ball toward the green target.",
+          hint: "Kick the ball 3 times to complete this step.",
+        },
+        {
+          title: "Make a pass",
+          text: "Press Q, or use the Pass button on mobile, to pass the ball to your teammate.",
+          hint: "Pass the ball to your teammate 3 times.",
+        },
+        {
+          title: "Switch teammate",
+          text: "Press C, or use the Switch button on mobile, to change the selected teammate.",
+          hint: "Switch players 3 times to complete this step.",
         },
         {
           title: "Steal with Dash",
@@ -585,12 +861,26 @@
         },
       ];
 
+      const stepRequirements = [
+        { type: "move", target: 1.35, unit: "s" },
+        { type: "dribble", target: 2.0, unit: "s" },
+        { type: "dash", target: 3, unit: "count" },
+        { type: "shoot", target: 3, unit: "count" },
+        { type: "pass", target: 3, unit: "count" },
+        { type: "switch", target: 3, unit: "count" },
+        { type: "steal", target: 3, unit: "count" },
+      ];
+
+      const TUTORIAL_LIMIT_X = 6.8;
+      const TUTORIAL_LIMIT_Z = 4.5;
+
       init();
 
       function init() {
         setupLights();
         setupField();
         setupPlayer();
+        setupTeammate();
         setupBall();
         setupDummy();
         setupGoalTarget();
@@ -602,9 +892,9 @@
       }
 
       function setupLights() {
-        scene.add(new THREE.AmbientLight(0xffffff, 1.25));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.92));
 
-        const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.55);
         sun.position.set(8, 20, 10);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
@@ -614,7 +904,7 @@
         sun.shadow.camera.bottom = -15;
         scene.add(sun);
 
-        const fill = new THREE.DirectionalLight(0xddeeff, 3.2);
+        const fill = new THREE.DirectionalLight(0xddeeff, 1.9);
         fill.position.set(-5, 8, -5);
         scene.add(fill);
       }
@@ -675,6 +965,12 @@
       function setupPlayer() {
         player.group.position.set(-2.2, 0, 0);
         scene.add(player.group);
+      }
+
+      function setupTeammate() {
+      teammate.group.position.set(1.65, 0, -1.15);
+      teammate.group.visible = false;
+      scene.add(teammate.group);
       }
 
       function setupBall() {
@@ -761,6 +1057,15 @@
             event.preventDefault();
             if (!event.repeat) doShoot();
           }
+
+          if (key === "q") {
+            event.preventDefault();
+            if (!event.repeat) doPass();
+          }
+          if (key === "c") {
+           event.preventDefault();
+          if (!event.repeat) doSwitchPlayer();
+           }
         });
 
         window.addEventListener("keyup", (event) => {
@@ -793,6 +1098,18 @@
           doShoot();
         });
 
+        tutorialPassBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          doPass();
+        });
+
+        tutorialSwitchBtn.addEventListener("pointerdown", (event) => {
+         event.preventDefault();
+         event.stopPropagation();
+         doSwitchPlayer();
+        });
+
         prevStepBtn.addEventListener("click", () =>
           setStep(currentStepIndex - 1)
         );
@@ -800,6 +1117,10 @@
           setStep(currentStepIndex + 1)
         );
         resetStepBtn.addEventListener("click", () => setStep(currentStepIndex));
+        restartTutorialBtn?.addEventListener("click", () => {
+          tutorialCompleteScreen?.classList.add("hidden");
+          setStep(0);
+        });
       }
 
       function setupProgressDots() {
@@ -815,23 +1136,33 @@
       function setStep(index) {
         currentStepIndex = THREE.MathUtils.clamp(index, 0, steps.length - 1);
         completedStep = false;
+        clearTimeout(stepIntroTimeout);
+        tutorialCard?.classList.remove("is-collapsed");
+        stepProgressDisplay?.classList.remove("show");
+        tutorialCompleteScreen?.classList.add("hidden");
         const step = steps[currentStepIndex];
 
-        stepKicker.textContent = `Paso ${currentStepIndex + 1} de ${
+        stepKicker.textContent = `Step ${currentStepIndex + 1} of ${
           steps.length
         }`;
         stepTitle.textContent = step.title;
         stepText.textContent = step.text;
         floatingHint.textContent = step.hint;
         prevStepBtn.disabled = currentStepIndex === 0;
-        nextStepBtn.textContent =
-          currentStepIndex === steps.length - 1 ? "Terminar" : "Siguiente";
+        nextStepBtn.textContent = "Next";
+        nextStepBtn.style.display = "none";
 
         [...progressDots.children].forEach((dot, dotIndex) => {
           dot.classList.toggle("active", dotIndex === currentStepIndex);
         });
 
         resetSceneForStep();
+        updateStepProgressLabel();
+        stepIntroTimeout = setTimeout(() => {
+          if (completedStep) return;
+          tutorialCard?.classList.add("is-collapsed");
+          stepProgressDisplay?.classList.add("show");
+        }, 4000);
       }
 
       function resetSceneForStep() {
@@ -840,29 +1171,47 @@
         player.facing.set(1, 0, 0);
         player.group.rotation.y = 0;
         player.hasPointerTarget = false;
+        teammate.group.position.set(1.65, 0, -1.15);
+        teammate.velocity.set(0, 0, 0);
+        teammate.target.set(1.65, 0, -1.15);
+teammate.hasPointerTarget = false;
+        teammate.facing.set(-1, 0, 0);
+        teammate.group.visible = currentStepIndex === 4 || currentStepIndex === 5;
+        switchedToTeammate = false;
+        stepProgressCount = 0;
+        stepProgressTime = 0;
+        clearTimeout(autoAdvanceTimeout);
+        clearTimeout(stealResetTimeout);
+        stealInteractionBlockedUntil = 0;
+        pendingPassTarget = false;
+        teammateHasBall = false;
+        clearTimeout(teammateReturnTimeout);
 
         dummy.group.position.set(2.1, 0, 0.4);
         dummy.hasBall = false;
         dummy.dashUntil = 0;
         dummy.dashCooldownUntil = 0;
-        dummy.group.visible = currentStepIndex === 4;
+        dummy.group.visible = currentStepIndex === 6;
 
         goalTarget.visible = currentStepIndex === 3;
 
-        ball.attached = currentStepIndex !== 4;
-        if (currentStepIndex === 4) {
-        dummy.hasBall = true;
-        ball.attached = false;
-
-        tutorialBallBody.pos.set(
-        dummy.group.position.x - 0.65,
-        BALL_RADIUS,
-         dummy.group.position.z
-         );
-       }
+        ball.attached = currentStepIndex !== 6;
         ball.velocity.set(0, 0, 0);
-        tutorialBallBody.pos.set(-1.52, BALL_RADIUS, 0);
         tutorialBallBody.vel.set(0, 0, 0);
+
+        if (currentStepIndex === 6) {
+          dummy.hasBall = true;
+          ball.attached = false;
+
+          tutorialBallBody.pos.set(
+            dummy.group.position.x - 0.65,
+            BALL_RADIUS,
+            dummy.group.position.z
+          );
+        } else {
+          tutorialBallBody.pos.set(-1.52, BALL_RADIUS, 0);
+        }
+
         ball.group.position.copy(tutorialBallBody.pos);
 
         dashUntil = 0;
@@ -878,10 +1227,64 @@
         successBadge.textContent = message;
         successBadge.classList.add("show");
         clearTimeout(messageTimeout);
+        clearTimeout(autoAdvanceTimeout);
+
         messageTimeout = setTimeout(
           () => successBadge.classList.remove("show"),
           1200
         );
+
+        autoAdvanceTimeout = setTimeout(() => {
+          if (currentStepIndex < steps.length - 1) {
+            setStep(currentStepIndex + 1);
+          } else {
+            successBadge.classList.remove("show");
+            tutorialCard?.classList.add("is-collapsed");
+            stepProgressDisplay?.classList.remove("show");
+            tutorialCompleteScreen?.classList.remove("hidden");
+          }
+        }, 950);
+      }
+
+      function updateStepProgressLabel() {
+        const requirement = stepRequirements[currentStepIndex];
+        if (!requirement || completedStep) return;
+
+        if (requirement.unit === "count") {
+          const label = `Progress: ${stepProgressCount}/${requirement.target}`;
+          stepText.textContent = `${steps[currentStepIndex].text}\n\n${label}`;
+
+          if (stepProgressDisplay) {
+            stepProgressDisplay.innerHTML = `Progress <strong>${stepProgressCount}/${requirement.target}</strong>`;
+          }
+
+          return;
+        }
+
+        const seconds = Math.min(requirement.target, stepProgressTime).toFixed(
+          1
+        );
+        const total = requirement.target.toFixed(1);
+        const label = `Progress: ${seconds}/${total}s`;
+
+        stepText.textContent = `${steps[currentStepIndex].text}\n\n${label}`;
+
+        if (stepProgressDisplay) {
+          stepProgressDisplay.innerHTML = `Progress <strong>${seconds}/${total}s</strong>`;
+        }
+      }
+
+      function addStepActionProgress(messageWhenDone) {
+        const requirement = stepRequirements[currentStepIndex];
+        if (!requirement || completedStep || requirement.unit !== "count")
+          return;
+
+        stepProgressCount = Math.min(requirement.target, stepProgressCount + 1);
+        updateStepProgressLabel();
+
+        if (stepProgressCount >= requirement.target) {
+          showSuccess(messageWhenDone);
+        }
       }
 
       function updatePointerTarget(event) {
@@ -891,12 +1294,16 @@
         const point = new THREE.Vector3();
 
         if (raycaster.ray.intersectPlane(groundPlane, point)) {
-          player.target.set(
-            THREE.MathUtils.clamp(point.x, -6.8, 6.8),
-            0,
-            THREE.MathUtils.clamp(point.z, -4.5, 4.5)
-          );
-          player.hasPointerTarget = true;
+          const targetActor =
+  currentStepIndex === 5 && switchedToTeammate ? teammate : player;
+
+targetActor.target.set(
+  THREE.MathUtils.clamp(point.x, -6.8, 6.8),
+  0,
+  THREE.MathUtils.clamp(point.z, -4.5, 4.5)
+);
+
+targetActor.hasPointerTarget = true;
         }
       }
 
@@ -928,7 +1335,9 @@
         player.velocity.copy(direction).multiplyScalar(13.5);
         player.hasPointerTarget = false;
 
-        if (currentStepIndex === 2) showSuccess("Dash realizado");
+        if (currentStepIndex === 2) {
+          addStepActionProgress("Dash completed");
+        }
       }
 
       function doShoot() {
@@ -946,7 +1355,7 @@
 
         if (typeof player.group.playStrikeAnimation === "function") {
           player.group.playStrikeAnimation("idle");
-          }
+        }
 
         tutorialBallBody.pos.copy(ball.group.position);
         tutorialBallBody.pos.y = BALL_RADIUS;
@@ -957,10 +1366,172 @@
         shootPulseUntil = performance.now() + 220;
         ballPickupBlockedUntil = performance.now() + 520;
 
-        if (currentStepIndex === 3) showSuccess("Disparo realizado");
+        if (currentStepIndex === 3) {
+          addStepActionProgress("Shooting completed");
+        }
       }
 
+      function doPass() {
+        if (currentStepIndex !== 4) return;
+        if (!ball.attached) return;
+
+        const direction = teammate.group.position.clone().sub(player.group.position);
+        direction.y = 0;
+
+        if (direction.lengthSq() < 0.001) return;
+
+        direction.normalize();
+        player.facing.copy(direction);
+
+        if (typeof player.group.playStrikeAnimation === "function") {
+          player.group.playStrikeAnimation("idle");
+        }
+
+        ball.attached = false;
+
+        tutorialBallBody.pos.copy(ball.group.position);
+        tutorialBallBody.pos.y = BALL_RADIUS;
+        tutorialBallBody.vel.copy(direction).multiplyScalar(10.5);
+        tutorialBallBody.vel.y = 0.2;
+
+        ball.velocity.copy(tutorialBallBody.vel);
+        ballPickupBlockedUntil = performance.now() + 650;
+
+        //addStepActionProgress("Passing completed");
+        pendingPassTarget = true;
+
+        if (stepProgressCount < stepRequirements[4].target) {
+          setTimeout(() => {
+            if (currentStepIndex !== 4 || completedStep) return;
+
+            if (teammateHasBall) return;
+
+            ball.attached = true;
+            tutorialBallBody.vel.set(0, 0, 0);
+            ball.velocity.set(0, 0, 0);
+            updateStepProgressLabel();
+          }, 800);
+        }
+      }
+
+      function doSwitchPlayer() {
+  if (currentStepIndex !== 5) return;
+
+  switchedToTeammate = !switchedToTeammate;
+
+  player.hasPointerTarget = false;
+  teammate.hasPointerTarget = false;
+
+  player.velocity.set(0, 0, 0);
+  teammate.velocity.set(0, 0, 0);
+
+  addStepActionProgress("Switch completed");
+}
+      function updateTeammate(dt) {
+  if (currentStepIndex !== 4 && currentStepIndex !== 5) return;
+
+  if (currentStepIndex === 5) {
+    if (switchedToTeammate) {
+      const move = getMoveVector();
+
+      if (move.lengthSq() > 0.001) {
+        teammate.hasPointerTarget = false;
+        teammate.velocity.lerp(
+          move.multiplyScalar(teammate.speed),
+          1 - Math.pow(0.002, dt)
+        );
+      } else if (teammate.hasPointerTarget) {
+        const toTarget = teammate.target.clone().sub(teammate.group.position);
+        toTarget.y = 0;
+
+        if (toTarget.length() > 0.08) {
+          teammate.velocity.lerp(
+            toTarget.normalize().multiplyScalar(teammate.speed),
+            1 - Math.pow(0.002, dt)
+          );
+        } else {
+          teammate.velocity.multiplyScalar(Math.pow(0.002, dt));
+        }
+      } else {
+        teammate.velocity.multiplyScalar(Math.pow(0.001, dt));
+      }
+    } else {
+      teammate.velocity.multiplyScalar(Math.pow(0.001, dt));
+    }
+
+    teammate.group.position.addScaledVector(teammate.velocity, dt);
+    teammate.group.position.x = THREE.MathUtils.clamp(
+      teammate.group.position.x,
+      -TUTORIAL_LIMIT_X,
+      TUTORIAL_LIMIT_X
+    );
+    teammate.group.position.z = THREE.MathUtils.clamp(
+      teammate.group.position.z,
+      -TUTORIAL_LIMIT_Z,
+      TUTORIAL_LIMIT_Z
+    );
+
+    if (teammate.velocity.lengthSq() > 0.03) {
+      teammate.facing.copy(teammate.velocity.clone().setY(0).normalize());
+    }
+
+    return;
+  }
+
+  const target = new THREE.Vector3(2.35, 0, -0.45);
+
+  if (teammateHasBall) {
+    const toTarget = target.sub(teammate.group.position);
+    toTarget.y = 0;
+
+    if (toTarget.lengthSq() > 0.01) {
+      teammate.velocity.lerp(
+        toTarget.normalize().multiplyScalar(2.15),
+        1 - Math.pow(0.01, dt)
+      );
+    } else {
+      teammate.velocity.multiplyScalar(Math.pow(0.02, dt));
+    }
+  } else {
+    teammate.velocity.multiplyScalar(Math.pow(0.01, dt));
+  }
+
+  teammate.group.position.addScaledVector(teammate.velocity, dt);
+  teammate.group.position.x = THREE.MathUtils.clamp(
+    teammate.group.position.x,
+    -TUTORIAL_LIMIT_X,
+    TUTORIAL_LIMIT_X
+  );
+  teammate.group.position.z = THREE.MathUtils.clamp(
+    teammate.group.position.z,
+    -TUTORIAL_LIMIT_Z,
+    TUTORIAL_LIMIT_Z
+  );
+
+  if (teammate.velocity.lengthSq() > 0.03) {
+    teammate.facing.copy(teammate.velocity.clone().setY(0).normalize());
+  }
+}
+
+
       function updatePlayer(dt) {
+        if (currentStepIndex === 5 && switchedToTeammate) {
+  player.velocity.multiplyScalar(Math.pow(0.001, dt));
+
+  updatePlayerMeshFacing(player.group, {
+    pos: player.group.position,
+    vel: player.velocity,
+    facing: player.facing,
+  });
+
+  updatePlayerAnimationVariant(
+    player.group,
+    { speed: player.velocity.length(), vel: player.velocity },
+    player.velocity.lengthSq() > 0.08 ? "run" : "idle"
+  );
+
+  return;
+}
         const now = performance.now();
 
         if (now < dashUntil) {
@@ -1023,13 +1594,69 @@
           player.velocity.lengthSq() > 0.08 ? "run" : "idle"
         );
 
-        if (currentStepIndex === 0 && player.velocity.lengthSq() > 1.2)
-          showSuccess("Movement completed");
-        if (currentStepIndex === 1 && player.velocity.lengthSq() > 1.2)
-          showSuccess("Dribbling completed");
+        if (!completedStep && currentStepIndex === 0) {
+          if (player.velocity.lengthSq() > 1.2) {
+            stepProgressTime += dt;
+          } else {
+            stepProgressTime = Math.max(0, stepProgressTime - dt * 0.45);
+          }
+
+          updateStepProgressLabel();
+
+          if (stepProgressTime >= stepRequirements[0].target) {
+            showSuccess("Movement completed");
+          }
+        }
+
+        if (!completedStep && currentStepIndex === 1) {
+          if (ball.attached && player.velocity.lengthSq() > 1.2) {
+            stepProgressTime += dt;
+          } else {
+            stepProgressTime = Math.max(0, stepProgressTime - dt * 0.35);
+          }
+
+          updateStepProgressLabel();
+
+          if (stepProgressTime >= stepRequirements[1].target) {
+            showSuccess("Dribbling completed");
+          }
+        }
       }
 
       function updateBall(dt) {
+        if (teammateHasBall) {
+          const right = new THREE.Vector3(
+            teammate.facing.z,
+            0,
+            -teammate.facing.x
+          ).normalize();
+          const footSwitch =
+            teammate.velocity.lengthSq() > 0.05
+              ? Math.sin(performance.now() * 0.014) * 0.055
+              : 0;
+          const target = teammate.group.position
+            .clone()
+            .add(teammate.facing.clone().multiplyScalar(0.68))
+            .add(right.multiplyScalar(footSwitch));
+
+          target.y = BALL_RADIUS;
+          target.x = THREE.MathUtils.clamp(
+            target.x,
+            -TUTORIAL_LIMIT_X + BALL_RADIUS,
+            TUTORIAL_LIMIT_X - BALL_RADIUS
+          );
+          target.z = THREE.MathUtils.clamp(
+            target.z,
+            -TUTORIAL_LIMIT_Z + BALL_RADIUS,
+            TUTORIAL_LIMIT_Z - BALL_RADIUS
+          );
+
+          tutorialBallBody.pos.copy(target);
+          tutorialBallBody.vel.copy(teammate.velocity);
+          ball.velocity.copy(teammate.velocity);
+          ball.group.position.copy(tutorialBallBody.pos);
+          return;
+        }
         if (ball.attached && !dummy.hasBall) {
           const right = new THREE.Vector3(
             player.facing.z,
@@ -1046,6 +1673,16 @@
             .add(right.multiplyScalar(footSwitch));
 
           target.y = BALL_RADIUS;
+          target.x = THREE.MathUtils.clamp(
+            target.x,
+            -TUTORIAL_LIMIT_X + BALL_RADIUS,
+            TUTORIAL_LIMIT_X - BALL_RADIUS
+          );
+          target.z = THREE.MathUtils.clamp(
+            target.z,
+            -TUTORIAL_LIMIT_Z + BALL_RADIUS,
+            TUTORIAL_LIMIT_Z - BALL_RADIUS
+          );
 
           tutorialBallBody.pos.copy(target);
           tutorialBallBody.vel.copy(player.velocity);
@@ -1069,13 +1706,13 @@
         wallBounce(tutorialBallBody);
         tutorialBallBody.pos.x = THREE.MathUtils.clamp(
           tutorialBallBody.pos.x,
-          -FIELD_W / 2 + BALL_RADIUS,
-          FIELD_W / 2 - BALL_RADIUS
+          -TUTORIAL_LIMIT_X + BALL_RADIUS,
+          TUTORIAL_LIMIT_X - BALL_RADIUS
         );
         tutorialBallBody.pos.z = THREE.MathUtils.clamp(
           tutorialBallBody.pos.z,
-          -FIELD_H / 2 + BALL_RADIUS,
-          FIELD_H / 2 - BALL_RADIUS
+          -TUTORIAL_LIMIT_Z + BALL_RADIUS,
+          TUTORIAL_LIMIT_Z - BALL_RADIUS
         );
         tutorialBallBody.pos.y = BALL_RADIUS;
         ball.group.position.copy(tutorialBallBody.pos);
@@ -1093,15 +1730,55 @@
           );
         }
 
-        const playerDistanceToBall = player.group.position.distanceTo(tutorialBallBody.pos);
+        const playerDistanceToBall = player.group.position.distanceTo(
+          tutorialBallBody.pos
+        );
         const pickupDistance = PLAYER_BODY_RADIUS + BALL_RADIUS + 0.32;
         const canPickupBall = performance.now() >= ballPickupBlockedUntil;
 
+        if (currentStepIndex === 4 && pendingPassTarget) {
+          const teammateDistance =
+            teammate.group.position.distanceTo(tutorialBallBody.pos);
+
+          if (teammateDistance < 0.8) {
+            pendingPassTarget = false;
+            teammateHasBall = true;
+            ball.attached = false;
+            tutorialBallBody.vel.set(0, 0, 0);
+            ball.velocity.set(0, 0, 0);
+
+            addStepActionProgress("Passing completed");
+
+            clearTimeout(teammateReturnTimeout);
+            teammateReturnTimeout = setTimeout(() => {
+              if (currentStepIndex !== 4 || completedStep) return;
+
+              teammateHasBall = false;
+              teammate.velocity.set(0, 0, 0);
+              teammate.group.position.set(1.65, 0, -1.15);
+              teammate.facing.set(-1, 0, 0);
+
+              ball.attached = true;
+              tutorialBallBody.vel.set(0, 0, 0);
+              ball.velocity.set(0, 0, 0);
+              updateStepProgressLabel();
+            }, 900);
+          }
+        }
+
         if (canPickupBall && playerDistanceToBall < pickupDistance) {
+          pendingPassTarget = false;
           ball.attached = true;
           tutorialBallBody.vel.set(0, 0, 0);
           ball.velocity.set(0, 0, 0);
-          showSuccess("Balón recuperado");
+          if (
+            currentStepIndex !== 3 &&
+            currentStepIndex !== 4 &&
+            currentStepIndex !== 5 &&
+            currentStepIndex !== 6
+          ) {
+            showSuccess("Ball recovered");
+          }
           return;
         }
 
@@ -1109,23 +1786,33 @@
           currentStepIndex === 3 &&
           ball.group.position.distanceTo(goalTarget.position) < 0.9
         ) {
-          showSuccess("¡Buen tiro!");
           tutorialBallBody.vel.multiplyScalar(0.92);
         }
       }
 
       function updateDummy(dt) {
-        if (currentStepIndex !== 4) return;
+        if (currentStepIndex !== 6) return;
 
         const toBall = tutorialBallBody.pos.clone().sub(dummy.group.position);
         toBall.y = 0;
 
         if (toBall.lengthSq() > 0.001) {
           dummy.velocity.lerp(
-            toBall.normalize().multiplyScalar(2.2),
+            toBall.normalize().multiplyScalar(3.4),
             1 - Math.pow(0.01, dt)
           );
           dummy.group.position.addScaledVector(dummy.velocity, dt);
+          dummy.group.position.x = THREE.MathUtils.clamp(
+            dummy.group.position.x,
+            -TUTORIAL_LIMIT_X,
+            TUTORIAL_LIMIT_X
+          );
+
+          dummy.group.position.z = THREE.MathUtils.clamp(
+            dummy.group.position.z,
+            -TUTORIAL_LIMIT_Z,
+            TUTORIAL_LIMIT_Z
+          );
           dummy.facing.copy(dummy.velocity.clone().setY(0).normalize());
 
           updatePlayerMeshFacing(dummy.group, {
@@ -1148,38 +1835,75 @@
         const now = performance.now();
 
         if (
-         !dummy.hasBall &&
-         playerToDummy < 1.15 &&
+          !dummy.hasBall &&
+          playerToDummy < 1.15 &&
           now > dummy.dashCooldownUntil
         ) {
-           dummy.dashUntil = now + 180;
-           dummy.dashCooldownUntil = now + 900;
-         }
-         if (
-  !dummy.hasBall &&
-  now < dummy.dashUntil &&
-  playerToDummy < 1.05 &&
-  ball.attached
-) {
-  dummy.hasBall = true;
-  ball.attached = false;
-  tutorialBallBody.vel.set(0, 0, 0);
-}
+          dummy.dashUntil = now + 180;
+          dummy.dashCooldownUntil = now + 650;
+        }
+        if (
+          !dummy.hasBall &&
+          now > stealInteractionBlockedUntil &&
+          now < dummy.dashUntil &&
+          playerToDummy < 1.05 &&
+          ball.attached
+        ) {
+          dummy.hasBall = true;
+          ball.attached = false;
+          tutorialBallBody.vel.set(0, 0, 0);
+        }
         const isDashing = performance.now() < dashUntil;
 
         if (
-  dummy.hasBall &&
-  isDashing &&
-  playerToDummy < 1.05
-) {
-  dummy.hasBall = false;
+          !completedStep &&
+          dummy.hasBall &&
+          now > stealInteractionBlockedUntil &&
+          isDashing &&
+          playerToDummy < 1.05
+        ) {
+          dummy.hasBall = false;
 
-  ball.attached = true;
-  tutorialBallBody.vel.set(0, 0, 0);
-  ball.velocity.set(0, 0, 0);
+          ball.attached = true;
+          tutorialBallBody.vel.set(0, 0, 0);
+          ball.velocity.set(0, 0, 0);
+          stealInteractionBlockedUntil = now + 950;
 
-  showSuccess("Ball recovered!");
-}
+          const requirement = stepRequirements[6];
+          const stealTarget = requirement?.target ?? 3;
+
+          stepProgressCount = Math.min(stealTarget, stepProgressCount + 1);
+          updateStepProgressLabel();
+
+          if (stepProgressCount >= stealTarget) {
+            showSuccess("Steal completed");
+            return;
+          }
+
+          if (requirement && stepProgressCount < stealTarget) {
+            clearTimeout(stealResetTimeout);
+
+            stealResetTimeout = setTimeout(() => {
+              if (currentStepIndex !== 6 || completedStep) return;
+
+              ball.attached = false;
+              dummy.hasBall = true;
+              dummy.velocity.set(0, 0, 0);
+
+              const giveBackPosition = dummy.group.position
+                .clone()
+                .add(dummy.facing.clone().multiplyScalar(0.72));
+              giveBackPosition.y = BALL_RADIUS;
+
+              tutorialBallBody.pos.copy(giveBackPosition);
+              tutorialBallBody.vel.set(0, 0, 0);
+              ball.velocity.set(0, 0, 0);
+              ball.group.position.copy(tutorialBallBody.pos);
+
+              updateStepProgressLabel();
+            }, 850);
+          }
+        }
       }
 
       function animate() {
@@ -1187,6 +1911,7 @@
         const dt = Math.min(clock.getDelta(), 0.034);
 
         updatePlayer(dt);
+        updateTeammate(dt);
         updateBall(dt);
         updateDummy(dt);
 
@@ -1195,6 +1920,12 @@
           0.01,
           player.group.position.z
         );
+        teammateShadow.position.set(
+          teammate.group.position.x,
+          0.01,
+          teammate.group.position.z
+        );
+        teammateShadow.visible = teammate.group.visible;
         dummyShadow.position.set(
           dummy.group.position.x,
           0.01,
@@ -1207,30 +1938,56 @@
         );
         dummyShadow.visible = dummy.group.visible;
 
+        updatePlayerMeshFacing(teammate.group, {
+          pos: teammate.group.position,
+          vel: teammate.velocity,
+          facing: teammate.facing,
+        });
+
+        updatePlayerAnimationVariant(
+          teammate.group,
+          { speed: teammate.velocity.length(), vel: teammate.velocity },
+          teammate.velocity.lengthSq() > 0.08 ? "run" : "idle"
+        );
+
         goalTarget.rotation.y += 0.025;
         goalTarget.scale.setScalar(
           1 + Math.sin(performance.now() * 0.006) * 0.06
         );
 
         const now = performance.now();
-        player.group.scale.setScalar(
-          now < dashUntil ? TUTORIAL_PLAYER_SCALE * 1.08 : TUTORIAL_PLAYER_SCALE
-        );
+        if (currentStepIndex === 5) {
+          player.group.scale.setScalar(
+            switchedToTeammate
+              ? TUTORIAL_PLAYER_SCALE * 0.96
+              : TUTORIAL_PLAYER_SCALE * 1.08
+          );
+          teammate.group.scale.setScalar(
+            switchedToTeammate
+              ? TUTORIAL_PLAYER_SCALE * 1.08
+              : TUTORIAL_PLAYER_SCALE * 0.96
+          );
+        } else {
+          player.group.scale.setScalar(
+            now < dashUntil ? TUTORIAL_PLAYER_SCALE * 1.08 : TUTORIAL_PLAYER_SCALE
+          );
+          teammate.group.scale.setScalar(TUTORIAL_PLAYER_SCALE * 0.96);
+        }
         dummy.group.scale.setScalar(TUTORIAL_DUMMY_SCALE);
         ball.group.scale.setScalar(now < shootPulseUntil ? 1.25 : 1);
 
         if (dummy.hasBall) {
-  const target = dummy.group.position
-    .clone()
-    .add(dummy.facing.clone().multiplyScalar(0.68));
+          const target = dummy.group.position
+            .clone()
+            .add(dummy.facing.clone().multiplyScalar(0.68));
 
-  target.y = BALL_RADIUS;
+          target.y = BALL_RADIUS;
 
-  tutorialBallBody.pos.copy(target);
-  tutorialBallBody.vel.copy(dummy.velocity);
+          tutorialBallBody.pos.copy(target);
+          tutorialBallBody.vel.copy(dummy.velocity);
 
-  ball.group.position.copy(tutorialBallBody.pos);
-}
+          ball.group.position.copy(tutorialBallBody.pos);
+        }
 
         updateCamera();
         renderer.render(scene, camera);

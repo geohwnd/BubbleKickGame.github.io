@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <link rel="icon" href="img/favicon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Kick — Keep Away</title>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@600;700;800;900&display=swap");
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #1730e8;
+        color: #ffffff;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+
+      #game-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .top-left {
+        position: fixed;
+        top: max(16px, env(safe-area-inset-top));
+        left: max(16px, env(safe-area-inset-left));
+        z-index: 30;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .pill-btn,
+      .top-title {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 18px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        text-decoration: none;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.8px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22);
+      }
+
+      .pill-btn {
+        cursor: pointer;
+      }
+
+      .hud-score {
+        position: fixed;
+        top: max(12px, env(safe-area-inset-top));
+        left: 50%;
+        z-index: 28;
+        transform: translateX(-50%);
+        width: 126px;
+        min-height: 92px;
+        display: grid;
+        place-items: center;
+        padding: 12px 16px;
+        border-radius: 24px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+      }
+
+      .hud-label {
+        color: #b9ff22;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 2.8px;
+        text-transform: uppercase;
+      }
+
+      #pass-count {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 62px;
+        line-height: 0.86;
+        text-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      }
+
+      .hud-best {
+        position: fixed;
+        top: max(16px, env(safe-area-inset-top));
+        right: max(18px, env(safe-area-inset-right));
+        z-index: 28;
+        width: 84px;
+        min-height: 72px;
+        display: grid;
+        place-items: center;
+        border-radius: 22px;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+      }
+
+      #best-count {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 900;
+      }
+
+      .controls-hint {
+        position: fixed;
+        left: 50%;
+        bottom: max(22px, env(safe-area-inset-bottom));
+        z-index: 29;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        min-width: min(620px, calc(100vw - 32px));
+        padding: 12px 22px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.82);
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .hint-key {
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.11);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #b9ff22;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+      }
+
+      .mobile-actions {
+        position: fixed;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: max(26px, env(safe-area-inset-bottom));
+        z-index: 35;
+        display: none;
+        gap: 12px;
+      }
+
+      .mobile-action-btn {
+        width: 74px;
+        height: 74px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 22px;
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        font-size: 24px;
+        font-weight: 900;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+      }
+
+      .mobile-action-btn span {
+        font-size: 9px;
+        line-height: 1;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
+      .intro-screen,
+      .game-over-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: radial-gradient(
+          circle at center,
+          rgba(24, 64, 255, 0.28),
+          rgba(5, 15, 70, 0.48)
+        );
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .countdown-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .countdown-number {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(112px, 22vw, 220px);
+        line-height: 0.82;
+        color: #ffffff;
+        letter-spacing: 3px;
+        text-shadow: 0 12px 36px rgba(0, 0, 0, 0.36),
+          0 0 42px rgba(185, 255, 34, 0.35);
+        transform: scale(1);
+        animation: countdownPop 0.38s ease;
+      }
+
+      .countdown-label {
+        margin-top: 12px;
+        padding: 8px 18px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff, #b9ff22);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+      }
+
+      @keyframes countdownPop {
+        from {
+          opacity: 0;
+          transform: scale(0.72);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .intro-card,
+      .game-over-card {
+        width: min(560px, calc(100vw - 36px));
+        padding: 34px 30px 30px;
+        border-radius: 34px;
+        text-align: center;
+        background: linear-gradient(
+          145deg,
+          rgba(4, 18, 95, 0.96),
+          rgba(8, 38, 165, 0.88) 56%,
+          rgba(8, 120, 92, 0.64)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36),
+          0 0 44px rgba(93, 240, 214, 0.16);
+      }
+
+      .intro-tag,
+      .game-over-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: min(430px, 100%);
+        min-height: 30px;
+        margin-bottom: 18px;
+        padding: 7px 16px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 3.2px;
+        text-transform: uppercase;
+      }
+
+      .logo {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(82px, 12vw, 128px);
+        line-height: 0.82;
+        color: #ffffff;
+        letter-spacing: 1px;
+        text-shadow: 0 7px 28px rgba(0, 0, 0, 0.4),
+          5px 5px 0 rgba(0, 0, 40, 0.22);
+      }
+
+      .logo span,
+      .final-score {
+        color: #b9ff22;
+        text-shadow: 0 0 28px rgba(185, 255, 34, 0.5),
+          0 8px 0 rgba(0, 0, 0, 0.22);
+      }
+
+      .intro-description,
+      .game-over-message {
+        margin: 26px auto 26px;
+        max-width: 430px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.55;
+      }
+
+      .primary-btn,
+      .secondary-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 56px;
+        width: min(320px, 100%);
+        border-radius: 999px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 28px;
+        letter-spacing: 2px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .primary-btn {
+        color: #1332cc;
+        background: linear-gradient(
+          135deg,
+          #f7fbff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        border: none;
+        box-shadow: 0 12px 30px rgba(185, 255, 34, 0.22);
+      }
+
+      .secondary-btn {
+        margin-top: 12px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
+      .intro-steps {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .intro-step {
+        width: 68px;
+        min-height: 68px;
+        display: grid;
+        place-items: center;
+        padding: 8px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .intro-step div:last-child {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 1.3px;
+        text-transform: uppercase;
+      }
+
+      .final-label {
+        margin-top: 22px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+
+      .final-score {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(92px, 15vw, 144px);
+        line-height: 0.9;
+      }
+
+      .small-toast {
+        position: fixed;
+        left: 50%;
+        top: 142px;
+        z-index: 36;
+        transform: translateX(-50%) scale(0.92);
+        padding: 12px 22px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff, #b9ff22);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .small-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+
+      @media (max-width: 760px), (pointer: coarse) {
+        .controls-hint {
+          display: none;
+        }
+
+        .mobile-actions {
+          display: flex;
+        }
+
+        .hud-score {
+          width: 108px;
+          min-height: 78px;
+        }
+
+        #pass-count {
+          font-size: 52px;
+        }
+
+        .top-title {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="game-canvas"></canvas>
+
+    <div class="top-left">
+      <div class="top-title">Keep Away Triangles</div>
+      <a class="pill-btn" href="index.html">← Menu</a>
+      <button id="restart-top-btn" class="pill-btn" type="button">
+        ↻ Restart
+      </button>
+    </div>
+
+    <div class="hud-score">
+      <div class="hud-label">Passes</div>
+      <div id="pass-count">0</div>
+    </div>
+
+    <div class="hud-best">
+      <div>
+        <div class="hud-label">Best</div>
+        <div id="best-count">0</div>
+      </div>
+    </div>
+
+    <div class="controls-hint">
+      <span class="hint-key">WASD</span>
+      <span class="hint-key">Move</span>
+      <span class="hint-key">Q Pass</span>
+      <span class="hint-key">C Switch</span>
+    </div>
+
+    <div class="mobile-actions">
+      <button id="mobile-switch-btn" class="mobile-action-btn" type="button">
+        🔁<span>Switch</span>
+      </button>
+      <button id="mobile-pass-btn" class="mobile-action-btn" type="button">
+        🤝<span>Pass</span>
+      </button>
+    </div>
+
+    <div id="toast" class="small-toast">+1 Pass</div>
+
+    <div id="countdown-screen" class="countdown-screen hidden">
+      <div id="countdown-number" class="countdown-number">3</div>
+      <div id="countdown-label" class="countdown-label">Get Ready</div>
+    </div>
+
+    <div id="intro-screen" class="intro-screen">
+      <div class="intro-card">
+        <div class="intro-tag">THE WORLD MATCH · KEEP AWAY</div>
+
+        <div class="logo">
+          KEEP AWAY<br />
+          <span>TRIANGLES</span>
+        </div>
+
+        <div class="intro-description">
+          Keep possession by passing the ball between your teammates in a
+          triangle. The defender will try to steal or intercept the ball. Get as
+          many consecutive passes as possible.
+        </div>
+
+        <button id="play-btn" class="primary-btn" type="button">Play!</button>
+
+        <div class="intro-steps">
+          <div class="intro-step">
+            <div>🕹️</div>
+            <div>Move</div>
+          </div>
+          <div class="intro-step">
+            <div>🤝</div>
+            <div>Pass</div>
+          </div>
+          <div class="intro-step">
+            <div>🛡️</div>
+            <div>Avoid</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-over-screen" class="game-over-screen hidden">
+      <div class="game-over-card">
+        <div class="game-over-tag">END OF ROUND · KEEP AWAY</div>
+
+        <div class="logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
+
+        <div class="final-label">Your Passes</div>
+        <div id="final-score" class="final-score">0</div>
+
+        <div id="final-message" class="game-over-message">
+          The defender recovered the ball. Try again and beat your record.
+        </div>
+
+        <button id="play-again-btn" class="primary-btn" type="button">
+          Rematch
+        </button>
+        <a class="secondary-btn" href="index.html">Main Menu</a>
+      </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+          "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+      import {
+        makeBobble,
+        updatePlayerMeshFacing,
+        updatePlayerAnimationVariant,
+        applyPlayerVisualScale,
+      } from "./js/modelsRush.js";
+
+      /* LEGACY FALLBACK REMOVED */
+      function __keepAwayUnusedFallbackMakeBobble(colors = {}) {
+        const group = new THREE.Group();
+        group.userData.baseScale = 1;
+        group.userData.animationVariant = "idle";
+        group.userData.strikeUntil = 0;
+
+        const shirtColor = colors.shirt ?? 0x1f7a3a;
+        const shortsColor = colors.shorts ?? 0xffffff;
+        const socksColor = colors.socks ?? 0xffffff;
+        const skinColor = colors.skin ?? 0xd8a15f;
+        const shoesColor = colors.shoes ?? 0x111111;
+
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: shirtColor,
+          roughness: 0.72,
+        });
+        const shortsMat = new THREE.MeshStandardMaterial({
+          color: shortsColor,
+          roughness: 0.74,
+        });
+        const socksMat = new THREE.MeshStandardMaterial({
+          color: socksColor,
+          roughness: 0.78,
+        });
+        const skinMat = new THREE.MeshStandardMaterial({
+          color: skinColor,
+          roughness: 0.68,
+        });
+        const shoesMat = new THREE.MeshStandardMaterial({
+          color: shoesColor,
+          roughness: 0.8,
+        });
+
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.22, 0.38, 8, 16),
+          bodyMat
+        );
+        body.position.y = 0.84;
+        body.castShadow = true;
+        group.add(body);
+
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.18, 24, 24),
+          skinMat
+        );
+        head.position.y = 1.3;
+        head.castShadow = true;
+        group.add(head);
+
+        const hips = new THREE.Mesh(
+          new THREE.BoxGeometry(0.42, 0.18, 0.22),
+          shortsMat
+        );
+        hips.position.y = 0.52;
+        hips.castShadow = true;
+        group.add(hips);
+
+        const leftArm = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.055, 0.38, 6, 10),
+          skinMat
+        );
+        leftArm.position.set(-0.29, 0.84, 0.02);
+        leftArm.rotation.z = 0.34;
+        leftArm.castShadow = true;
+        group.add(leftArm);
+
+        const rightArm = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.055, 0.38, 6, 10),
+          skinMat
+        );
+        rightArm.position.set(0.29, 0.84, 0.02);
+        rightArm.rotation.z = -0.34;
+        rightArm.castShadow = true;
+        group.add(rightArm);
+
+        const leftLeg = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.065, 0.44, 6, 10),
+          socksMat
+        );
+        leftLeg.position.set(-0.12, 0.25, 0);
+        leftLeg.castShadow = true;
+        group.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.065, 0.44, 6, 10),
+          socksMat
+        );
+        rightLeg.position.set(0.12, 0.25, 0);
+        rightLeg.castShadow = true;
+        group.add(rightLeg);
+
+        const leftShoe = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.06, 0.24),
+          shoesMat
+        );
+        leftShoe.position.set(-0.12, 0.04, 0.05);
+        leftShoe.castShadow = true;
+        group.add(leftShoe);
+
+        const rightShoe = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.06, 0.24),
+          shoesMat
+        );
+        rightShoe.position.set(0.12, 0.04, 0.05);
+        rightShoe.castShadow = true;
+        group.add(rightShoe);
+
+        group.userData.parts = {
+          body,
+          leftArm,
+          rightArm,
+          leftLeg,
+          rightLeg,
+          leftShoe,
+          rightShoe,
+        };
+
+        group.playStrikeAnimation = () => {
+          group.userData.strikeUntil = performance.now() + 220;
+        };
+
+        return group;
+      }
+
+      function __keepAwayUnusedFallbackApplyPlayerVisualScale(group, scale) {
+        group.userData.baseScale = scale;
+        group.scale.setScalar(scale);
+      }
+
+      function __keepAwayUnusedFallbackUpdatePlayerMeshFacing(group, actor) {
+        const facing = actor?.facing ?? new THREE.Vector3(0, 0, 1);
+        const flatFacing = facing.clone().setY(0);
+        if (flatFacing.lengthSq() < 0.001) return;
+        flatFacing.normalize();
+        group.rotation.y = Math.atan2(flatFacing.x, flatFacing.z);
+      }
+
+      function __keepAwayUnusedFallbackUpdatePlayerAnimationVariant(
+        group,
+        actor,
+        variant = "idle"
+      ) {
+        const parts = group.userData.parts;
+        if (!parts) return;
+
+        const speed = actor?.speed ?? actor?.vel?.length?.() ?? 0;
+        const now = performance.now();
+        const isStriking = now < (group.userData.strikeUntil ?? 0);
+        const t = now * 0.012;
+        const runAmount = variant === "run" || speed > 0.08 ? 1 : 0;
+        const swing = Math.sin(t) * 0.34 * runAmount;
+
+        parts.leftArm.rotation.x = -swing;
+        parts.rightArm.rotation.x = swing;
+        parts.leftLeg.rotation.x = swing;
+        parts.rightLeg.rotation.x = -swing;
+
+        if (isStriking) {
+          parts.rightLeg.rotation.x = -0.95;
+          parts.rightShoe.position.z = 0.18;
+        } else {
+          parts.rightShoe.position.z = 0.05;
+        }
+      }
+
+      const canvas = document.getElementById("game-canvas");
+      const introScreen = document.getElementById("intro-screen");
+      const gameOverScreen = document.getElementById("game-over-screen");
+      const passCountEl = document.getElementById("pass-count");
+      const bestCountEl = document.getElementById("best-count");
+      const finalScoreEl = document.getElementById("final-score");
+      const finalMessageEl = document.getElementById("final-message");
+      const playBtn = document.getElementById("play-btn");
+      const playAgainBtn = document.getElementById("play-again-btn");
+      const restartTopBtn = document.getElementById("restart-top-btn");
+      const mobilePassBtn = document.getElementById("mobile-pass-btn");
+      const mobileSwitchBtn = document.getElementById("mobile-switch-btn");
+      const toastEl = document.getElementById("toast");
+      const countdownScreen = document.getElementById("countdown-screen");
+      const countdownNumber = document.getElementById("countdown-number");
+      const countdownLabel = document.getElementById("countdown-label");
+
+      const FIELD_MODEL_PATH = "models/CanchaIndividual.glb";
+      const BALL_MODEL_PATH = "models/Ball_Model.glb";
+      const FIELD_MODEL_SCALE = 4.25;
+      const FIELD_LIMIT_X = 5.3;
+      const FIELD_LIMIT_Z = 3.45;
+      const BALL_R = 0.18;
+      const PLAYER_SCALE = 0.2;
+      const DEFENDER_SCALE = 0.18;
+      const PLAYER_SPEED = 4.6;
+      const PASS_SPEED = 10.8;
+      const PICKUP_RADIUS = 0.64;
+      const STEAL_RADIUS = 0.72;
+      const INTERCEPT_RADIUS = 0.46;
+      const LOOSE_BALL_PICKUP_RADIUS = 0.76;
+      const DEFENDER_LOOSE_PICKUP_RADIUS = 0.7;
+      const DEFENDER_DASH_SPEED = 7.4;
+      const DEFENDER_DASH_DURATION = 240;
+      const DEFENDER_DASH_COOLDOWN_BASE = 1250;
+
+      const homePositions = [
+        new THREE.Vector3(-2.4, 0, 1.35),
+        new THREE.Vector3(2.2, 0, 1.35),
+        new THREE.Vector3(0, 0, -1.75),
+      ];
+
+      const bestStorageKey = "bubbleKickKeepAwayBest";
+      let bestScore = Number(localStorage.getItem(bestStorageKey) || 0);
+
+      let scene;
+      let camera;
+      let renderer;
+      let clock;
+      let fieldModel;
+      let ball;
+      let ballModel;
+      let ballShadow;
+      let passTargetRing;
+      let passTargetMat;
+
+      let running = false;
+      let selectedIndex = 0;
+      let ballCarrierIndex = 0;
+      let pendingReceiverIndex = null;
+      let passCount = 0;
+      let toastTimeout = null;
+      let passBlockedUntil = 0;
+      let countdownTimeouts = [];
+
+      const keys = new Set();
+      const pointer = {
+        active: false,
+        target: new THREE.Vector3(),
+      };
+
+      const raycaster = new THREE.Raycaster();
+      const pointerNdc = new THREE.Vector2();
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const players = [];
+
+      function hexToNumber(hex, fallback) {
+        if (!hex || typeof hex !== "string") return fallback;
+
+        try {
+          return parseInt(hex.replace("#", ""), 16);
+        } catch {
+          return fallback;
+        }
+      }
+
+      function readSelectedTeam(storageKey, fallback) {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) return fallback;
+
+          const team = JSON.parse(raw);
+
+          if (!team?.colors || !Array.isArray(team.colors)) {
+            return fallback;
+          }
+
+          return {
+            ...team,
+            color: team.color ?? team.colors[0],
+            colors: team.colors,
+            shirt: hexToNumber(team.colors[0], fallback.shirt),
+            shorts: hexToNumber(team.colors[1], fallback.shorts),
+            socks: hexToNumber(team.colors[2], fallback.socks),
+            skin: fallback.skin,
+            shoes: fallback.shoes,
+          };
+        } catch {
+          return fallback;
+        }
+      }
+
+      const playerColors = readSelectedTeam("bubbleKickP1Team", {
+        shirt: 0xf7d51f,
+        shorts: 0x16a06d,
+        socks: 0xffffff,
+        skin: 0xd8a15f,
+        shoes: 0x111111,
+      });
+
+      const defenderColors = readSelectedTeam("bubbleKickP2Team", {
+        shirt: 0x29a9ff,
+        shorts: 0xffffff,
+        socks: 0x111111,
+        skin: 0xd8a15f,
+        shoes: 0x111111,
+      });
+
+      function applyKitColorsToBobble(root, kitColors) {
+        if (!root || !kitColors) return;
+
+        root.traverse((child) => {
+          if (!child.isMesh || !child.material) return;
+
+          const materials = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
+
+          materials.forEach((material) => {
+            if (!material?.color) return;
+
+            const clonedMaterial = material.clone();
+            const materialName = `${child.name || ""} ${
+              material.name || ""
+            }`.toLowerCase();
+            const color = material.color;
+
+            const looksLikeShirtByName =
+              materialName.includes("shirt") ||
+              materialName.includes("jersey") ||
+              materialName.includes("body") ||
+              materialName.includes("torso") ||
+              materialName.includes("uniform") ||
+              materialName.includes("camisa") ||
+              materialName.includes("player_top");
+
+            const looksLikeShortsByName =
+              materialName.includes("short") ||
+              materialName.includes("pants") ||
+              materialName.includes("trouser") ||
+              materialName.includes("bottom") ||
+              materialName.includes("pantalon");
+
+            const looksLikeSocksByName =
+              materialName.includes("sock") ||
+              materialName.includes("leg") ||
+              materialName.includes("media");
+
+            const looksLikeShoesByName =
+              materialName.includes("shoe") ||
+              materialName.includes("boot") ||
+              materialName.includes("cleat") ||
+              materialName.includes("zapato");
+
+            const looksLikeSkinByName =
+              materialName.includes("skin") ||
+              materialName.includes("head") ||
+              materialName.includes("arm") ||
+              materialName.includes("hand") ||
+              materialName.includes("face");
+
+            const looksRedUniform =
+              color.r > 0.55 && color.g < 0.35 && color.b < 0.35;
+            const looksBlueUniform = color.b > 0.45 && color.r < 0.35;
+            const looksGreenUniform = color.g > 0.45 && color.r < 0.45;
+            const looksYellowUniform =
+              color.r > 0.55 && color.g > 0.45 && color.b < 0.25;
+
+            if (
+              looksLikeShirtByName ||
+              looksRedUniform ||
+              looksBlueUniform ||
+              looksGreenUniform ||
+              looksYellowUniform
+            ) {
+              clonedMaterial.color.setHex(kitColors.shirt);
+            } else if (looksLikeShortsByName) {
+              clonedMaterial.color.setHex(kitColors.shorts);
+            } else if (looksLikeSocksByName) {
+              clonedMaterial.color.setHex(kitColors.socks);
+            } else if (looksLikeShoesByName) {
+              clonedMaterial.color.setHex(kitColors.shoes);
+            } else if (looksLikeSkinByName) {
+              clonedMaterial.color.setHex(kitColors.skin);
+            }
+
+            if (Array.isArray(child.material)) {
+              const materialIndex = child.material.indexOf(material);
+              child.material[materialIndex] = clonedMaterial;
+            } else {
+              child.material = clonedMaterial;
+            }
+          });
+        });
+      }
+
+      function applyKitColorsWhenModelIsReady(root, kitColors) {
+        let attempts = 0;
+        const maxAttempts = 80;
+
+        const apply = () => {
+          applyKitColorsToBobble(root, kitColors);
+          attempts++;
+
+          if (attempts < maxAttempts) {
+            requestAnimationFrame(apply);
+          }
+        };
+
+        apply();
+      }
+
+      const defender = {
+        mesh: null,
+        shadow: null,
+        pos: new THREE.Vector3(0, 0, 0.05),
+        vel: new THREE.Vector3(),
+        facing: new THREE.Vector3(0, 0, 1),
+        speed: 2.75,
+        dashUntil: 0,
+        dashCooldownUntil: 0,
+      };
+
+      const ballState = {
+        pos: homePositions[0].clone().add(new THREE.Vector3(0.62, BALL_R, 0)),
+        vel: new THREE.Vector3(),
+      };
+
+      const keepAwayMusic = new Audio("audio/Brazil Football Samba.mp3");
+      keepAwayMusic.loop = true;
+      keepAwayMusic.preload = "auto";
+      keepAwayMusic.volume = 0.38;
+
+      const passSound = new Audio("audio/Combo Hit 05.wav");
+      passSound.preload = "auto";
+      passSound.volume = 0.7;
+
+      const stealSound = new Audio("audio/Goal_Sound.mp3");
+      stealSound.preload = "auto";
+      stealSound.volume = 0.55;
+
+      let musicStarted = false;
+
+      function startMusic() {
+        if (musicStarted) return;
+        musicStarted = true;
+        keepAwayMusic.play().catch(() => {
+          musicStarted = false;
+        });
+      }
+
+      function playPassSound() {
+        passSound.currentTime = 0;
+        passSound.play().catch(() => {});
+      }
+
+      function playStealSound() {
+        stealSound.currentTime = 0;
+        stealSound.play().catch(() => {});
+      }
+
+      function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1730e8);
+        scene.fog = new THREE.Fog(0x1730e8, 12, 27);
+
+        camera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          80
+        );
+        camera.position.set(0, 7.2, 7.2);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: false,
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.NoToneMapping;
+        renderer.toneMappingExposure = 0.98;
+        renderer.domElement.style.filter =
+          "saturate(1.12) contrast(1.16) brightness(0.88)";
+
+        clock = new THREE.Clock();
+
+        setupLights();
+        setupField();
+        setupPlayers();
+        setupBall();
+        setupInput();
+        updateHUD();
+        resize();
+        animate();
+      }
+
+      function setupLights() {
+        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+
+        const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+        sun.position.set(8, 18, 10);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        sun.shadow.camera.left = -14;
+        sun.shadow.camera.right = 14;
+        sun.shadow.camera.top = 14;
+        sun.shadow.camera.bottom = -14;
+        scene.add(sun);
+
+        const fill = new THREE.DirectionalLight(0xddeeff, 1.65);
+        fill.position.set(-5, 7, -5);
+        scene.add(fill);
+      }
+
+      function setupField() {
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath(
+          "https://www.gstatic.com/draco/versioned/decoders/1.5.6/"
+        );
+
+        const loader = new GLTFLoader();
+        loader.setDRACOLoader(dracoLoader);
+
+        loader.load(
+          FIELD_MODEL_PATH,
+          (gltf) => {
+            fieldModel = gltf.scene;
+            fieldModel.position.set(0, -0.02, 0);
+            fieldModel.scale.setScalar(FIELD_MODEL_SCALE);
+            fieldModel.traverse((child) => {
+              if (child.isMesh) {
+                child.receiveShadow = true;
+                child.castShadow = false;
+              }
+            });
+            scene.add(fieldModel);
+          },
+          undefined,
+          () => {
+            const fallback = new THREE.Mesh(
+              new THREE.PlaneGeometry(12, 8),
+              new THREE.MeshStandardMaterial({
+                color: 0x0f8e3a,
+                roughness: 0.95,
+              })
+            );
+            fallback.rotation.x = -Math.PI / 2;
+            fallback.receiveShadow = true;
+            scene.add(fallback);
+          }
+        );
+      }
+
+      function makeShadow() {
+        const shadow = new THREE.Mesh(
+          new THREE.CircleGeometry(0.5, 32),
+          new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.2,
+          })
+        );
+        shadow.rotation.x = -Math.PI / 2;
+        shadow.position.y = 0.01;
+        scene.add(shadow);
+        return shadow;
+      }
+
+      function setupPlayers() {
+        for (let i = 0; i < 3; i++) {
+          const mesh = makeBobble({ ...playerColors, team: playerColors });
+          applyKitColorsWhenModelIsReady(mesh, playerColors);
+          applyPlayerVisualScale(mesh, PLAYER_SCALE);
+          mesh.position.copy(homePositions[i]);
+          mesh.castShadow = true;
+          scene.add(mesh);
+
+          players.push({
+            mesh,
+            shadow: makeShadow(),
+            pos: homePositions[i].clone(),
+            vel: new THREE.Vector3(),
+            target: homePositions[i].clone(),
+            hasPointerTarget: false,
+            facing: new THREE.Vector3(i === 1 ? -1 : 1, 0, 0),
+            home: homePositions[i].clone(),
+            speed: PLAYER_SPEED,
+          });
+        }
+
+        defender.mesh = makeBobble({ ...defenderColors, team: defenderColors });
+        applyKitColorsWhenModelIsReady(defender.mesh, defenderColors);
+        applyPlayerVisualScale(defender.mesh, DEFENDER_SCALE);
+        defender.mesh.position.copy(defender.pos);
+        scene.add(defender.mesh);
+        defender.shadow = makeShadow();
+      }
+
+      function setupBall() {
+        ball = new THREE.Group();
+        scene.add(ball);
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath(
+          "https://www.gstatic.com/draco/versioned/decoders/1.5.6/"
+        );
+
+        const loader = new GLTFLoader();
+        loader.setDRACOLoader(dracoLoader);
+
+        loader.load(
+          BALL_MODEL_PATH,
+          (gltf) => {
+            ballModel = gltf.scene;
+            ballModel.scale.setScalar(0.22);
+
+            ballModel.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+
+            ball.add(ballModel);
+          },
+          undefined,
+          () => {
+            const texLoader = new THREE.TextureLoader();
+            const ballTexture = texLoader.load("img/football.png");
+            ballTexture.colorSpace = THREE.SRGBColorSpace;
+
+            const fallbackBall = new THREE.Mesh(
+              new THREE.SphereGeometry(BALL_R, 32, 32),
+              new THREE.MeshStandardMaterial({
+                map: ballTexture,
+                roughness: 0.45,
+                metalness: 0.02,
+              })
+            );
+
+            fallbackBall.castShadow = true;
+            ball.add(fallbackBall);
+          }
+        );
+
+        ballShadow = makeShadow();
+        ballShadow.scale.set(0.5, 0.5, 0.5);
+
+        passTargetMat = new THREE.MeshBasicMaterial({
+          color: 0xb9ff22,
+          transparent: true,
+          opacity: 0.0,
+          side: THREE.DoubleSide,
+        });
+
+        passTargetRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.28, 0.38, 36),
+          passTargetMat
+        );
+
+        passTargetRing.rotation.x = -Math.PI / 2;
+        passTargetRing.position.y = 0.025;
+        scene.add(passTargetRing);
+      }
+
+      function setupInput() {
+        window.addEventListener("keydown", (event) => {
+          const key = event.key.toLowerCase();
+          keys.add(key);
+
+          if (
+            [
+              "w",
+              "a",
+              "s",
+              "d",
+              "arrowup",
+              "arrowdown",
+              "arrowleft",
+              "arrowright",
+              "q",
+              "c",
+            ].includes(key)
+          ) {
+            event.preventDefault();
+          }
+
+          if (event.repeat) return;
+
+          if (key === "q") passBall();
+          if (key === "c") switchPlayer();
+        });
+
+        window.addEventListener("keyup", (event) => {
+          keys.delete(event.key.toLowerCase());
+        });
+
+        window.addEventListener("blur", () => keys.clear());
+        window.addEventListener("resize", resize);
+
+        canvas.addEventListener("pointerdown", (event) => {
+          pointer.active = true;
+          updatePointerTarget(event);
+        });
+
+        canvas.addEventListener("pointermove", (event) => {
+          if (!pointer.active) return;
+          updatePointerTarget(event);
+        });
+
+        window.addEventListener("pointerup", () => {
+          pointer.active = false;
+        });
+
+        mobilePassBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          passBall();
+        });
+
+        mobileSwitchBtn.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          switchPlayer();
+        });
+
+        playBtn.addEventListener("click", () => {
+          startMusic();
+          startGame();
+        });
+
+        playAgainBtn.addEventListener("click", () => {
+          startMusic();
+          startGame();
+        });
+
+        restartTopBtn.addEventListener("click", () => startGame());
+      }
+
+      function updatePointerTarget(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointerNdc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+
+        raycaster.setFromCamera(pointerNdc, camera);
+        const point = new THREE.Vector3();
+
+        if (raycaster.ray.intersectPlane(groundPlane, point)) {
+          const actor = players[selectedIndex];
+          actor.target.set(
+            THREE.MathUtils.clamp(point.x, -FIELD_LIMIT_X, FIELD_LIMIT_X),
+            0,
+            THREE.MathUtils.clamp(point.z, -FIELD_LIMIT_Z, FIELD_LIMIT_Z)
+          );
+          actor.hasPointerTarget = true;
+        }
+      }
+
+      function startGame() {
+        running = false;
+        clearCountdownTimers();
+        introScreen.classList.add("hidden");
+        gameOverScreen.classList.add("hidden");
+        selectedIndex = 0;
+        ballCarrierIndex = 0;
+        pendingReceiverIndex = null;
+        passCount = 0;
+        passBlockedUntil = 0;
+        defender.speed = 2.75;
+        defender.pos.set(0, 0, 0.05);
+        defender.vel.set(0, 0, 0);
+        defender.facing.set(0, 0, 1);
+        defender.dashUntil = 0;
+        defender.dashCooldownUntil = 0;
+
+        players.forEach((player, index) => {
+          player.pos.copy(player.home);
+          player.mesh.position.copy(player.pos);
+          player.vel.set(0, 0, 0);
+          player.target.copy(player.home);
+          player.hasPointerTarget = false;
+          player.facing.set(index === 1 ? -1 : 1, 0, 0);
+        });
+
+        ballState.pos
+          .copy(players[0].pos)
+          .add(new THREE.Vector3(0.62, BALL_R, 0));
+        ballState.vel.set(0, 0, 0);
+        updateHUD();
+        startCountdown();
+      }
+
+      function clearCountdownTimers() {
+        countdownTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+        countdownTimeouts = [];
+        countdownScreen.classList.add("hidden");
+      }
+
+      function setCountdownValue(value, label = "Get Ready") {
+        countdownNumber.textContent = value;
+        countdownLabel.textContent = label;
+        countdownNumber.style.animation = "none";
+        countdownNumber.offsetHeight;
+        countdownNumber.style.animation = "countdownPop 0.38s ease";
+      }
+
+      function startCountdown() {
+        countdownScreen.classList.remove("hidden");
+        setCountdownValue("3", "Get Ready");
+
+        countdownTimeouts.push(
+          setTimeout(() => setCountdownValue("2", "Get Set"), 850),
+          setTimeout(() => setCountdownValue("1", "Ready"), 1700),
+          setTimeout(() => setCountdownValue("GO!", "Keep Possession"), 2550),
+          setTimeout(() => {
+            countdownScreen.classList.add("hidden");
+            running = true;
+          }, 3300)
+        );
+      }
+
+      function getMoveVector() {
+        const move = new THREE.Vector3();
+
+        if (keys.has("w") || keys.has("arrowup")) move.z -= 1;
+        if (keys.has("s") || keys.has("arrowdown")) move.z += 1;
+        if (keys.has("a") || keys.has("arrowleft")) move.x -= 1;
+        if (keys.has("d") || keys.has("arrowright")) move.x += 1;
+
+        if (move.lengthSq() > 0.001) move.normalize();
+        return move;
+      }
+
+      function switchPlayer() {
+        if (!running) return;
+        const safeSelectedIndex = Number.isInteger(selectedIndex)
+          ? selectedIndex
+          : 0;
+        selectedIndex = (safeSelectedIndex + 1) % players.length;
+        players.forEach((player) => {
+          player.hasPointerTarget = false;
+          player.vel.multiplyScalar(0.25);
+        });
+        showToast(`Player ${selectedIndex + 1}`);
+      }
+
+      function passBall() {
+        if (!running) return;
+        if (ballCarrierIndex === null) {
+          const loosePickup = findClosestPlayerToBall(LOOSE_BALL_PICKUP_RADIUS);
+
+          if (loosePickup !== null) {
+            ballCarrierIndex = loosePickup;
+            selectedIndex = loosePickup;
+            ballState.vel.set(0, 0, 0);
+            showToast(`Player ${loosePickup + 1} Recovered`);
+          } else {
+            showToast("Recover the Ball");
+          }
+
+          return;
+        }
+
+        if (ballCarrierIndex !== selectedIndex) {
+          selectedIndex = ballCarrierIndex;
+          showToast("Control the Ball Carrier");
+          return;
+        }
+
+        if (performance.now() < passBlockedUntil) return;
+
+        const carrier = players[ballCarrierIndex];
+        const receiverIndex = choosePassReceiver(carrier);
+        if (receiverIndex === ballCarrierIndex) return;
+
+        const receiver = players[receiverIndex];
+        const direction = receiver.pos.clone().sub(carrier.pos);
+        direction.y = 0;
+
+        if (direction.lengthSq() < 0.001) return;
+
+        direction.normalize();
+        carrier.facing.copy(direction);
+
+        if (typeof carrier.mesh.playStrikeAnimation === "function") {
+          carrier.mesh.playStrikeAnimation("idle");
+        }
+
+        pendingReceiverIndex = receiverIndex;
+        ballCarrierIndex = null;
+        passBlockedUntil = performance.now() + 260;
+
+        ballState.pos
+          .copy(carrier.pos)
+          .add(direction.clone().multiplyScalar(0.64));
+        ballState.pos.y = BALL_R;
+        ballState.vel.copy(direction).multiplyScalar(PASS_SPEED);
+        ballState.vel.y = 0.18;
+      }
+
+      function choosePassReceiver(carrier) {
+        const move = getMoveVector();
+        const baseDirection =
+          move.lengthSq() > 0.001
+            ? move
+            : carrier.facing.clone().setY(0).normalize();
+
+        let bestIndex = ballCarrierIndex;
+        let bestScore = -Infinity;
+
+        players.forEach((candidate, index) => {
+          if (index === ballCarrierIndex) return;
+
+          const toCandidate = candidate.pos.clone().sub(carrier.pos).setY(0);
+          const distance = Math.max(toCandidate.length(), 0.001);
+          const direction = toCandidate.clone().normalize();
+          const directionScore = direction.dot(baseDirection);
+          const defenderPenalty =
+            distanceToSegment(defender.pos, carrier.pos, candidate.pos) < 0.9
+              ? 0.7
+              : 0;
+          const score =
+            directionScore * 2.4 - distance * 0.08 - defenderPenalty;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestIndex = index;
+          }
+        });
+
+        return bestIndex;
+      }
+
+      function updatePlayers(dt) {
+        if (!Number.isInteger(selectedIndex) || !players[selectedIndex]) {
+          selectedIndex = ballCarrierIndex !== null ? ballCarrierIndex : 0;
+        }
+        const selected = players[selectedIndex];
+        const move = getMoveVector();
+
+        if (move.lengthSq() > 0.001) {
+          selected.hasPointerTarget = false;
+          selected.vel.lerp(
+            move.multiplyScalar(selected.speed),
+            1 - Math.pow(0.002, dt)
+          );
+        } else if (selected.hasPointerTarget) {
+          const toTarget = selected.target.clone().sub(selected.pos);
+          toTarget.y = 0;
+
+          if (toTarget.length() > 0.08) {
+            selected.vel.lerp(
+              toTarget.normalize().multiplyScalar(selected.speed),
+              1 - Math.pow(0.002, dt)
+            );
+          } else {
+            selected.vel.multiplyScalar(Math.pow(0.002, dt));
+          }
+        } else {
+          selected.vel.multiplyScalar(Math.pow(0.001, dt));
+        }
+
+        players.forEach((player, index) => {
+          if (index !== selectedIndex) updateSupportPlayer(player, index, dt);
+
+          player.pos.addScaledVector(player.vel, dt);
+          player.pos.x = THREE.MathUtils.clamp(
+            player.pos.x,
+            -FIELD_LIMIT_X,
+            FIELD_LIMIT_X
+          );
+          player.pos.z = THREE.MathUtils.clamp(
+            player.pos.z,
+            -FIELD_LIMIT_Z,
+            FIELD_LIMIT_Z
+          );
+
+          if (player.vel.lengthSq() > 0.03) {
+            player.facing.copy(player.vel.clone().setY(0).normalize());
+          }
+
+          player.mesh.position.copy(player.pos);
+          updatePlayerMeshFacing(player.mesh, player);
+          updatePlayerAnimationVariant(
+            player.mesh,
+            { speed: player.vel.length(), vel: player.vel },
+            player.vel.lengthSq() > 0.08 ? "run" : "idle"
+          );
+          applyKitColorsToBobble(player.mesh, playerColors);
+        });
+      }
+
+      function updateSupportPlayer(player, index, dt) {
+        let target = player.home.clone();
+
+        if (ballCarrierIndex !== null && index !== ballCarrierIndex) {
+          const carrier = players[ballCarrierIndex];
+          const awayFromDefender = player.home
+            .clone()
+            .sub(defender.pos)
+            .setY(0);
+
+          if (awayFromDefender.lengthSq() > 0.001) {
+            target.add(awayFromDefender.normalize().multiplyScalar(0.35));
+          }
+
+          const awayFromCarrier = player.home.clone().sub(carrier.pos).setY(0);
+          if (awayFromCarrier.lengthSq() > 0.001) {
+            target.add(awayFromCarrier.normalize().multiplyScalar(0.2));
+          }
+        }
+
+        target.x = THREE.MathUtils.clamp(
+          target.x,
+          -FIELD_LIMIT_X,
+          FIELD_LIMIT_X
+        );
+        target.z = THREE.MathUtils.clamp(
+          target.z,
+          -FIELD_LIMIT_Z,
+          FIELD_LIMIT_Z
+        );
+
+        const toTarget = target.sub(player.pos);
+        toTarget.y = 0;
+
+        if (toTarget.lengthSq() > 0.02) {
+          player.vel.lerp(
+            toTarget.normalize().multiplyScalar(2.15),
+            1 - Math.pow(0.01, dt)
+          );
+        } else {
+          player.vel.multiplyScalar(Math.pow(0.02, dt));
+        }
+      }
+
+      function updateDefender(dt) {
+        if (!running) return;
+
+        const difficultyBoost = Math.min(
+          1.45,
+          1 + Math.floor(passCount / 8) * 0.08
+        );
+        defender.speed = 2.75 * difficultyBoost;
+        const now = performance.now();
+
+        let target;
+        if (ballCarrierIndex !== null) {
+          target = players[ballCarrierIndex].pos.clone();
+        } else if (pendingReceiverIndex !== null) {
+          const receiver = players[pendingReceiverIndex];
+          const interceptPoint = closestPointOnSegment(
+            defender.pos,
+            ballState.pos,
+            receiver.pos
+          );
+          const chaseBallBias =
+            defender.pos.distanceTo(ballState.pos) < 1.7 ? 0.72 : 0.35;
+          target = interceptPoint.lerp(ballState.pos, chaseBallBias);
+        } else {
+          target = ballState.pos.clone();
+        }
+
+        const toTarget = target.sub(defender.pos);
+        toTarget.y = 0;
+        const distanceToTarget = toTarget.length();
+
+        if (
+          distanceToTarget > 0.85 &&
+          distanceToTarget < 2.7 &&
+          now > defender.dashCooldownUntil
+        ) {
+          defender.dashUntil = now + DEFENDER_DASH_DURATION;
+          defender.dashCooldownUntil =
+            now + DEFENDER_DASH_COOLDOWN_BASE - Math.min(passCount, 18) * 22;
+        }
+
+        if (toTarget.lengthSq() > 0.001) {
+          const desiredSpeed =
+            now < defender.dashUntil
+              ? DEFENDER_DASH_SPEED * difficultyBoost
+              : defender.speed;
+          defender.vel.lerp(
+            toTarget.normalize().multiplyScalar(desiredSpeed),
+            now < defender.dashUntil
+              ? 1 - Math.pow(0.0002, dt)
+              : 1 - Math.pow(0.01, dt)
+          );
+        } else {
+          defender.vel.multiplyScalar(Math.pow(0.02, dt));
+        }
+
+        defender.pos.addScaledVector(defender.vel, dt);
+        defender.pos.x = THREE.MathUtils.clamp(
+          defender.pos.x,
+          -FIELD_LIMIT_X,
+          FIELD_LIMIT_X
+        );
+        defender.pos.z = THREE.MathUtils.clamp(
+          defender.pos.z,
+          -FIELD_LIMIT_Z,
+          FIELD_LIMIT_Z
+        );
+
+        if (defender.vel.lengthSq() > 0.03) {
+          defender.facing.copy(defender.vel.clone().setY(0).normalize());
+        }
+
+        defender.mesh.position.copy(defender.pos);
+        updatePlayerMeshFacing(defender.mesh, defender);
+        updatePlayerAnimationVariant(
+          defender.mesh,
+          { speed: defender.vel.length(), vel: defender.vel },
+          defender.vel.lengthSq() > 0.08 ? "run" : "idle"
+        );
+        applyKitColorsToBobble(defender.mesh, defenderColors);
+      }
+
+      function updateBall(dt) {
+        if (ballCarrierIndex !== null) {
+          const carrier = players[ballCarrierIndex];
+          const right = new THREE.Vector3(
+            carrier.facing.z,
+            0,
+            -carrier.facing.x
+          ).normalize();
+          const footSwitch =
+            carrier.vel.lengthSq() > 0.05
+              ? Math.sin(performance.now() * 0.014) * 0.055
+              : 0;
+          const target = carrier.pos
+            .clone()
+            .add(carrier.facing.clone().multiplyScalar(0.62))
+            .add(right.multiplyScalar(footSwitch));
+
+          target.y = BALL_R;
+          target.x = THREE.MathUtils.clamp(
+            target.x,
+            -FIELD_LIMIT_X + BALL_R,
+            FIELD_LIMIT_X - BALL_R
+          );
+          target.z = THREE.MathUtils.clamp(
+            target.z,
+            -FIELD_LIMIT_Z + BALL_R,
+            FIELD_LIMIT_Z - BALL_R
+          );
+
+          ballState.pos.copy(target);
+          ballState.vel.copy(carrier.vel);
+          return;
+        }
+
+        ballState.vel.y -= 10.8 * dt;
+        ballState.pos.addScaledVector(ballState.vel, dt);
+        ballState.vel.multiplyScalar(Math.pow(0.55, dt));
+
+        if (ballState.pos.y <= BALL_R) {
+          ballState.pos.y = BALL_R;
+          ballState.vel.y = 0;
+        }
+
+        ballState.pos.x = THREE.MathUtils.clamp(
+          ballState.pos.x,
+          -FIELD_LIMIT_X + BALL_R,
+          FIELD_LIMIT_X - BALL_R
+        );
+        ballState.pos.z = THREE.MathUtils.clamp(
+          ballState.pos.z,
+          -FIELD_LIMIT_Z + BALL_R,
+          FIELD_LIMIT_Z - BALL_R
+        );
+
+        if (pendingReceiverIndex !== null) {
+          const receiver = players[pendingReceiverIndex];
+          const distanceToReceiver = receiver.pos.distanceTo(ballState.pos);
+          const distanceToDefender = defender.pos.distanceTo(ballState.pos);
+
+          if (distanceToDefender < INTERCEPT_RADIUS) {
+            defenderRecoverBall();
+            return;
+          }
+
+          if (distanceToReceiver < PICKUP_RADIUS) {
+            ballCarrierIndex = pendingReceiverIndex;
+            selectedIndex = ballCarrierIndex;
+            pendingReceiverIndex = null;
+            passCount++;
+            playPassSound();
+            showToast("+1 Pass");
+            updateHUD();
+            return;
+          }
+        }
+
+        if (pendingReceiverIndex === null) {
+          if (
+            defender.pos.distanceTo(ballState.pos) <
+            DEFENDER_LOOSE_PICKUP_RADIUS
+          ) {
+            defenderRecoverBall();
+            return;
+          }
+
+          const loosePickup = findClosestPlayerToBall(LOOSE_BALL_PICKUP_RADIUS);
+
+          if (loosePickup !== null) {
+            ballCarrierIndex = loosePickup;
+            selectedIndex = loosePickup;
+            ballState.vel.set(0, 0, 0);
+            showToast(`Player ${loosePickup + 1} Recovered`);
+          }
+        }
+      }
+
+      function findClosestPlayerToBall(maxDistance) {
+        let closestIndex = null;
+        let closestDistance = maxDistance;
+
+        players.forEach((player, index) => {
+          const distance = player.pos.distanceTo(ballState.pos);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+
+        return closestIndex;
+      }
+
+      function checkSteal() {
+        if (!running) return;
+
+        if (ballCarrierIndex !== null) {
+          const carrier = players[ballCarrierIndex];
+
+          if (defender.pos.distanceTo(carrier.pos) < STEAL_RADIUS) {
+            defenderRecoverBall();
+          }
+          return;
+        }
+
+        if (
+          defender.pos.distanceTo(ballState.pos) < DEFENDER_LOOSE_PICKUP_RADIUS
+        ) {
+          defenderRecoverBall();
+        }
+      }
+
+      function defenderRecoverBall() {
+        if (!running) return;
+
+        ballCarrierIndex = null;
+        pendingReceiverIndex = null;
+        ballState.vel.set(0, 0, 0);
+        ballState.pos
+          .copy(defender.pos)
+          .add(defender.facing.clone().multiplyScalar(0.62));
+        ballState.pos.y = BALL_R;
+        showToast("AI Recovered");
+        endGame();
+      }
+
+      function endGame() {
+        if (!running) return;
+        clearCountdownTimers();
+        running = false;
+        playStealSound();
+
+        if (passCount > bestScore) {
+          bestScore = passCount;
+          localStorage.setItem(bestStorageKey, String(bestScore));
+          finalMessageEl.textContent = "New Record! That rondo was incredible.";
+        } else {
+          finalMessageEl.textContent =
+            "The defender recovered the ball. Try again and beat your record.";
+        }
+
+        finalScoreEl.textContent = passCount;
+        updateHUD();
+        gameOverScreen.classList.remove("hidden");
+      }
+
+      function updateHUD() {
+        passCountEl.textContent = passCount;
+        bestCountEl.textContent = bestScore;
+      }
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toastEl.classList.remove("show"), 650);
+      }
+
+      function syncVisuals(dt) {
+        players.forEach((player, index) => {
+          player.shadow.position.set(player.pos.x, 0.014, player.pos.z);
+          player.shadow.scale.setScalar(index === selectedIndex ? 1.25 : 1);
+          player.mesh.scale.setScalar(
+            index === selectedIndex ? PLAYER_SCALE * 1.08 : PLAYER_SCALE
+          );
+        });
+
+        defender.shadow.position.set(defender.pos.x, 0.014, defender.pos.z);
+        defender.mesh.scale.setScalar(
+          performance.now() < defender.dashUntil
+            ? DEFENDER_SCALE * 1.12
+            : DEFENDER_SCALE
+        );
+
+        ball.position.copy(ballState.pos);
+        ballShadow.position.set(ballState.pos.x, 0.012, ballState.pos.z);
+        const shadowScale = THREE.MathUtils.clamp(
+          1.15 - ballState.pos.y * 0.16,
+          0.42,
+          1.05
+        );
+        ballShadow.scale.setScalar(shadowScale);
+
+        if (ballModel && ballState.vel.lengthSq() > 0.08) {
+          const rollAxis = new THREE.Vector3(
+            ballState.vel.z,
+            0,
+            -ballState.vel.x
+          ).normalize();
+          ballModel.rotateOnWorldAxis(
+            rollAxis,
+            Math.min(ballState.vel.length() * dt * 1.15, 0.18)
+          );
+        }
+
+        if (pendingReceiverIndex !== null) {
+          passTargetMat.opacity =
+            0.58 + Math.sin(performance.now() * 0.01) * 0.16;
+          passTargetRing.position.x = players[pendingReceiverIndex].pos.x;
+          passTargetRing.position.z = players[pendingReceiverIndex].pos.z;
+          passTargetRing.scale.setScalar(
+            1 + Math.sin(performance.now() * 0.009) * 0.08
+          );
+        } else {
+          passTargetMat.opacity = 0;
+        }
+      }
+
+      function updateCamera() {
+        camera.position.lerp(new THREE.Vector3(0, 7.3, 7.3), 0.045);
+        camera.lookAt(0, 0, 0);
+      }
+
+      function closestPointOnSegment(point, start, end) {
+        const segment = end.clone().sub(start);
+        const t = THREE.MathUtils.clamp(
+          point.clone().sub(start).dot(segment) / segment.lengthSq(),
+          0,
+          1
+        );
+        return start.clone().add(segment.multiplyScalar(t));
+      }
+
+      function distanceToSegment(point, start, end) {
+        return closestPointOnSegment(point, start, end).distanceTo(point);
+      }
+
+      function resize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.034);
+
+        if (running) {
+          updatePlayers(dt);
+          updateDefender(dt);
+          updateBall(dt);
+          checkSteal();
+        }
+
+        syncVisuals(dt);
+        updateCamera();
+        renderer.render(scene, camera);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

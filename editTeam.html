@@ -4,54 +4,54 @@
   <link rel="icon" href="img/favicon.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Editar Equipo — Bubble Kick</title>
+  <title>Bubble Kick - Edit Team</title>
 
   <link rel="stylesheet" href="css/styleEditTeam.css" />
 </head>
 
 <body>
   <div class="topbar">
-    <a class="back-btn" href="teamselection.html">← Menú</a>
-    <button class="save-btn" id="saveBtn">Guardar cambios</button>
+    <a class="back-btn" href="teamselection.html">← Menu</a>
+    <button class="save-btn" id="saveBtn">Save Changes</button>
   </div>
 
   <header class="title-wrap">
-    <div class="badge">8v8 Footii Match</div>
-    <h1>Editar Equipo</h1>
-    <p class="subtitle">Edita nombres y color de piel de tus jugadores</p>
+    <div class="badge">4v4 Rush Match</div>
+    <h1>Edit Team</h1>
+    <p class="subtitle">Edit your players' names and skin color</p>
   </header>
 
   <div class="team-switcher">
-    <button class="team-tab active" data-team="1">Jugador 1</button>
-    <button class="team-tab" data-team="2">Jugador 2 / IA</button>
+    <button class="team-tab active" data-team="1">Player 1</button>
+    <button class="team-tab" data-team="2">Player 2 / AI</button>
   </div>
 
   <main class="editor-shell">
     <section class="preview-card">
       <div class="preview-header">
-        <div class="card-title" id="previewTitle">Plantilla Jugador 1</div>
+        <div class="card-title" id="previewTitle">Player 1 Roster</div>
         <div class="team-pill" id="teamPill">LOCAL</div>
       </div>
 
       <div class="stage-wrap">
         <canvas id="teamCanvas"></canvas>
-        <div class="stage-label">Modo idle · vista de plantilla</div>
+        <div class="stage-label">Idle mode · roster preview</div>
       </div>
     </section>
 
     <section class="form-card">
       <div class="form-header">
-        <div class="card-title">Personalización</div>
+        <div class="card-title">Customization</div>
         <div class="team-pill" id="editingPill">LOCAL</div>
       </div>
 
       <div class="players-list" id="playersList"></div>
 
       <div class="skin-panel">
-        <div class="skin-title">Color de piel del modelo M_Skin</div>
+        <div class="skin-title">M_Skin model skin color</div>
         <div class="skin-control">
           <label>
-            <span>Color de piel</span>
+            <span>Skin color</span>
             <input type="color" id="skinColorInput" />
           </label>
           <div class="skin-swatch" id="skinSwatch"></div>
@@ -59,13 +59,13 @@
       </div>
 
       <div class="actions-row">
-        <button class="ghost-btn" id="resetNamesBtn">Restaurar nombres</button>
-        <button class="ghost-btn" id="resetSkinBtn">Restaurar piel</button>
+        <button class="ghost-btn" id="resetNamesBtn">Reset Names</button>
+        <button class="ghost-btn" id="resetSkinBtn">Reset Skin</button>
       </div>
     </section>
   </main>
 
-  <div class="toast" id="toast">Cambios guardados</div>
+  <div class="toast" id="toast">Changes saved</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>

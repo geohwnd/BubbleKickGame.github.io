@@ -330,11 +330,7 @@ canvas {
 }
 
 #field-lines {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.05;
+  display: none;
 }
 
 #intro,
@@ -453,17 +449,188 @@ canvas {
   }
 }
 
+/* ───────────────── JUGGLING INTRO SCREEN ───────────────── */
+.juggling-intro-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(
+      ellipse at 72% 48%,
+      rgba(93, 240, 214, 0.28),
+      transparent 0 34%,
+      transparent 55%
+    ),
+    linear-gradient(
+      155deg,
+      rgba(29, 54, 243, 0.96),
+      rgba(15, 40, 150, 0.98)
+    );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.juggling-intro-screen.hidden {
+  display: none;
+}
+
+.juggling-intro-card {
+  width: auto;
+  max-width: min(560px, calc(100vw - 36px));
+  text-align: center;
+}
+
+.juggling-intro-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(430px, 100%);
+  min-height: 30px;
+  margin-bottom: 18px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3.2px;
+  text-transform: uppercase;
+}
+
+.juggling-intro-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(92px, 13vw, 138px);
+  line-height: 0.82;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow:
+    0 7px 28px rgba(0, 0, 0, 0.4),
+    5px 5px 0 rgba(0, 0, 40, 0.22);
+}
+
+.juggling-intro-logo span {
+  color: var(--bk-lime);
+  text-shadow:
+    0 0 28px rgba(185, 255, 34, 0.5),
+    0 8px 0 rgba(0, 0, 0, 0.22);
+}
+
+.juggling-intro-description {
+  max-width: 430px;
+  margin: 28px auto 32px;
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  line-height: 1.55;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.juggling-intro-play-btn {
+  min-width: min(320px, 100%);
+  color: #1332cc;
+  background: linear-gradient(
+    135deg,
+    #f7fbff 0%,
+    #95f4ff 58%,
+    var(--bk-lime) 100%
+  );
+  border: none;
+  border-radius: 999px;
+  padding: 14px 54px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.25),
+    0 0 34px rgba(185, 255, 34, 0.22);
+}
+
+.juggling-intro-steps {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 26px;
+}
+
+.juggling-intro-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.juggling-intro-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 21px;
+}
+
+.juggling-intro-label {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .juggling-intro-card {
+    max-width: min(92vw, 360px);
+  }
+
+  .juggling-intro-tag {
+    width: 100%;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding-inline: 10px;
+  }
+
+  .juggling-intro-logo {
+    font-size: clamp(78px, 22vw, 104px);
+  }
+
+  .juggling-intro-description {
+    margin: 22px auto 26px;
+    font-size: 12px;
+  }
+
+  .juggling-intro-play-btn {
+    min-width: min(290px, 100%);
+    padding: 13px 38px;
+    font-size: 28px;
+  }
+
+  .juggling-intro-steps {
+    gap: 16px;
+  }
+
+  .juggling-intro-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+}
+
 /* ───────────────── GAME OVER SCREEN ───────────────── */
 .game-over-screen {
   position: fixed;
   inset: 0;
   z-index: 999;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  background: rgba(0, 0, 0, 0.55);
+  padding: 24px;
+  background: rgba(4, 13, 44, 0.48);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -473,48 +640,121 @@ canvas {
 }
 
 .game-over-card {
-  min-width: 320px;
-  padding: 28px;
-
-  border-radius: 28px;
-
-  background: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-
+  width: min(560px, calc(100vw - 36px));
+  padding: 34px 30px 30px;
+  border-radius: 34px;
   text-align: center;
-
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(
+    145deg,
+    rgba(4, 18, 95, 0.94),
+    rgba(8, 38, 165, 0.86) 56%,
+    rgba(8, 120, 92, 0.64)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.36),
+    0 0 44px rgba(93, 240, 214, 0.16);
 }
 
 .game-over-title {
+  display: none;
+}
+
+.game-over-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(430px, 100%);
+  min-height: 30px;
+  margin-bottom: 18px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3.2px;
+  text-transform: uppercase;
+}
+
+.game-over-logo {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 42px;
-  letter-spacing: 2px;
-  color: white;
+  font-size: clamp(92px, 13vw, 138px);
+  line-height: 0.82;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow:
+    0 7px 28px rgba(0, 0, 0, 0.4),
+    5px 5px 0 rgba(0, 0, 40, 0.22);
+}
+
+.game-over-logo span {
+  color: var(--bk-lime);
+  text-shadow:
+    0 0 28px rgba(185, 255, 34, 0.5),
+    0 8px 0 rgba(0, 0, 0, 0.22);
 }
 
 .game-over-subtitle {
-  margin-top: 8px;
-
-  color: rgba(255,255,255,0.8);
-
+  margin-top: 26px;
+  color: rgba(255, 255, 255, 0.72);
   text-transform: uppercase;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 3px;
 }
 
 .game-over-score {
-  margin: 18px 0 24px;
-
+  margin: 8px 0 24px;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 92px;
-
-  line-height: 1;
-
+  font-size: clamp(96px, 18vw, 154px);
+  line-height: 0.82;
   color: var(--bk-lime);
-
   text-shadow:
-    0 0 25px rgba(185,255,34,0.45),
-    0 0 60px rgba(185,255,34,0.15);
+    0 0 34px rgba(185, 255, 34, 0.4),
+    0 12px 34px rgba(0, 0, 0, 0.34);
+}
+
+.game-over-actions {
+  display: grid;
+  gap: 12px;
+  width: min(300px, 100%);
+  margin: 20px auto 0;
+}
+
+.game-over-primary-btn,
+.game-over-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  border-radius: 999px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.game-over-primary-btn {
+  color: #1332cc;
+  background: linear-gradient(
+    135deg,
+    #f7fbff 0%,
+    #95f4ff 58%,
+    var(--bk-lime) 100%
+  );
+  border: none;
+  box-shadow: 0 12px 30px rgba(185, 255, 34, 0.22);
+}
+
+.game-over-secondary-btn {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 /* ───────────────── COUNTDOWN SCREEN ───────────────── */
@@ -527,10 +767,10 @@ canvas {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(4, 13, 44, 0.28);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  pointer-events: auto;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: none;
   opacity: 1;
   transform: scale(1);
   transition: opacity 0.25s ease, transform 0.25s ease;
@@ -562,6 +802,7 @@ canvas {
 }
 
 .countdown-label {
+  display: none;
   padding: 9px 18px;
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.92);
@@ -580,7 +821,7 @@ body.is-counting-down #hud,
 body.is-counting-down .top-left,
 body.is-counting-down #controls-hint,
 body.is-counting-down #best-box {
-  opacity: 0.45;
+  opacity: 1;
 }
 
 @keyframes countdownPop {
@@ -610,5 +851,33 @@ body.is-counting-down #best-box {
     padding: 8px 14px;
     font-size: 11px;
     letter-spacing: 1.3px;
+  }
+}
+@media (max-width: 420px) {
+  .game-over-card {
+    width: min(92vw, 360px);
+    padding: 28px 20px 24px;
+    border-radius: 30px;
+  }
+
+  .game-over-tag {
+    width: 100%;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding-inline: 10px;
+  }
+
+  .game-over-logo {
+    font-size: clamp(78px, 22vw, 104px);
+  }
+
+  .game-over-score {
+    font-size: clamp(88px, 25vw, 124px);
+  }
+
+  .game-over-primary-btn,
+  .game-over-secondary-btn {
+    min-height: 50px;
+    font-size: 23px;
   }
 }

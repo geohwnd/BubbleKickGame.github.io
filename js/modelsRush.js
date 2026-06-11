@@ -150,7 +150,7 @@ export function createFootballStadiumGroup(team1Colors, team2Colors, options = {
             object: crowdRoot,
             baseY: crowdRoot.position.y,
             phase: Math.random() * Math.PI * 2,
-            speed: 2.2 + Math.random() * 1.4,
+            speed: 5.4 + Math.random() * 2.2,
             amplitude: 0.018 + Math.random() * 0.018,
             baseRotationZ: crowdRoot.rotation.z,
             rotationAmount: 0.006 + Math.random() * 0.008,

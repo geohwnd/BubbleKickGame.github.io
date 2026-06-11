@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
     <link rel="icon" href="img/favicon.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Juggling FC</title>
+    <title>Bubble Kick — Juggling</title>
     <link rel="stylesheet" href="css/styleJuggling.css" />
   </head>
   <body>
@@ -12,33 +12,83 @@
     <div id="drop-flash"></div>
     <canvas id="game-canvas"></canvas>
 
+    <div id="juggling-intro" class="juggling-intro-screen">
+      <div class="juggling-intro-card">
+        <div class="juggling-intro-tag">
+          THE WORLD MATCH · JUGGLING MODE
+        </div>
+
+        <div class="juggling-intro-logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
+
+        <div class="juggling-intro-description">
+          Keep the ball in the air by juggling with both feet.
+          <br />
+          Move underneath the ball and achieve the highest number of touches
+          possible before it hits the ground.
+        </div>
+
+        <button id="start-juggling-btn" class="juggling-intro-play-btn" type="button">
+          PLAY!
+        </button>
+
+        <div class="juggling-intro-steps">
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">🕹️</div>
+            <div class="juggling-intro-label">MOVE</div>
+          </div>
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">⚽</div>
+            <div class="juggling-intro-label">JUGGLE</div>
+          </div>
+          <div class="juggling-intro-step">
+            <div class="juggling-intro-icon">🏆</div>
+            <div class="juggling-intro-label">RECORD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="countdown-screen" class="countdown-screen">
       <div id="countdown-number" class="countdown-number">3</div>
-      <div class="countdown-label">Prepárate</div>
+      <div class="countdown-label">Get Ready</div>
     </div>
 
     <div id="game-over-screen" class="game-over-screen hidden">
       <div class="game-over-card">
-        <div class="game-over-title">Juggling Complete</div>
+        <div class="game-over-tag">END OF ROUND · JUGGLING MODE</div>
+
+        <div class="game-over-logo">
+          BUBBLE<br />
+          KICK <span>26</span>
+        </div>
 
         <div class="game-over-subtitle">
-          Dominadas realizadas
+          YOUR JUGGLES
         </div>
 
         <div id="final-score" class="game-over-score">
           0
         </div>
 
-        <button id="play-again-btn" class="pill-btn">
-          Volver a jugar
-        </button>
+        <div class="game-over-actions">
+          <button id="play-again-btn" class="game-over-primary-btn" type="button">
+            REMATCH
+          </button>
+
+          <a class="game-over-secondary-btn" href="index.html">
+            MAIN MENU
+          </a>
+        </div>
       </div>
     </div>
 
     <div class="top-left">
-      <a class="pill-btn" href="index.html">← Menú</a>
+      <a class="pill-btn" href="index.html">← Menu</a>
       <button class="pill-btn" type="button" onclick="window.location.href='index.html'">
-        Salir
+        Exit
       </button>
     </div>
 
@@ -94,24 +144,24 @@
 
     <div id="hud">
       <div id="counter-box">
-        <div id="counter-label">Toques</div>
+        <div id="counter-label">Touches</div>
         <div id="counter">0</div>
       </div>
       <div id="combo-box"><div id="combo-text">COMBO!</div></div>
       <div id="best-box">
-        <div id="best-label">Mejor</div>
+        <div id="best-label">Best</div>
         <div id="best-score">0</div>
       </div>
       <div id="controls-hint">
         <span class="hint-key">WASD / Mouse</span>
-        <span class="hint-key">Mover</span>
-        <span class="hint-key">Acércate al balón</span>
+        <span class="hint-key">Move</span>
+        <span class="hint-key">Get Under the Ball</span>
         <span class="hint-key">Auto-kick</span>
       </div>
     </div>
 
     <div id="loading-bar-wrap">
-      <div id="loading-bar-label">Cargando animaciones…</div>
+      <div id="loading-bar-label">Loading animations...</div>
       <div id="loading-bar-bg"><div id="loading-bar-fill"></div></div>
     </div>
 

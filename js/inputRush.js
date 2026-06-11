@@ -26,6 +26,8 @@ const JOYSTICK_FULL_INPUT_MODE = true;
 const callbacks = {
   onDash: null,
   onShoot: null,
+  onSwitchDefense: null,
+  onPass: null,
   onRestart: null,
   onDragStart: null,
   onDragMove: null,
@@ -143,7 +145,7 @@ function handleKeyDown(event) {
 
   inputState.keys.add(key);
 
-  if (["w", "a", "s", "d", "Space", "Shift"].includes(key)) {
+  if (["w", "a", "s", "d", "Space", "Shift", "c", "q"].includes(key)) {
     event.preventDefault();
   }
 
@@ -153,6 +155,14 @@ function handleKeyDown(event) {
 
   if (key === "Space" && !event.repeat) {
     callbacks.onShoot?.();
+  }
+
+  if (key === "c" && !event.repeat) {
+    callbacks.onSwitchDefense?.();
+  }
+
+  if (key === "q" && !event.repeat) {
+    callbacks.onPass?.();
   }
 
   if (key === "r" && !event.repeat) {

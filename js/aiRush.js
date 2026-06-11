@@ -37,6 +37,8 @@ export const AI_CONFIG = {
   // Regla clave: NO todos persiguen la pelota.
   // Solo se presiona cuando el rival ya cruzó media cancha o está cerca del arco.
   pressureDistance: 3.4,
+  idlePressDistance: 8.0,
+  idleCarrierSpeed: 0.28,
   midfieldPressX: 0.15,
   dangerGoalDistance: 5.3,
   looseBallChaseDistance: 3.05,
@@ -213,7 +215,8 @@ export function updateRushAI(context) {
 // =========================
 
 function decideAIInAttack(context) {
-  const { getAIControlledBody, playerOutfieldBodies, aiOutfieldBodies } = context;
+  const { getAIControlledBody, playerOutfieldBodies, aiOutfieldBodies } =
+    context;
 
   const carrier = getAIControlledBody();
   const attackGoal = getGoalTargetForPlayer(TEAMS.P2);
@@ -338,16 +341,30 @@ function decideAIInDefense(context) {
 
   const playerCarrier = getControlledPlayerBody();
   const ownGoal = getOwnGoalForPlayer(TEAMS.P2);
-  const closestToCarrier = getClosestBodyTo(playerCarrier.pos, aiOutfieldBodies);
+  const closestToCarrier = getClosestBodyTo(
+    playerCarrier.pos,
+    aiOutfieldBodies
+  );
   const distanceToOwnGoal = playerCarrier.pos.distanceTo(ownGoal);
 
   // P1 ataca hacia +X. La IA solo presiona fuerte si P1 ya pasó media cancha
   // o si está cerca del arco. Antes de eso, mantiene marca y bloque.
   const carrierCrossedMidfield = playerCarrier.pos.x > AI_CONFIG.midfieldPressX;
   const carrierNearGoal = distanceToOwnGoal < AI_CONFIG.dangerGoalDistance;
+  const carrierInOwnHalf = playerCarrier.pos.x < -AI_CONFIG.midfieldPressX;
+  const carrierIsIdle =
+    playerCarrier.vel.lengthSq() <
+    AI_CONFIG.idleCarrierSpeed * AI_CONFIG.idleCarrierSpeed;
+
+  const shouldIdlePress =
+    carrierInOwnHalf &&
+    carrierIsIdle &&
+    closestToCarrier.dist < AI_CONFIG.idlePressDistance;
+
   const shouldPress =
-    (carrierCrossedMidfield || carrierNearGoal) &&
-    closestToCarrier.dist < AI_CONFIG.pressureDistance;
+    shouldIdlePress ||
+    ((carrierCrossedMidfield || carrierNearGoal) &&
+      closestToCarrier.dist < AI_CONFIG.pressureDistance);
 
   if (shouldPress) {
     setAIControlledBodyIndex(closestToCarrier.index);
@@ -363,7 +380,7 @@ function decideAIInDefense(context) {
 
     aiMemory.moveTarget
       .copy(playerCarrier.pos)
-      .addScaledVector(playerToGoal, 0.62);
+      .addScaledVector(playerToGoal, shouldIdlePress ? 0.28 : 0.62);
 
     clampFieldTarget(aiMemory.moveTarget, 0.8);
 
@@ -373,15 +390,24 @@ function decideAIInDefense(context) {
     );
     dashDir.y = 0;
 
+    const dashChance = shouldIdlePress ? 0.42 : AI_CONFIG.dashChance;
+    const dashDistance = shouldIdlePress
+      ? AI_CONFIG.dashPressDistance + 0.65
+      : AI_CONFIG.dashPressDistance;
+
     if (
       dashDir.lengthSq() > 0.001 &&
-      closestToCarrier.dist < AI_CONFIG.dashPressDistance &&
-      Math.random() < AI_CONFIG.dashChance
+      closestToCarrier.dist < dashDistance &&
+      Math.random() < dashChance
     ) {
       tryDash?.(closestToCarrier.body, dashDir);
     }
   } else {
-    const bestBlocker = getBestDefensiveBlocker(aiOutfieldBodies, ballBody.pos, TEAMS.P2);
+    const bestBlocker = getBestDefensiveBlocker(
+      aiOutfieldBodies,
+      ballBody.pos,
+      TEAMS.P2
+    );
     setAIControlledBodyIndex(bestBlocker.index);
     aiMemory.tacticalMode = "shape";
     aiMemory.moveTarget.copy(getAIDefensivePoint(ballBody, 0));
@@ -389,12 +415,16 @@ function decideAIInDefense(context) {
 }
 
 function decideAILooseBall(context) {
-  const { ballBody, aiOutfieldBodies, setAIControlledBodyIndex, tryDash } = context;
+  const { ballBody, aiOutfieldBodies, setAIControlledBodyIndex, tryDash } =
+    context;
 
   const closestToBall = getClosestBodyTo(ballBody.pos, aiOutfieldBodies);
 
   // Pelota suelta: ahí sí el más cercano va por la pelota.
-  if (closestToBall.dist < AI_CONFIG.looseBallChaseDistance || ballBody.pos.x > -0.4) {
+  if (
+    closestToBall.dist < AI_CONFIG.looseBallChaseDistance ||
+    ballBody.pos.x > -0.4
+  ) {
     setAIControlledBodyIndex(closestToBall.index);
     aiMemory.tacticalMode = "loose";
     aiMemory.moveTarget.copy(ballBody.pos);
@@ -414,7 +444,11 @@ function decideAILooseBall(context) {
       tryDash?.(closestToBall.body, dashToBall);
     }
   } else {
-    const bestBlocker = getBestDefensiveBlocker(aiOutfieldBodies, ballBody.pos, TEAMS.P2);
+    const bestBlocker = getBestDefensiveBlocker(
+      aiOutfieldBodies,
+      ballBody.pos,
+      TEAMS.P2
+    );
     setAIControlledBodyIndex(bestBlocker.index);
     aiMemory.tacticalMode = "shape";
     aiMemory.moveTarget.copy(getAIDefensivePoint(ballBody, 0));
@@ -447,10 +481,14 @@ export function updatePlayerTeammateAI(context) {
   if (gameState.ballCarrier === TEAMS.P2) {
     // Si la IA trae la pelota, tus compañeros NO se amontonan.
     // Uno puede cerrar si la IA ya cruzó media cancha; los demás marcan carril.
-    const supportBodies = playerTeamBodies.filter((item) => item !== controlledBody);
+    const supportBodies = playerTeamBodies.filter(
+      (item) => item !== controlledBody
+    );
     const closestToAI = getClosestBodyTo(aiCarrier.pos, supportBodies);
     const aiCrossedMidfield = aiCarrier.pos.x < -AI_CONFIG.midfieldPressX;
-    const aiNearGoal = aiCarrier.pos.distanceTo(getOwnGoalForPlayer(TEAMS.P1)) < AI_CONFIG.dangerGoalDistance;
+    const aiNearGoal =
+      aiCarrier.pos.distanceTo(getOwnGoalForPlayer(TEAMS.P1)) <
+      AI_CONFIG.dangerGoalDistance;
     const shouldPress =
       closestToAI.body === body &&
       closestToAI.dist < AI_CONFIG.pressureDistance &&
@@ -467,25 +505,44 @@ export function updatePlayerTeammateAI(context) {
       target = aiCarrier.pos.clone().addScaledVector(aiToGoal, 0.55);
       clampFieldTarget(target, 0.8);
     } else {
-      const lane = bodyIndex === 1 ? -AI_CONFIG.coverLaneWidth : AI_CONFIG.coverLaneWidth;
+      const lane =
+        bodyIndex === 1 ? -AI_CONFIG.coverLaneWidth : AI_CONFIG.coverLaneWidth;
       target = getPlayerDefensivePoint(ballBody, lane);
     }
   } else if (gameState.ballCarrier === TEAMS.P1) {
     // Tu equipo con pelota: compañeros se abren para recibir, estilo Volta.
-    const lane = bodyIndex === 1 ? -AI_CONFIG.supportWidth : AI_CONFIG.supportWidth;
+    const lane =
+      bodyIndex === 1 ? -AI_CONFIG.supportWidth : AI_CONFIG.supportWidth;
 
     target = getPlayerAttackSupportPoint({
       carrier: controlledBody,
       laneOffset: lane,
     });
+
+    const toGoal = new THREE.Vector3().subVectors(
+      getGoalTargetForPlayer(TEAMS.P1),
+      controlledBody.pos
+    );
+    toGoal.y = 0;
+
+    if (toGoal.lengthSq() > 0.001) {
+      toGoal.normalize();
+      target.addScaledVector(toGoal, 0.35);
+    }
+
+    clampFieldTarget(target, 0.9);
   } else {
     // Pelota suelta: solo el más cercano va si está cerca; el resto cubre.
     const closest = getClosestBodyTo(ballBody.pos, playerTeamBodies);
 
-    if (closest.body === body && closest.dist < AI_CONFIG.looseBallChaseDistance) {
+    if (
+      closest.body === body &&
+      closest.dist < AI_CONFIG.looseBallChaseDistance
+    ) {
       target = ballBody.pos;
     } else {
-      const lane = bodyIndex === 1 ? -AI_CONFIG.coverLaneWidth : AI_CONFIG.coverLaneWidth;
+      const lane =
+        bodyIndex === 1 ? -AI_CONFIG.coverLaneWidth : AI_CONFIG.coverLaneWidth;
       target = getPlayerDefensivePoint(ballBody, lane);
     }
   }
@@ -533,10 +590,15 @@ function updateAITeammates(context) {
     if (gameState.ballCarrier === TEAMS.P1) {
       // Si el jugador trae la pelota, uno presiona solo si ya cruzó media cancha.
       // Los demás marcan jugadores/carriles, no pelota.
-      const closestToCarrier = getClosestBodyTo(playerCarrier.pos, aiOutfieldBodies);
-      const carrierCrossedMidfield = playerCarrier.pos.x > AI_CONFIG.midfieldPressX;
+      const closestToCarrier = getClosestBodyTo(
+        playerCarrier.pos,
+        aiOutfieldBodies
+      );
+      const carrierCrossedMidfield =
+        playerCarrier.pos.x > AI_CONFIG.midfieldPressX;
       const carrierNearGoal =
-        playerCarrier.pos.distanceTo(getOwnGoalForPlayer(TEAMS.P2)) < AI_CONFIG.dangerGoalDistance;
+        playerCarrier.pos.distanceTo(getOwnGoalForPlayer(TEAMS.P2)) <
+        AI_CONFIG.dangerGoalDistance;
       const shouldPress =
         closestToCarrier.body === body &&
         closestToCarrier.dist < AI_CONFIG.pressureDistance &&
@@ -559,7 +621,8 @@ function updateAITeammates(context) {
       }
     } else if (gameState.ballCarrier === TEAMS.P2) {
       // IA con pelota: compañeros se abren, no se pegan al balón.
-      const lane = index % 2 === 0 ? -AI_CONFIG.supportWidth : AI_CONFIG.supportWidth;
+      const lane =
+        index % 2 === 0 ? -AI_CONFIG.supportWidth : AI_CONFIG.supportWidth;
 
       target = getAIAttackSupportPoint({
         carrier: activeAI,
@@ -569,10 +632,16 @@ function updateAITeammates(context) {
       // Pelota suelta: el más cercano va; los demás forman bloque.
       const closest = getClosestBodyTo(ballBody.pos, aiOutfieldBodies);
 
-      if (closest.body === body && closest.dist < AI_CONFIG.looseBallChaseDistance) {
+      if (
+        closest.body === body &&
+        closest.dist < AI_CONFIG.looseBallChaseDistance
+      ) {
         target = ballBody.pos;
       } else {
-        const lane = index % 2 === 0 ? -AI_CONFIG.coverLaneWidth : AI_CONFIG.coverLaneWidth;
+        const lane =
+          index % 2 === 0
+            ? -AI_CONFIG.coverLaneWidth
+            : AI_CONFIG.coverLaneWidth;
         target = getAIDefensivePoint(ballBody, lane);
       }
     }
@@ -585,7 +654,10 @@ function updateAITeammates(context) {
     moveBodyArcadeTo(body, target, speed, 0.09);
 
     if (gameState.ballCarrier === TEAMS.P1) {
-      const dashDir = new THREE.Vector3().subVectors(playerCarrier.pos, body.pos);
+      const dashDir = new THREE.Vector3().subVectors(
+        playerCarrier.pos,
+        body.pos
+      );
       dashDir.y = 0;
 
       if (
@@ -618,9 +690,7 @@ export function updateKeeperAI(context) {
 
   const isPlayerKeeper = teamNumber === TEAMS.P1;
 
-  const keeperX = isPlayerKeeper
-    ? -FIELD_W / 2 + 0.85
-    : FIELD_W / 2 - 0.85;
+  const keeperX = isPlayerKeeper ? -FIELD_W / 2 + 0.85 : FIELD_W / 2 - 0.85;
 
   const maxZ = GOAL_W / 2 - 0.32;
 
@@ -769,7 +839,9 @@ function aiShoot(context) {
   aiMemory.lastShotAt = now;
   gameState.aiPickupBlockedUntil = now + 480;
 
-  ballBody.pos.copy(body.pos).addScaledVector(aimedDir, body.r + ballBody.r + 0.42);
+  ballBody.pos
+    .copy(body.pos)
+    .addScaledVector(aimedDir, body.r + ballBody.r + 0.42);
   ballBody.pos.y = ballBody.r;
   ballBody.vel.copy(aimedDir).multiplyScalar(force);
   ballBody.vel.y = 0.9;
@@ -881,7 +953,12 @@ function getPlayerAttackSupportPoint(context) {
 }
 
 function findBestPassTarget(context) {
-  const { carrier, teammates = [], playerOutfieldBodies = [], attackGoal } = context;
+  const {
+    carrier,
+    teammates = [],
+    playerOutfieldBodies = [],
+    attackGoal,
+  } = context;
 
   let bestBody = null;
   let bestScore = -Infinity;
@@ -893,15 +970,20 @@ function findBestPassTarget(context) {
     const distance = carrier.pos.distanceTo(teammate.pos);
     if (distance > AI_CONFIG.passRange || distance < 1.05) return;
 
-    const closestDefender = getClosestBodyTo(teammate.pos, playerOutfieldBodies);
+    const closestDefender = getClosestBodyTo(
+      teammate.pos,
+      playerOutfieldBodies
+    );
     const defenderDistance = closestDefender?.dist ?? 999;
 
     const carrierGoalDistance = carrier.pos.distanceTo(attackGoal);
     const teammateGoalDistance = teammate.pos.distanceTo(attackGoal);
-    const isForward = teammateGoalDistance + AI_CONFIG.passForwardBonus < carrierGoalDistance;
+    const isForward =
+      teammateGoalDistance + AI_CONFIG.passForwardBonus < carrierGoalDistance;
 
     const openScore = THREE.MathUtils.clamp(defenderDistance / 3.2, 0, 1);
-    const distanceScore = 1 - THREE.MathUtils.clamp(distance / AI_CONFIG.passRange, 0, 1);
+    const distanceScore =
+      1 - THREE.MathUtils.clamp(distance / AI_CONFIG.passRange, 0, 1);
     const forwardScore = isForward ? 0.45 : 0;
 
     const score = openScore * 0.55 + distanceScore * 0.25 + forwardScore;
@@ -918,6 +1000,27 @@ function findBestPassTarget(context) {
     score: bestScore,
     isForward: bestIsForward,
   };
+}
+
+export function findBestPlayerPassTarget(context) {
+  const { carrier, teammates = [], aiOutfieldBodies = [] } = context;
+
+  if (!carrier || !teammates.length) {
+    return {
+      body: null,
+      score: -Infinity,
+      isForward: false,
+    };
+  }
+
+  const attackGoal = getGoalTargetForPlayer(TEAMS.P1);
+
+  return findBestPassTarget({
+    carrier,
+    teammates,
+    playerOutfieldBodies: aiOutfieldBodies,
+    attackGoal,
+  });
 }
 
 // =========================
@@ -962,6 +1065,63 @@ function maybeDashToGoal(context) {
   ) {
     tryDash?.(body, dashToGoal);
   }
+}
+
+function getBestDefensiveBlocker(bodies = [], ballPos, defendingTeam) {
+  if (!bodies.length) {
+    return {
+      body: null,
+      index: 0,
+      dist: Infinity,
+    };
+  }
+
+  const ownGoal = getOwnGoalForPlayer(defendingTeam);
+  const ballFlat = ballPos.clone();
+  ballFlat.y = PLAYER_BODY_RADIUS;
+
+  const goalToBall = new THREE.Vector3().subVectors(ballFlat, ownGoal);
+  goalToBall.y = 0;
+
+  if (goalToBall.lengthSq() < 0.001) {
+    return getClosestBodyTo(ballFlat, bodies);
+  }
+
+  const blockDir = goalToBall.normalize();
+  const idealBlockPoint = ownGoal
+    .clone()
+    .addScaledVector(blockDir, AI_CONFIG.dangerGoalDistance * 0.46);
+
+  idealBlockPoint.y = PLAYER_BODY_RADIUS;
+  clampFieldTarget(idealBlockPoint, 0.85);
+
+  let bestBody = bodies[0];
+  let bestIndex = 0;
+  let bestScore = Infinity;
+  let bestDist = Infinity;
+
+  bodies.forEach((body, index) => {
+    if (!body) return;
+
+    const distanceToBlock = body.pos.distanceTo(idealBlockPoint);
+    const distanceToBall = body.pos.distanceTo(ballFlat);
+
+    const score = distanceToBlock * 0.72 + distanceToBall * 0.28;
+
+    if (score < bestScore) {
+      bestScore = score;
+      bestDist = distanceToBlock;
+      bestBody = body;
+      bestIndex = index;
+    }
+  });
+
+  return {
+    body: bestBody,
+    index: bestIndex,
+    dist: bestDist,
+    target: idealBlockPoint,
+  };
 }
 
 export function getClosestBodyTo(targetPos, bodies = []) {

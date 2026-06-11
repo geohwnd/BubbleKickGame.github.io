@@ -1,4 +1,3 @@
-
 import { RGBELoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js";
 // Postprocessing disabled for Rush Match.
 // import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
@@ -91,12 +90,54 @@ import {
 // =========================
 
 const canvas = document.getElementById("canvas");
+const rushLoadingScreen = document.getElementById("rush-loading-screen");
+const rushLoadingText = rushLoadingScreen?.querySelector(".rush-loading-text");
+let isRushStarting = true;
+let rushStartSequenceFinished = false;
+let pendingPassReceiver = null;
 // Permite que el canvas funcione como control virtual tipo Playroom/mobile.
 // Evita scroll, selección, zoom táctil o menú contextual mientras se arrastra.
 canvas.style.touchAction = "none";
 canvas.style.userSelect = "none";
 canvas.style.cursor = "grab";
 canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+function setRushLoadingText(text) {
+  if (rushLoadingText) {
+    rushLoadingText.textContent = text;
+    rushLoadingText.classList.toggle(
+      "is-countdown",
+      text !== "Loading Match..."
+    );
+  }
+}
+
+function showRushLoadingScreen() {
+  rushLoadingScreen?.classList.remove("is-hidden");
+}
+
+function hideRushLoadingScreen() {
+  rushLoadingScreen?.classList.add("is-hidden");
+}
+
+function beginRushStartSequence() {
+  if (rushStartSequenceFinished) return;
+
+  rushStartSequenceFinished = true;
+  isRushStarting = true;
+
+  showRushLoadingScreen();
+  setRushLoadingText("Loading Match...");
+
+  window.setTimeout(() => setRushLoadingText("3"), 900);
+  window.setTimeout(() => setRushLoadingText("2"), 1650);
+  window.setTimeout(() => setRushLoadingText("1"), 2400);
+  window.setTimeout(() => setRushLoadingText("GO!"), 3150);
+
+  window.setTimeout(() => {
+    hideRushLoadingScreen();
+    isRushStarting = false;
+  }, 3850);
+}
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -112,8 +153,8 @@ renderer.toneMappingExposure = 1.08;
 renderer.setClearColor(0x051f14);
 
 // Filtro menos agresivo para reducir banding/moiré en la textura de la cancha.
-renderer.domElement.style.filter = "saturate(1.22) contrast(1.18) brightness(0.78)";
-
+renderer.domElement.style.filter =
+  "saturate(1.22) contrast(1.18) brightness(0.78)";
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x051f14, 0.02);
@@ -228,7 +269,6 @@ const fill = new THREE.DirectionalLight(0xddeeff, 5.2);
 fill.position.set(-5, 8, -5);
 scene.add(fill);
 
-
 // =========================
 // TEAMS / ROSTERS
 // =========================
@@ -252,14 +292,18 @@ const p2TeamColors = sanitizeTeamPalette(selectedTeamP2?.colors, [
 // FIELD / STADIUM
 // =========================
 
-const footballStadiumGroup = createFootballStadiumGroup(p1TeamColors, p2TeamColors, {
-  scale: 1.75,
-  position: new THREE.Vector3(0, -0.12, 0),
-  rotationY: -Math.PI / 2,
-  autoFit: true,
-  targetSize: 24,
-  verticalOffset: -0.02,
-});
+const footballStadiumGroup = createFootballStadiumGroup(
+  p1TeamColors,
+  p2TeamColors,
+  {
+    scale: 1.75,
+    position: new THREE.Vector3(0, -0.12, 0),
+    rotationY: -Math.PI / 2,
+    autoFit: true,
+    targetSize: 24,
+    verticalOffset: -0.02,
+  }
+);
 
 scene.add(footballStadiumGroup);
 
@@ -298,13 +342,19 @@ function readStoredSkinColors(storageKey) {
       );
     }
 
-    if (typeof parsedValue === "string" && /^#[0-9a-fA-F]{6}$/.test(parsedValue)) {
+    if (
+      typeof parsedValue === "string" &&
+      /^#[0-9a-fA-F]{6}$/.test(parsedValue)
+    ) {
       return [parsedValue, parsedValue, parsedValue, parsedValue];
     }
   } catch (_) {
     const storedValue = localStorage.getItem(storageKey);
 
-    if (typeof storedValue === "string" && /^#[0-9a-fA-F]{6}$/.test(storedValue)) {
+    if (
+      typeof storedValue === "string" &&
+      /^#[0-9a-fA-F]{6}$/.test(storedValue)
+    ) {
       return [storedValue, storedValue, storedValue, storedValue];
     }
   }
@@ -317,11 +367,14 @@ const p2SkinColors = readStoredSkinColors("bubbleKickP2SkinColor");
 
 function getRosterName(playerNumber, index = 0) {
   const roster = playerNumber === TEAMS.P1 ? p1RosterNames : p2RosterNames;
-  return roster[index] || (playerNumber === TEAMS.P1 ? "Jugador" : "Jugador IA");
+  return (
+    roster[index] || (playerNumber === TEAMS.P1 ? "Jugador" : "Jugador IA")
+  );
 }
 
 function getTeamDisplayName(playerNumber) {
-  const selectedTeam = playerNumber === TEAMS.P1 ? selectedTeamP1 : selectedTeamP2;
+  const selectedTeam =
+    playerNumber === TEAMS.P1 ? selectedTeamP1 : selectedTeamP2;
   const fallback = playerNumber === TEAMS.P1 ? "JUGADOR 1" : "IA";
 
   return (selectedTeam?.name || selectedTeam?.code || fallback)
@@ -348,9 +401,9 @@ updateInstructionText();
 // GAME CONSTANTS
 // =========================
 
-const RUSH_PLAYER_SPEED = 4.35;
-const RUSH_PLAYER_ACCEL = 0.22;
-const RUSH_DASH_SPEED = 13.5;
+const RUSH_PLAYER_SPEED = 5.0;
+const RUSH_PLAYER_ACCEL = 0.28;
+const RUSH_DASH_SPEED = 14.4;
 const RUSH_DASH_DURATION = 180;
 const RUSH_DASH_COOLDOWN = 720;
 const RUSH_STEAL_RADIUS = 1.22;
@@ -367,12 +420,36 @@ const DT = 1 / 60;
 // =========================
 
 const p1Body = new Body(-3.35, PLAYER_BODY_RADIUS, 0, PLAYER_BODY_RADIUS, 2);
-const p1Mate1Body = new Body(-4.45, PLAYER_BODY_RADIUS, -2.25, PLAYER_BODY_RADIUS, 2);
-const p1Mate2Body = new Body(-4.45, PLAYER_BODY_RADIUS, 2.25, PLAYER_BODY_RADIUS, 2);
+const p1Mate1Body = new Body(
+  -4.45,
+  PLAYER_BODY_RADIUS,
+  -2.25,
+  PLAYER_BODY_RADIUS,
+  2
+);
+const p1Mate2Body = new Body(
+  -4.45,
+  PLAYER_BODY_RADIUS,
+  2.25,
+  PLAYER_BODY_RADIUS,
+  2
+);
 
 const p2Body = new Body(3.35, PLAYER_BODY_RADIUS, 0, PLAYER_BODY_RADIUS, 2);
-const p2Mate1Body = new Body(4.45, PLAYER_BODY_RADIUS, -2.25, PLAYER_BODY_RADIUS, 2);
-const p2Mate2Body = new Body(4.45, PLAYER_BODY_RADIUS, 2.25, PLAYER_BODY_RADIUS, 2);
+const p2Mate1Body = new Body(
+  4.45,
+  PLAYER_BODY_RADIUS,
+  -2.25,
+  PLAYER_BODY_RADIUS,
+  2
+);
+const p2Mate2Body = new Body(
+  4.45,
+  PLAYER_BODY_RADIUS,
+  2.25,
+  PLAYER_BODY_RADIUS,
+  2
+);
 
 const p1KeeperBody = new Body(
   -FIELD_W / 2 + 0.72,
@@ -451,14 +528,38 @@ p1KeeperMesh.scale.setScalar(PLAYER_VISUAL_SCALE * 0.95);
 p2KeeperMesh.scale.setScalar(PLAYER_VISUAL_SCALE * 0.95);
 
 const p1NameLabel = makePlayerNameLabel(scene, p1RosterNames[0], p1TeamColor);
-const p1Mate1NameLabel = makePlayerNameLabel(scene, p1RosterNames[1], p1TeamColor);
-const p1Mate2NameLabel = makePlayerNameLabel(scene, p1RosterNames[2], p1TeamColor);
-const p1KeeperNameLabel = makePlayerNameLabel(scene, p1RosterNames[3], p1TeamColor);
+const p1Mate1NameLabel = makePlayerNameLabel(
+  scene,
+  p1RosterNames[1],
+  p1TeamColor
+);
+const p1Mate2NameLabel = makePlayerNameLabel(
+  scene,
+  p1RosterNames[2],
+  p1TeamColor
+);
+const p1KeeperNameLabel = makePlayerNameLabel(
+  scene,
+  p1RosterNames[3],
+  p1TeamColor
+);
 
 const p2NameLabel = makePlayerNameLabel(scene, p2RosterNames[0], p2TeamColor);
-const p2Mate1NameLabel = makePlayerNameLabel(scene, p2RosterNames[1], p2TeamColor);
-const p2Mate2NameLabel = makePlayerNameLabel(scene, p2RosterNames[2], p2TeamColor);
-const p2KeeperNameLabel = makePlayerNameLabel(scene, p2RosterNames[3], p2TeamColor);
+const p2Mate1NameLabel = makePlayerNameLabel(
+  scene,
+  p2RosterNames[1],
+  p2TeamColor
+);
+const p2Mate2NameLabel = makePlayerNameLabel(
+  scene,
+  p2RosterNames[2],
+  p2TeamColor
+);
+const p2KeeperNameLabel = makePlayerNameLabel(
+  scene,
+  p2RosterNames[3],
+  p2TeamColor
+);
 
 const p1Shadow = makeShadow(scene);
 const p1Mate1Shadow = makeShadow(scene);
@@ -484,7 +585,9 @@ const { arrowLine, arrowGeo, movArrowGroup } = createRushArrowVisuals(scene);
 
 const particles = [];
 const MASTER_VOLUME_STORAGE_KEY = "bubbleKickMasterVolume";
-let masterVolume = Number(localStorage.getItem(MASTER_VOLUME_STORAGE_KEY) || 0.65);
+let masterVolume = Number(
+  localStorage.getItem(MASTER_VOLUME_STORAGE_KEY) || 0.65
+);
 
 if (!Number.isFinite(masterVolume)) {
   masterVolume = 0.65;
@@ -496,13 +599,15 @@ function setMasterVolume(value) {
   masterVolume = THREE.MathUtils.clamp(Number(value), 0, 1);
   localStorage.setItem(MASTER_VOLUME_STORAGE_KEY, String(masterVolume));
 
-  stadiumEnvironmentSound.volume = 0.32 * masterVolume;
+  stadiumEnvironmentSound.volume = 0.92 * masterVolume;
   goalSound.volume = 0.82 * masterVolume;
   kickSound.volume = 0.65 * masterVolume;
 }
 let lastGoalParticleState = false;
 
-const stadiumEnvironmentSound = new Audio("audio/Stadium_Environment.mp3");
+const stadiumEnvironmentSound = new Audio(
+  "audio/BaumannMusic_Brazil_CLEAN.mp3"
+);
 stadiumEnvironmentSound.loop = true;
 stadiumEnvironmentSound.preload = "auto";
 stadiumEnvironmentSound.volume = 0.32 * masterVolume;
@@ -520,10 +625,14 @@ function startStadiumEnvironmentSound() {
     .catch(() => {
       stadiumEnvironmentStarted = false;
     });
-} 
+}
 
-window.addEventListener("pointerdown", startStadiumEnvironmentSound, { once: true });
-window.addEventListener("keydown", startStadiumEnvironmentSound, { once: true });
+window.addEventListener("pointerdown", startStadiumEnvironmentSound, {
+  once: true,
+});
+window.addEventListener("keydown", startStadiumEnvironmentSound, {
+  once: true,
+});
 startStadiumEnvironmentSound();
 
 const goalSound = new Audio("audio/Goal_Sound.mp3");
@@ -568,8 +677,45 @@ function setAIControlledBodyIndex(index) {
   );
 }
 
+function canSwitchDefense() {
+  return (
+    gameState.gamePhase === GAME_PHASES.PLAYING &&
+    gameState.ballCarrier === TEAMS.P2
+  );
+}
+
+function switchControlledDefender() {
+  if (!canSwitchDefense()) return;
+
+  const currentBody = getControlledPlayerBody();
+  const candidates = playerOutfieldBodies.filter(
+    (body) => body !== currentBody
+  );
+
+  if (!candidates.length) return;
+
+  const ballPosition = ballBody.pos;
+  const bestCandidate = candidates.reduce(
+    (best, body) => {
+      const dist = body.pos.distanceTo(ballPosition);
+      return dist < best.dist ? { body, dist } : best;
+    },
+    { body: candidates[0], dist: candidates[0].pos.distanceTo(ballPosition) }
+  ).body;
+
+  const nextIndex = playerOutfieldBodies.indexOf(bestCandidate);
+
+  if (nextIndex >= 0) {
+    gameState.controlledPlayerIndex = nextIndex;
+    resetDrag();
+    updateTurnUI(gameState, uiTeamOptions);
+  }
+}
+
 function getBodyByPlayer(playerNumber) {
-  return playerNumber === TEAMS.P1 ? getControlledPlayerBody() : getAIControlledBody();
+  return playerNumber === TEAMS.P1
+    ? getControlledPlayerBody()
+    : getAIControlledBody();
 }
 
 function getMeshByBody(body) {
@@ -585,8 +731,6 @@ function getMeshByBody(body) {
 
   return null;
 }
-
-
 
 function playStrikeForBody(body, returnVariant = "run") {
   const mesh = getMeshByBody(body);
@@ -636,20 +780,23 @@ function getGoalScorerName(scorerTeam) {
     return getRosterName(scorerTeam, gameState.lastTouchIndex);
   }
 
-  return `${getRosterName(gameState.lastTouchTeam, gameState.lastTouchIndex)} (Autogol)`;
+  return `${getRosterName(
+    gameState.lastTouchTeam,
+    gameState.lastTouchIndex
+  )} (Own Goal)`;
 }
 
 function getGoalScorerText(scorerTeam) {
   const teamName = getTeamDisplayName(scorerTeam);
 
   if (gameState.lastTouchTeam === scorerTeam) {
-    return `¡${teamName} anotó! Gol de ${getRosterName(
+    return `GOAL FOR ${teamName}! Scored by ${getRosterName(
       scorerTeam,
       gameState.lastTouchIndex
     )}`;
   }
 
-  return `¡${teamName} anotó! Autogol de ${getRosterName(
+  return `GOAL FOR ${teamName}! Own goal by ${getRosterName(
     gameState.lastTouchTeam,
     gameState.lastTouchIndex
   )}`;
@@ -763,6 +910,69 @@ function shootControlledPlayer() {
   updateTurnUI(gameState, uiTeamOptions);
 }
 
+function passControlledPlayer() {
+  if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
+  if (!ensurePlayerPossessionIfNearBall()) return;
+
+  const body = getControlledPlayerBody();
+  const teammates = playerOutfieldBodies.filter((mate) => mate !== body);
+
+  if (!teammates.length) return;
+
+  const forwardDir = body.facing.clone().setY(0);
+
+  if (forwardDir.lengthSq() < 0.001) {
+    forwardDir.set(1, 0, 0);
+  }
+
+  forwardDir.normalize();
+
+  const bestMate = teammates.reduce(
+    (best, mate) => {
+      const toMate = new THREE.Vector3().subVectors(mate.pos, body.pos).setY(0);
+      const dist = Math.max(toMate.length(), 0.001);
+      const dirToMate = toMate.clone().normalize();
+      const forwardScore = dirToMate.dot(forwardDir);
+      const score = forwardScore * 2.2 - dist * 0.08;
+
+      return score > best.score ? { mate, score } : best;
+    },
+    { mate: teammates[0], score: -Infinity }
+  ).mate;
+
+  const passDir = new THREE.Vector3()
+    .subVectors(bestMate.pos, body.pos)
+    .setY(0);
+
+  if (passDir.lengthSq() < 0.001) {
+    passDir.copy(forwardDir);
+  }
+
+  passDir.normalize();
+
+  playStrikeForBody(body, "run");
+  setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+  clearBallCarrier();
+  pendingPassReceiver = bestMate;
+
+  gameState.kickChargingPlayer = null;
+  gameState.kickChargeStart = 0;
+  gameState.playerPickupBlockedUntil = performance.now() + 360;
+
+  hideStrengthBar();
+
+  ballBody.pos
+    .copy(body.pos)
+    .addScaledVector(passDir, body.r + ballBody.r + 0.42);
+
+  ballBody.pos.y = ballBody.r;
+  ballBody.vel.copy(passDir).multiplyScalar(12.8);
+  ballBody.vel.y = 0.42;
+
+  playKickSound(0.48);
+  updateTurnUI(gameState, uiTeamOptions);
+}
+
 function tryDash(body, preferredDirection = null) {
   if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
 
@@ -845,6 +1055,7 @@ function moveRushPlayer(body, playerNumber) {
 
 function updateBallPossession() {
   if (gameState.ballCarrier) {
+    pendingPassReceiver = null;
     const carrierBody = getBodyByPlayer(gameState.ballCarrier);
 
     ballBody.pos
@@ -861,12 +1072,35 @@ function updateBallPossession() {
   const closestPlayer = getClosestBodyTo(ballBody.pos, playerTeamBodies);
   const closestAI = getClosestBodyTo(ballBody.pos, aiTeamBodies);
   const now = performance.now();
+  if (pendingPassReceiver) {
+    const receiveDistance = pendingPassReceiver.pos.distanceTo(ballBody.pos);
+
+    if (receiveDistance < 0.9) {
+      gameState.controlledPlayerIndex =
+        playerTeamBodies.indexOf(pendingPassReceiver);
+
+      setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+      setBallCarrier(TEAMS.P1);
+
+      ballBody.vel.set(0, 0, 0);
+      pendingPassReceiver = null;
+
+      playCatchForBody(
+        playerTeamBodies[gameState.controlledPlayerIndex],
+        "run"
+      );
+      updateTurnUI(gameState, uiTeamOptions);
+      return;
+    }
+  }
 
   if (
     now >= gameState.playerPickupBlockedUntil &&
     closestPlayer.dist < closestPlayer.body.r + ballBody.r + RUSH_CONTROL_EXTRA
   ) {
-    gameState.controlledPlayerIndex = playerTeamBodies.indexOf(closestPlayer.body);
+    gameState.controlledPlayerIndex = playerTeamBodies.indexOf(
+      closestPlayer.body
+    );
 
     setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
     setBallCarrier(TEAMS.P1);
@@ -890,7 +1124,9 @@ function updateDashSteal() {
   const carrierBody = getBodyByPlayer(gameState.ballCarrier);
 
   const challengerBodies =
-    gameState.ballCarrier === TEAMS.P1 ? aiOutfieldBodies : playerOutfieldBodies;
+    gameState.ballCarrier === TEAMS.P1
+      ? aiOutfieldBodies
+      : playerOutfieldBodies;
 
   const challengerNumber =
     gameState.ballCarrier === TEAMS.P1 ? TEAMS.P2 : TEAMS.P1;
@@ -904,7 +1140,8 @@ function updateDashSteal() {
   if (!activeChallenger) return;
 
   if (challengerNumber === TEAMS.P1) {
-    gameState.controlledPlayerIndex = playerOutfieldBodies.indexOf(activeChallenger);
+    gameState.controlledPlayerIndex =
+      playerOutfieldBodies.indexOf(activeChallenger);
   } else {
     gameState.aiCarrierIndex = aiOutfieldBodies.indexOf(activeChallenger);
   }
@@ -1025,6 +1262,7 @@ function triggerGoal(scorer) {
   }
 
   enterGoalPhase();
+  pendingPassReceiver = null;
 
   addScore(scorer);
 
@@ -1075,6 +1313,7 @@ function endMatch() {
 function restartGame() {
   resetGameState();
   resetPositions();
+  pendingPassReceiver = null;
   resetAIMemory();
 
   clearTimeout(goalTimeout);
@@ -1130,7 +1369,17 @@ setInputCallbacks({
     if (isRushPaused) return;
     shootControlledPlayer();
   },
-  
+
+  onSwitchDefense: () => {
+    if (isRushPaused) return;
+    switchControlledDefender();
+  },
+
+  onPass: () => {
+    if (isRushPaused) return;
+    passControlledPlayer();
+  },
+
   onRestart: () => {
     restartGame();
   },
@@ -1148,12 +1397,33 @@ onQuickRestartPressed(restartGame);
 
 const mobileShootButton = document.getElementById("mobile-shoot-btn");
 const mobileDashButton = document.getElementById("mobile-dash-btn");
+const mobileContextButton = document.getElementById(
+  "mobile-switch-defense-btn"
+);
+const mobileContextIcon = document.getElementById("mobile-context-icon");
+const mobileContextLabel = document.getElementById("mobile-context-label");
 
 const pauseButton = document.getElementById("pause-btn");
 const pauseOverlay = document.getElementById("pause-overlay");
 const resumeButton = document.getElementById("resume-btn");
+const toggleMobileControlsButton = document.getElementById(
+  "toggle-mobile-controls-btn"
+);
+const FORCE_MOBILE_CONTROLS_KEY = "bubbleKickForceMobileControls";
+let forceMobileControls =
+  localStorage.getItem(FORCE_MOBILE_CONTROLS_KEY) === "true";
 
 let isRushPaused = false;
+
+function updateForcedMobileControlsUI() {
+  document.body.classList.toggle("force-mobile-controls", forceMobileControls);
+
+  if (toggleMobileControlsButton) {
+    toggleMobileControlsButton.textContent = forceMobileControls
+      ? "Hide Mobile Controls"
+      : "Show Mobile Controls";
+  }
+}
 
 function setRushPaused(isPaused) {
   isRushPaused = isPaused;
@@ -1162,7 +1432,7 @@ function setRushPaused(isPaused) {
   pauseOverlay?.setAttribute("aria-hidden", isRushPaused ? "false" : "true");
 
   if (pauseButton) {
-    pauseButton.innerHTML = isRushPaused ? "▶ Reanudar" : "⏸ Pausa";
+    pauseButton.innerHTML = isRushPaused ? "▶ Resume" : "⏸ Pause";
   }
 }
 
@@ -1173,15 +1443,50 @@ function toggleRushPause() {
 pauseButton?.addEventListener("click", toggleRushPause);
 resumeButton?.addEventListener("click", () => setRushPaused(false));
 
+toggleMobileControlsButton?.addEventListener("click", () => {
+  forceMobileControls = !forceMobileControls;
+  localStorage.setItem(FORCE_MOBILE_CONTROLS_KEY, String(forceMobileControls));
+  updateForcedMobileControlsUI();
+  updateMobileActionButtonsVisibility();
+});
+
+updateForcedMobileControlsUI();
+
 function setMobileActionButtonsVisible(isVisible) {
-  [mobileShootButton, mobileDashButton].forEach((button) => {
-    if (!button) return;
-    button.classList.toggle("is-hidden", !isVisible);
-  });
+  [mobileShootButton, mobileDashButton, mobileContextButton].forEach(
+    (button) => {
+      if (!button) return;
+      button.classList.toggle("is-hidden", !isVisible);
+    }
+  );
 }
 
 function updateMobileActionButtonsVisibility() {
-  setMobileActionButtonsVisible(gameState.gamePhase !== GAME_PHASES.WIN);
+  const shouldShowControls =
+    forceMobileControls || gameState.gamePhase !== GAME_PHASES.WIN;
+
+  setMobileActionButtonsVisible(shouldShowControls);
+}
+
+function updateMobileContextButton() {
+  if (!mobileContextButton) return;
+
+  const isDefending = gameState.ballCarrier === TEAMS.P2;
+
+  mobileContextButton.classList.toggle("is-defense", isDefending);
+  mobileContextButton.classList.toggle("is-attack", !isDefending);
+  mobileContextButton.setAttribute(
+    "aria-label",
+    isDefending ? "Switch Defender" : "Pass"
+  );
+
+  if (mobileContextIcon) {
+    mobileContextIcon.textContent = isDefending ? "🔁" : "🤝";
+  }
+
+  if (mobileContextLabel) {
+    mobileContextLabel.textContent = isDefending ? "DEFENDER" : "PASS";
+  }
 }
 
 if (mobileShootButton) {
@@ -1198,7 +1503,6 @@ if (mobileShootButton) {
   });
 }
 
-
 if (mobileDashButton) {
   const handleMobileDash = (event) => {
     event.preventDefault();
@@ -1211,6 +1515,32 @@ if (mobileDashButton) {
   mobileDashButton.addEventListener("touchstart", handleMobileDash, {
     passive: false,
   });
+}
+
+if (mobileContextButton) {
+  const handleMobileContextAction = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isRushPaused) return;
+
+    if (canSwitchDefense()) {
+      switchControlledDefender();
+    } else {
+      passControlledPlayer();
+    }
+  };
+
+  mobileContextButton.addEventListener(
+    "pointerdown",
+    handleMobileContextAction
+  );
+  mobileContextButton.addEventListener(
+    "touchstart",
+    handleMobileContextAction,
+    {
+      passive: false,
+    }
+  );
 }
 
 // =========================
@@ -1334,15 +1664,47 @@ function syncMeshes() {
   // - jog: si está defendiendo/marcando.
   // - run: si tiene la pelota o está atacando.
   // La validación fina de "quieto" vive dentro de updatePlayerAnimationVariant().
-  updatePlayerAnimationVariant(p1Mesh, p1Body, p1HasBall ? "run" : p1IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p1Mate1Mesh, p1Mate1Body, p1HasBall ? "run" : p1IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p1Mate2Mesh, p1Mate2Body, p1HasBall ? "run" : p1IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p1KeeperMesh, p1KeeperBody, p1IsDefending ? "jog" : "idle");
+  updatePlayerAnimationVariant(
+    p1Mesh,
+    p1Body,
+    p1HasBall ? "run" : p1IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p1Mate1Mesh,
+    p1Mate1Body,
+    p1HasBall ? "run" : p1IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p1Mate2Mesh,
+    p1Mate2Body,
+    p1HasBall ? "run" : p1IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p1KeeperMesh,
+    p1KeeperBody,
+    p1IsDefending ? "jog" : "idle"
+  );
 
-  updatePlayerAnimationVariant(p2Mesh, p2Body, p2HasBall ? "run" : p2IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p2Mate1Mesh, p2Mate1Body, p2HasBall ? "run" : p2IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p2Mate2Mesh, p2Mate2Body, p2HasBall ? "run" : p2IsDefending ? "jog" : "run");
-  updatePlayerAnimationVariant(p2KeeperMesh, p2KeeperBody, p2IsDefending ? "jog" : "idle");
+  updatePlayerAnimationVariant(
+    p2Mesh,
+    p2Body,
+    p2HasBall ? "run" : p2IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p2Mate1Mesh,
+    p2Mate1Body,
+    p2HasBall ? "run" : p2IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p2Mate2Mesh,
+    p2Mate2Body,
+    p2HasBall ? "run" : p2IsDefending ? "jog" : "run"
+  );
+  updatePlayerAnimationVariant(
+    p2KeeperMesh,
+    p2KeeperBody,
+    p2IsDefending ? "jog" : "idle"
+  );
 
   p1NameLabel.position.set(p1Body.pos.x, p1Body.pos.y + 1.45, p1Body.pos.z);
   p1Mate1NameLabel.position.set(
@@ -1386,7 +1748,9 @@ function syncMeshes() {
   if (controlledBody) {
     const arrowBob = Math.sin(Date.now() * 0.008) * 0.08;
 
-    const movementDir = controlledBody.vel ? controlledBody.vel.clone() : new THREE.Vector3();
+    const movementDir = controlledBody.vel
+      ? controlledBody.vel.clone()
+      : new THREE.Vector3();
     movementDir.y = 0;
 
     const facingDir =
@@ -1404,7 +1768,11 @@ function syncMeshes() {
 
     facingDir.normalize();
 
-    controlledIndicatorGroup.position.set(controlledBody.pos.x, 0, controlledBody.pos.z);
+    controlledIndicatorGroup.position.set(
+      controlledBody.pos.x,
+      0,
+      controlledBody.pos.z
+    );
 
     controlledArrow.position.y = controlledBody.pos.y + 1.08 + arrowBob;
     controlledRing.rotation.y += 0.018;
@@ -1414,7 +1782,11 @@ function syncMeshes() {
   }
 
   if (ballBody.vel.lengthSq() > 0.0001) {
-    const rollAxis = new THREE.Vector3(ballBody.vel.z, 0, -ballBody.vel.x).normalize();
+    const rollAxis = new THREE.Vector3(
+      ballBody.vel.z,
+      0,
+      -ballBody.vel.x
+    ).normalize();
     const rollSpeed = ballBody.vel.length() * 0.05;
     ballMesh.rotateOnWorldAxis(rollAxis, rollSpeed);
   }
@@ -1432,21 +1804,40 @@ function syncMeshes() {
   ballShadow.position.set(ballBody.pos.x, 0.01, ballBody.pos.z);
 
   p1Shadow.material.opacity = Math.max(0.05, 0.28 - p1Body.pos.y * 0.06);
-  p1Mate1Shadow.material.opacity = Math.max(0.05, 0.28 - p1Mate1Body.pos.y * 0.06);
-  p1Mate2Shadow.material.opacity = Math.max(0.05, 0.28 - p1Mate2Body.pos.y * 0.06);
-  p1KeeperShadow.material.opacity = Math.max(0.05, 0.28 - p1KeeperBody.pos.y * 0.06);
+  p1Mate1Shadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p1Mate1Body.pos.y * 0.06
+  );
+  p1Mate2Shadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p1Mate2Body.pos.y * 0.06
+  );
+  p1KeeperShadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p1KeeperBody.pos.y * 0.06
+  );
 
   p2Shadow.material.opacity = Math.max(0.05, 0.28 - p2Body.pos.y * 0.06);
-  p2Mate1Shadow.material.opacity = Math.max(0.05, 0.28 - p2Mate1Body.pos.y * 0.06);
-  p2Mate2Shadow.material.opacity = Math.max(0.05, 0.28 - p2Mate2Body.pos.y * 0.06);
-  p2KeeperShadow.material.opacity = Math.max(0.05, 0.28 - p2KeeperBody.pos.y * 0.06);
+  p2Mate1Shadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p2Mate1Body.pos.y * 0.06
+  );
+  p2Mate2Shadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p2Mate2Body.pos.y * 0.06
+  );
+  p2KeeperShadow.material.opacity = Math.max(
+    0.05,
+    0.28 - p2KeeperBody.pos.y * 0.06
+  );
 
   ballShadow.material.opacity = Math.max(0.04, 0.22 - ballBody.pos.y * 0.07);
 
   const now = Date.now();
 
   p1Mesh.scale.y =
-    PLAYER_VISUAL_SCALE * (1 + Math.sin(now * 0.02) * Math.min(p1Body.speed / 10, 0.12));
+    PLAYER_VISUAL_SCALE *
+    (1 + Math.sin(now * 0.02) * Math.min(p1Body.speed / 10, 0.12));
   p1Mate1Mesh.scale.y =
     PLAYER_VISUAL_SCALE *
     (1 + Math.sin(now * 0.02 + 0.45) * Math.min(p1Mate1Body.speed / 10, 0.12));
@@ -1473,8 +1864,24 @@ function checkGoalParticles() {
   const scored = ballBody.pos.x < -FIELD_W / 2 || ballBody.pos.x > FIELD_W / 2;
 
   if (scored && !lastGoalParticleState) {
-    spawnParticles(scene, particles, ballBody.pos.x, 1, ballBody.pos.z, 0xffee44, 20);
-    spawnParticles(scene, particles, ballBody.pos.x, 1, ballBody.pos.z, 0xff6644, 15);
+    spawnParticles(
+      scene,
+      particles,
+      ballBody.pos.x,
+      1,
+      ballBody.pos.z,
+      0xffee44,
+      20
+    );
+    spawnParticles(
+      scene,
+      particles,
+      ballBody.pos.x,
+      1,
+      ballBody.pos.z,
+      0xff6644,
+      15
+    );
   }
 
   lastGoalParticleState = scored;
@@ -1492,10 +1899,11 @@ function animate(time) {
   const dt = Math.min((time - lastTime) / 1000, 0.05);
   lastTime = time;
 
-  if (isRushPaused) {
+  if (isRushStarting || isRushPaused) {
     syncMeshes();
     refreshFullUI(gameState, uiTeamOptions);
     updateMobileActionButtonsVisibility();
+    updateMobileContextButton();
     updateResponsiveCamera();
     renderer.render(scene, camera);
     return;
@@ -1507,6 +1915,7 @@ function animate(time) {
   checkGoalParticles();
   refreshFullUI(gameState, uiTeamOptions);
   updateMobileActionButtonsVisibility();
+  updateMobileContextButton();
   updateResponsiveCamera();
 
   renderer.render(scene, camera);
@@ -1520,4 +1929,5 @@ resetPositions();
 refreshFullUI(gameState, uiTeamOptions);
 renderMatchStats(gameState, uiTeamOptions);
 addBackgroundStars(scene);
+beginRushStartSequence();
 requestAnimationFrame(animate);
