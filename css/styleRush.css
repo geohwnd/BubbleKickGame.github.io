@@ -961,3 +961,12 @@ body {
   }
 }
 }
+
+/* Rush loading countdown */
+.rush-loading-text.is-countdown {
+  font-size: clamp(88px, 18vw, 210px) !important;
+  font-weight: 1000 !important;
+  line-height: 0.58 !important;
+  letter-spacing: 2px !important;
+  color: #000000 !important;
+}
