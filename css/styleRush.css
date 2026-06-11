@@ -647,6 +647,38 @@ body {
   transform: translateX(-50%) scale(0.96);
 }
 
+/* Match statistics actions */
+#win-overlay.show #restart-btn {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  transform: none !important;
+  min-width: 150px;
+}
+
+#win-overlay.show #restart-btn:hover {
+  transform: scale(1.03) !important;
+}
+
+#win-overlay.show #restart-btn:active {
+  transform: scale(0.96) !important;
+}
+
+#win-overlay.show .win-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+#win-overlay.show .win-menu-btn {
+  position: static !important;
+  min-width: 190px;
+}
+
 /* =========================
    MOBILE SHOOT BUTTON
    ========================= */
@@ -927,11 +959,24 @@ body {
   visibility: visible;
 }
 
-#quick-restart-btn {
-  display: none !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-}
+  #quick-restart-btn {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+
+  #win-overlay.show .win-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(280px, 82vw);
+    margin: 24px auto 0;
+  }
+
+  #win-overlay.show #restart-btn,
+  #win-overlay.show .win-menu-btn {
+    width: 100%;
+    min-width: 0;
+  }
 .rush-loading-text.is-countdown {
   color: #1730c9;
   font-size: clamp(110px, 26vw, 260px);
