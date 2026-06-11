@@ -91,12 +91,51 @@ import {
 // =========================
 
 const canvas = document.getElementById("canvas");
+const rushLoadingScreen = document.getElementById("rush-loading-screen");
+const rushLoadingText = rushLoadingScreen?.querySelector(".rush-loading-text");
+let isRushStarting = true;
+let rushStartSequenceFinished = false;
+let pendingPassReceiver = null;
 // Permite que el canvas funcione como control virtual tipo Playroom/mobile.
 // Evita scroll, selección, zoom táctil o menú contextual mientras se arrastra.
 canvas.style.touchAction = "none";
 canvas.style.userSelect = "none";
 canvas.style.cursor = "grab";
 canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+function setRushLoadingText(text) {
+  if (rushLoadingText) {
+    rushLoadingText.textContent = text;
+    rushLoadingText.classList.toggle("is-countdown", text !== "Loading Match...");
+  }
+}
+
+function showRushLoadingScreen() {
+  rushLoadingScreen?.classList.remove("is-hidden");
+}
+
+function hideRushLoadingScreen() {
+  rushLoadingScreen?.classList.add("is-hidden");
+}
+
+function beginRushStartSequence() {
+  if (rushStartSequenceFinished) return;
+
+  rushStartSequenceFinished = true;
+  isRushStarting = true;
+
+  showRushLoadingScreen();
+  setRushLoadingText("Loading Match...");
+
+  window.setTimeout(() => setRushLoadingText("3"), 900);
+  window.setTimeout(() => setRushLoadingText("2"), 1650);
+  window.setTimeout(() => setRushLoadingText("1"), 2400);
+  window.setTimeout(() => setRushLoadingText("GO!"), 3150);
+
+  window.setTimeout(() => {
+    hideRushLoadingScreen();
+    isRushStarting = false;
+  }, 3850);
+}
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -833,6 +872,7 @@ function passControlledPlayer() {
   playStrikeForBody(body, "run");
   setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
   clearBallCarrier();
+  pendingPassReceiver = bestMate;
 
   gameState.kickChargingPlayer = null;
   gameState.kickChargeStart = 0;
@@ -934,6 +974,7 @@ function moveRushPlayer(body, playerNumber) {
 
 function updateBallPossession() {
   if (gameState.ballCarrier) {
+    pendingPassReceiver = null;
     const carrierBody = getBodyByPlayer(gameState.ballCarrier);
 
     ballBody.pos
@@ -950,6 +991,23 @@ function updateBallPossession() {
   const closestPlayer = getClosestBodyTo(ballBody.pos, playerTeamBodies);
   const closestAI = getClosestBodyTo(ballBody.pos, aiTeamBodies);
   const now = performance.now();
+  if (pendingPassReceiver) {
+    const receiveDistance = pendingPassReceiver.pos.distanceTo(ballBody.pos);
+
+    if (receiveDistance < 0.9) {
+      gameState.controlledPlayerIndex = playerTeamBodies.indexOf(pendingPassReceiver);
+
+      setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+      setBallCarrier(TEAMS.P1);
+
+      ballBody.vel.set(0, 0, 0);
+      pendingPassReceiver = null;
+
+      playCatchForBody(playerTeamBodies[gameState.controlledPlayerIndex], "run");
+      updateTurnUI(gameState, uiTeamOptions);
+      return;
+    }
+  }
 
   if (
     now >= gameState.playerPickupBlockedUntil &&
@@ -1114,6 +1172,7 @@ function triggerGoal(scorer) {
   }
 
   enterGoalPhase();
+  pendingPassReceiver = null;
 
   addScore(scorer);
 
@@ -1164,6 +1223,7 @@ function endMatch() {
 function restartGame() {
   resetGameState();
   resetPositions();
+  pendingPassReceiver = null;
   resetAIMemory();
 
   clearTimeout(goalTimeout);
@@ -1636,7 +1696,7 @@ function animate(time) {
   const dt = Math.min((time - lastTime) / 1000, 0.05);
   lastTime = time;
 
-  if (isRushPaused) {
+  if (isRushStarting || isRushPaused) {
     syncMeshes();
     refreshFullUI(gameState, uiTeamOptions);
     updateMobileActionButtonsVisibility();
@@ -1666,4 +1726,5 @@ resetPositions();
 refreshFullUI(gameState, uiTeamOptions);
 renderMatchStats(gameState, uiTeamOptions);
 addBackgroundStars(scene);
+beginRushStartSequence();
 requestAnimationFrame(animate);

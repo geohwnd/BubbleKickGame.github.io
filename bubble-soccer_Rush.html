@@ -4,7 +4,7 @@
     <link rel="icon" href="img/favicon.png">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bubble Kick — Arcade Soccer</title>
+    <title>Bubble Kick — Rush Match</title>
 
     <link rel="stylesheet" href="css/styleRush.css" />
 
@@ -176,6 +176,55 @@
         text-transform: uppercase;
       }
 
+      .pause-controls {
+        display: grid;
+        gap: 9px;
+        margin: 0 0 24px;
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .pause-controls-title {
+        margin-bottom: 3px;
+        color: #b9ff22;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+      }
+
+      .pause-control-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+      }
+
+      .pause-control-key {
+        flex: 0 0 auto;
+        min-width: 82px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(135deg, #ffffff 0%, #95f4ff 58%, #b9ff22 100%);
+        font-size: 10px;
+        font-weight: 1000;
+        letter-spacing: 1px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .pause-control-action {
+        flex: 1;
+        text-align: left;
+      }
+
       .pause-actions {
         display: grid;
         gap: 12px;
@@ -215,13 +264,7 @@
         margin-top: 28px;
       }
 
-      #restart-btn,
-      #quick-restart-btn {
-        position: static;
-        z-index: 60;
-        transform: none;
-        min-height: 44px;
-      }
+      
 
       #restart-btn:hover,
       #quick-restart-btn:hover {
@@ -355,7 +398,7 @@
     <!-- Goal -->
     <div id="goal-overlay">
       <div id="goal-text">
-        ⚽ GOAL!
+        GOAL!
       </div>
 
       <div id="scorer-text"></div>
@@ -419,6 +462,34 @@
           Match Paused
         </div>
 
+        <div class="pause-controls">
+          <div class="pause-controls-title">Controls</div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">WASD</span>
+            <span class="pause-control-action">Move your player</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">SPACE</span>
+            <span class="pause-control-action">Shoot when you have the ball</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">Q</span>
+            <span class="pause-control-action">Pass to a teammate</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">C</span>
+            <span class="pause-control-action">Switch defender</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">SHIFT</span>
+            <span class="pause-control-action">Dash / sprint</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">Mobile</span>
+            <span class="pause-control-action">Use the on-screen buttons</span>
+          </div>
+        </div>
+
         <div class="pause-actions">
           <button id="resume-btn" class="pause-action-btn" type="button">
             Resume
@@ -476,8 +547,7 @@
         }, remaining);
       }
 
-      window.addEventListener("load", hideRushLoadingScreen);
-      window.setTimeout(hideRushLoadingScreen, 5000);
+      
     </script>
     <script type="module" src="./js/mainRush.js"></script>
   </body>

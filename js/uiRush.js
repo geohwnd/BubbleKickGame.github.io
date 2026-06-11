@@ -36,7 +36,7 @@ export const instructionEl = document.getElementById("instruction");
 export const rushHelpEl = document.getElementById("rush-help");
 
 export const restartBtnEl = document.getElementById("restart-btn");
-export const quickRestartBtnEl = document.getElementById("quick-restart-btn");
+export const quickRestartBtnEl = null;
 
 // =========================
 // TEAM UI
@@ -51,11 +51,11 @@ export function updateTeamLabels(options = {}) {
   } = options;
 
   if (scoreP1LabelEl && selectedTeamP1) {
-    scoreP1LabelEl.textContent = `${p1TeamIcon} ${selectedTeamP1.code || "J1"}`;
+    scoreP1LabelEl.textContent = `${p1TeamIcon} ${selectedTeamP1.code || "P1"}`;
   }
 
   if (scoreP2LabelEl && selectedTeamP2) {
-    scoreP2LabelEl.textContent = `${p2TeamIcon} ${selectedTeamP2.code || "J2"}`;
+    scoreP2LabelEl.textContent = `${p2TeamIcon} ${selectedTeamP2.code || "P2"}`;
   }
 }
 
@@ -109,11 +109,11 @@ export function updateTurnUI(gameState, options = {}) {
 
   if (gameState.gamePhase === GAME_PHASES.PLAYING) {
     if (gameState.ballCarrier === TEAMS.P1) {
-      turnTextEl.textContent = "POSESIÓN J1";
+      turnTextEl.textContent = "P1 POSSESSION";
     } else if (gameState.ballCarrier === TEAMS.P2) {
-      turnTextEl.textContent = "POSESIÓN IA";
+      turnTextEl.textContent = "AI POSSESSION";
     } else {
-      turnTextEl.textContent = "MODO RUSH VS IA";
+      turnTextEl.textContent = "RUSH MODE VS AI";
     }
   }
 }
@@ -165,7 +165,7 @@ export function showGoalOverlay(options = {}) {
   } = options;
 
   if (goalTextEl) {
-    goalTextEl.textContent = "⚽ ¡GOL!";
+    goalTextEl.textContent = "GOAAAAL!";
     goalTextEl.style.color = scoringTeam === TEAMS.P1 ? p1TeamColor : p2TeamColor;
   }
 
@@ -188,15 +188,15 @@ export function renderMatchStats(gameState, options = {}) {
   const {
     p1TeamIcon = "🔴",
     p2TeamIcon = "🔵",
-    p1TeamName = "JUGADOR 1",
-    p2TeamName = "IA",
+    p1TeamName = "PLAYER 1",
+    p2TeamName = "AI",
   } = options;
 
   if (!matchStatsContentEl) return;
 
   if (!gameState.goalEvents.length) {
     matchStatsContentEl.className = "stats-empty";
-    matchStatsContentEl.textContent = "Sin goles registrados";
+    matchStatsContentEl.textContent = "No Goals Recorded";
     return;
   }
 
@@ -205,7 +205,7 @@ export function renderMatchStats(gameState, options = {}) {
 
   const renderGoalList = (goals, side = "left") => {
     if (!goals.length) {
-      return '<div class="google-goal-item">Sin goles</div>';
+      return '<div class="google-goal-item">No goals</div>';
     }
 
     return goals
@@ -228,7 +228,7 @@ export function renderMatchStats(gameState, options = {}) {
         <div class="google-team-side">
           <div class="google-team-flag">${p1TeamIcon}</div>
           <div class="google-team-name">${p1TeamName}</div>
-          <div class="google-team-role">Jugador 1</div>
+          <div class="google-team-role">Player 1</div>
         </div>
 
         <div class="google-score">
@@ -240,11 +240,11 @@ export function renderMatchStats(gameState, options = {}) {
         <div class="google-team-side right">
           <div class="google-team-flag">${p2TeamIcon}</div>
           <div class="google-team-name">${p2TeamName}</div>
-          <div class="google-team-role">IA</div>
+          <div class="google-team-role">AI</div>
         </div>
       </div>
 
-      <div class="google-goals-title">Goles</div>
+      <div class="google-goals-title">Goals</div>
 
       <div class="google-goals-row">
         <div class="google-goals-list">
@@ -261,24 +261,24 @@ export function renderMatchStats(gameState, options = {}) {
 
 export function showWinOverlay(gameState, options = {}) {
   const {
-    p1TeamName = "JUGADOR 1",
-    p2TeamName = "IA",
+    p1TeamName = "PLAYER 1",
+    p2TeamName = "AI",
   } = options;
 
   const winner = getWinningTeam(gameState);
 
   if (winTitleEl) {
     if (winner === TEAMS.P1) {
-      winTitleEl.textContent = `🎉 ${p1TeamName} GANA`;
+      winTitleEl.textContent = `🎉 ${p1TeamName} WINS`;
     } else if (winner === TEAMS.P2) {
-      winTitleEl.textContent = `🤖 ${p2TeamName} GANA`;
+      winTitleEl.textContent = `🤖 ${p2TeamName} WINS`;
     } else {
-      winTitleEl.textContent = "🤝 EMPATE";
+      winTitleEl.textContent = "🤝 DRAW";
     }
   }
 
   if (winSubEl) {
-    winSubEl.textContent = `Marcador final ${gameState.p1Score} - ${gameState.p2Score}`;
+    winSubEl.textContent = `Final score ${gameState.p1Score} - ${gameState.p2Score}`;
   }
 
   renderMatchStats(gameState, options);
@@ -296,12 +296,12 @@ export function hideWinOverlay() {
 export function updateInstructionText() {
   if (instructionEl) {
     instructionEl.textContent =
-      "J1: WASD para moverte · Space dispara al frente · La IA roba, conduce y chuta";
+      "P1: WASD to move · Space shoots forward · Q pass · C switch defender";
   }
 
   if (rushHelpEl) {
     rushHelpEl.textContent =
-      "J1 WASD · Space dispara al frente · La IA presiona, roba y chuta";
+      "P1 WASD · Space shoots forward · Q pass · C switch defender · AI presses, steals and shoots";
   }
 }
 
@@ -320,7 +320,7 @@ export function onRestartPressed(callback) {
 }
 
 export function onQuickRestartPressed(callback) {
-  quickRestartBtnEl?.addEventListener("click", callback);
+  // Quick restart is intentionally disabled to prevent invisible click zones during gameplay.
 }
 
 // =========================
