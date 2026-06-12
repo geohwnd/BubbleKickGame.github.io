@@ -635,7 +635,7 @@ window.addEventListener("keydown", startStadiumEnvironmentSound, {
 });
 startStadiumEnvironmentSound();
 
-const goalSound = new Audio("audio/Goal_Sound.mp3");
+const goalSound = new Audio("audio/CRICHI'SGOAL.mp3");
 goalSound.preload = "auto";
 goalSound.volume = 0.82 * masterVolume;
 
