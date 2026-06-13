@@ -92,9 +92,17 @@ import {
 const canvas = document.getElementById("canvas");
 const rushLoadingScreen = document.getElementById("rush-loading-screen");
 const rushLoadingText = rushLoadingScreen?.querySelector(".rush-loading-text");
+const replayOverlay = document.getElementById("replay-overlay");
 let isRushStarting = true;
 let rushStartSequenceFinished = false;
 let pendingPassReceiver = null;
+const REPLAY_CAPTURE_MS = 3200;
+const REPLAY_PLAYBACK_MS = 3000;
+const replayBuffer = [];
+let isGoalReplayActive = false;
+let replayPlaybackFrames = [];
+let replayPlaybackStart = 0;
+let replayFinishedCallback = null;
 // Permite que el canvas funcione como control virtual tipo Playroom/mobile.
 // Evita scroll, selección, zoom táctil o menú contextual mientras se arrastra.
 canvas.style.touchAction = "none";
@@ -790,9 +798,136 @@ function updateKeeperMeshFacing(keeperMesh, keeperBody, teamNumber) {
 }
 
 // =========================
-// GOAL TEXT HELPERS
+// GOAL REPLAY
 // =========================
 
+function cloneReplayBodyState(body) {
+  return {
+    pos: body.pos.clone(),
+    vel: body.vel.clone(),
+    facing: body.facing
+      ? body.facing.clone()
+      : new THREE.Vector3(1, 0, 0),
+  };
+}
+
+function applyReplayBodyState(body, state) {
+  if (!body || !state) return;
+
+  body.pos.copy(state.pos);
+  body.vel.copy(state.vel);
+
+  if (body.facing && state.facing) {
+    body.facing.copy(state.facing);
+  }
+}
+
+function recordReplayFrame() {
+  if (
+    gameState.gamePhase !== GAME_PHASES.PLAYING ||
+    isGoalReplayActive
+  ) {
+    return;
+  }
+
+  const now = performance.now();
+
+  replayBuffer.push({
+    time: now,
+    playerBodies: allPlayerBodies.map(cloneReplayBodyState),
+    aiBodies: allAIBodies.map(cloneReplayBodyState),
+    ball: cloneReplayBodyState(ballBody),
+    controlledPlayerIndex: gameState.controlledPlayerIndex,
+    aiCarrierIndex: gameState.aiCarrierIndex,
+    ballCarrier: gameState.ballCarrier,
+  });
+
+  while (
+    replayBuffer.length > 2 &&
+    now - replayBuffer[0].time > REPLAY_CAPTURE_MS
+  ) {
+    replayBuffer.shift();
+  }
+}
+
+function beginGoalReplay(onFinished) {
+  if (!replayBuffer.length) {
+    onFinished?.();
+    return;
+  }
+
+  isGoalReplayActive = true;
+  replayPlaybackFrames = [...replayBuffer];
+  replayPlaybackStart = performance.now();
+  replayFinishedCallback = onFinished;
+
+  replayOverlay?.classList.add("show");
+
+  clearBallCarrier();
+  hideStrengthBar();
+}
+
+function applyReplayFrame(frame) {
+  frame.playerBodies.forEach((state, index) => {
+    applyReplayBodyState(allPlayerBodies[index], state);
+  });
+
+  frame.aiBodies.forEach((state, index) => {
+    applyReplayBodyState(allAIBodies[index], state);
+  });
+
+  applyReplayBodyState(ballBody, frame.ball);
+
+  gameState.controlledPlayerIndex =
+    frame.controlledPlayerIndex;
+
+  gameState.aiCarrierIndex =
+    frame.aiCarrierIndex;
+
+  gameState.ballCarrier =
+    frame.ballCarrier;
+}
+
+function updateGoalReplay() {
+  if (!isGoalReplayActive) return false;
+
+  const elapsed =
+    performance.now() - replayPlaybackStart;
+
+  const progress = THREE.MathUtils.clamp(
+    elapsed / REPLAY_PLAYBACK_MS,
+    0,
+    1
+  );
+
+  const frameIndex = Math.min(
+    replayPlaybackFrames.length - 1,
+    Math.floor(
+      progress *
+        (replayPlaybackFrames.length - 1)
+    )
+  );
+
+  applyReplayFrame(
+    replayPlaybackFrames[frameIndex]
+  );
+
+  if (progress >= 1) {
+    const callback = replayFinishedCallback;
+
+    isGoalReplayActive = false;
+    replayPlaybackFrames = [];
+    replayPlaybackStart = 0;
+    replayFinishedCallback = null;
+
+    replayOverlay?.classList.remove("show");
+    replayBuffer.length = 0;
+
+    callback?.();
+  }
+
+  return true;
+}
 function getGoalScorerName(scorerTeam) {
   if (gameState.lastTouchTeam === scorerTeam) {
     return getRosterName(scorerTeam, gameState.lastTouchIndex);
@@ -1294,16 +1429,17 @@ function triggerGoal(scorer) {
   });
 
   refreshFullUI(gameState, uiTeamOptions);
-  playGoalSound();
+playGoalSound();
 
+clearTimeout(goalTimeout);
+
+beginGoalReplay(() => {
   showGoalOverlay({
     scoringTeam: scorer,
     scorerText,
     p1TeamColor,
     p2TeamColor,
   });
-
-  clearTimeout(goalTimeout);
 
   goalTimeout = setTimeout(() => {
     hideGoalOverlay();
@@ -1317,6 +1453,7 @@ function triggerGoal(scorer) {
     refreshFullUI(gameState, uiTeamOptions);
     updateInstructionText();
   }, 2200);
+});
 }
 
 function endMatch() {
@@ -1332,6 +1469,12 @@ function restartGame() {
   resetGameState();
   resetPositions();
   pendingPassReceiver = null;
+  isGoalReplayActive = false;
+  replayPlaybackFrames = [];
+  replayPlaybackStart = 0;
+  replayFinishedCallback = null;
+  replayOverlay?.classList.remove("show");
+  replayBuffer.length = 0;
   resetAIMemory();
 
   clearTimeout(goalTimeout);
@@ -1637,7 +1780,7 @@ function simulate() {
     updateDashSteal();
     updateContactSteal();
   }
-
+  recordReplayFrame();
   checkGoal();
 }
 
@@ -1926,6 +2069,17 @@ function animate(time) {
     renderer.render(scene, camera);
     return;
   }
+
+  if (updateGoalReplay()) {
+  syncMeshes();
+  updateParticles(scene, particles, dt);
+  refreshFullUI(gameState, uiTeamOptions);
+  updateMobileActionButtonsVisibility();
+  updateMobileContextButton();
+  updateResponsiveCamera();
+  renderer.render(scene, camera);
+  return;
+}
 
   simulate();
   syncMeshes();

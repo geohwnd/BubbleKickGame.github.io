@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="icon" href="img/favicon.png">
+    <link rel="icon" href="img/favicon.png" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bubble Kick — Rush Match</title>
@@ -455,6 +455,10 @@
       ⏸ Pause
     </button>
 
+    <div id="replay-overlay" aria-hidden="true">
+      REPLAY
+    </div>
+
     <div id="pause-overlay" class="is-hidden" aria-hidden="true">
       <div class="pause-card">
         <div class="pause-title">
@@ -519,7 +523,7 @@
       <span id="mobile-context-label">DEFENDER</span>
     </button>
 
-    <button id="mobile-shoot-btn" aria-label="Chutar">
+    <button id="mobile-shoot-btn" aria-label="Shoot">
       ⚽
       <span>SHOOT</span>
     </button>
@@ -540,22 +544,6 @@
     </script>
 
     <!-- MAIN -->
-    <script>
-      const rushLoadingScreen = document.getElementById("rush-loading-screen");
-      const rushLoadingStart = performance.now();
-      const rushMinimumLoadingMs = 1800;
-
-      function hideRushLoadingScreen() {
-        const elapsed = performance.now() - rushLoadingStart;
-        const remaining = Math.max(0, rushMinimumLoadingMs - elapsed);
-
-        window.setTimeout(() => {
-          rushLoadingScreen?.classList.add("is-hidden");
-        }, remaining);
-      }
-
-      
-    </script>
     <script type="module" src="./js/mainRush.js"></script>
   </body>
 </html>
