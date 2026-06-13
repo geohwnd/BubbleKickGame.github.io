@@ -600,7 +600,6 @@ function setMasterVolume(value) {
   localStorage.setItem(MASTER_VOLUME_STORAGE_KEY, String(masterVolume));
 
   stadiumEnvironmentSound.volume = 0.92 * masterVolume;
-  goalSound.volume = 0.82 * masterVolume;
   kickSound.volume = 0.65 * masterVolume;
 }
 let lastGoalParticleState = false;
@@ -635,12 +634,31 @@ window.addEventListener("keydown", startStadiumEnvironmentSound, {
 });
 startStadiumEnvironmentSound();
 
-const goalSound = new Audio("audio/CRICHI'SGOAL3.mp3");
-goalSound.preload = "auto";
-goalSound.volume = 1.42 * masterVolume;
+const goalSounds = [
+  "audio/CRICHI'SGOAL.mp3",
+  "audio/CRICHI'SGOAL2.mp3",
+  "audio/CRICHI'SGOAL3.mp3",
+].map((src) => {
+  const audio = new Audio(src);
+  audio.preload = "auto";
+  return audio;
+});
+
+let lastGoalSoundIndex = -1;
 
 function playGoalSound(volume = 0.82) {
-  const sound = goalSound.cloneNode();
+  let randomIndex;
+
+  do {
+    randomIndex = Math.floor(Math.random() * goalSounds.length);
+  } while (
+    goalSounds.length > 1 &&
+    randomIndex === lastGoalSoundIndex
+  );
+
+  lastGoalSoundIndex = randomIndex;
+
+  const sound = goalSounds[randomIndex].cloneNode();
   sound.volume = volume * masterVolume;
   sound.play().catch(() => {});
 }
