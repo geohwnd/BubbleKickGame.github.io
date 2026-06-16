@@ -76,6 +76,7 @@ import {
   setInputCallbacks,
   getMoveInput,
   resetDrag,
+  updateGamepadInput,
 } from "./inputRush.js";
 
 import {
@@ -2114,6 +2115,7 @@ function animate(time) {
     return;
   }
 
+  updateGamepadInput();
   simulate();
   syncMeshes();
   updateParticles(scene, particles, dt);

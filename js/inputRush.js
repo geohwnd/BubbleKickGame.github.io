@@ -17,11 +17,39 @@ export const inputState = {
   joystickStartScreen: new THREE.Vector2(),
   joystickCurrentScreen: new THREE.Vector2(),
   joystickMove: new THREE.Vector3(),
+
+  // Gamepad / DualSense input.
+  gamepadIndex: null,
+  gamepadMove: new THREE.Vector3(),
+  gamepadButtonsDown: new Set(),
 };
 
 const JOYSTICK_DEADZONE = 5;
 const JOYSTICK_MAX_RADIUS = 62;
 const JOYSTICK_FULL_INPUT_MODE = true;
+
+const GAMEPAD_DEADZONE = 0.18;
+const GAMEPAD_AXIS_X = 0;
+const GAMEPAD_AXIS_Y = 1;
+
+const GAMEPAD_BUTTONS = {
+  CROSS: 0,
+  CIRCLE: 1,
+  SQUARE: 2,
+  TRIANGLE: 3,
+  L1: 4,
+  R1: 5,
+  L2: 6,
+  R2: 7,
+  SHARE: 8,
+  OPTIONS: 9,
+  L3: 10,
+  R3: 11,
+  DPAD_UP: 12,
+  DPAD_DOWN: 13,
+  DPAD_LEFT: 14,
+  DPAD_RIGHT: 15,
+};
 
 const callbacks = {
   onDash: null,
@@ -71,6 +99,7 @@ export function clearInput() {
   inputState.dragCurrent = null;
   inputState.isDragging = false;
   resetJoystick();
+  resetGamepadInput();
 
   callbacks.onBlur?.();
 }
@@ -90,6 +119,9 @@ export function getMoveInput(playerNumber = 1) {
 
     // Mouse/touch virtual joystick. This combines with WASD.
     input.add(inputState.joystickMove);
+
+    // DualSense / gamepad left stick + D-pad. This combines with WASD and touch joystick.
+    input.add(inputState.gamepadMove);
   } else {
     if (inputState.keys.has("ArrowUp")) input.z -= 1;
     if (inputState.keys.has("ArrowDown")) input.z += 1;
@@ -121,6 +153,8 @@ export function setupInputListeners(options = {}) {
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
   window.addEventListener("blur", clearInput);
+  window.addEventListener("gamepadconnected", handleGamepadConnected);
+  window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
 
   if (canvas && camera && groundPlane && raycaster && mouse) {
     setupPointerListeners({
@@ -138,6 +172,8 @@ export function removeInputListeners() {
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
   window.removeEventListener("blur", clearInput);
+  window.removeEventListener("gamepadconnected", handleGamepadConnected);
+  window.removeEventListener("gamepaddisconnected", handleGamepadDisconnected);
 }
 
 function handleKeyDown(event) {
@@ -178,6 +214,105 @@ function handleKeyUp(event) {
   if (key === "Space") {
     event.preventDefault();
   }
+}
+
+// =========================
+// GAMEPAD / DUALSENSE
+// =========================
+
+function handleGamepadConnected(event) {
+  inputState.gamepadIndex = event.gamepad.index;
+  resetGamepadInput();
+}
+
+function handleGamepadDisconnected(event) {
+  if (inputState.gamepadIndex === event.gamepad.index) {
+    inputState.gamepadIndex = null;
+    resetGamepadInput();
+  }
+}
+
+function resetGamepadInput() {
+  inputState.gamepadMove.set(0, 0, 0);
+  inputState.gamepadButtonsDown.clear();
+}
+
+function getActiveGamepad() {
+  const gamepads = navigator.getGamepads?.() ?? [];
+
+  if (
+    inputState.gamepadIndex !== null &&
+    gamepads[inputState.gamepadIndex]
+  ) {
+    return gamepads[inputState.gamepadIndex];
+  }
+
+  const firstConnectedGamepad = gamepads.find(Boolean);
+
+  if (firstConnectedGamepad) {
+    inputState.gamepadIndex = firstConnectedGamepad.index;
+  }
+
+  return firstConnectedGamepad ?? null;
+}
+
+function applyDeadzone(value, deadzone = GAMEPAD_DEADZONE) {
+  if (Math.abs(value) < deadzone) return 0;
+  return value;
+}
+
+function isGamepadButtonPressed(gamepad, buttonIndex) {
+  const button = gamepad?.buttons?.[buttonIndex];
+  return Boolean(button?.pressed || button?.value > 0.55);
+}
+
+function handleGamepadButton(gamepad, buttonIndex, action) {
+  const pressed = isGamepadButtonPressed(gamepad, buttonIndex);
+  const wasPressed = inputState.gamepadButtonsDown.has(buttonIndex);
+
+  if (pressed && !wasPressed) {
+    inputState.gamepadButtonsDown.add(buttonIndex);
+    action?.();
+    return;
+  }
+
+  if (!pressed && wasPressed) {
+    inputState.gamepadButtonsDown.delete(buttonIndex);
+  }
+}
+
+export function updateGamepadInput() {
+  const gamepad = getActiveGamepad();
+
+  if (!gamepad) {
+    resetGamepadInput();
+    return;
+  }
+
+  const leftX = applyDeadzone(gamepad.axes[GAMEPAD_AXIS_X] ?? 0);
+  const leftY = applyDeadzone(gamepad.axes[GAMEPAD_AXIS_Y] ?? 0);
+
+  let moveX = leftX;
+  let moveZ = leftY;
+
+  if (isGamepadButtonPressed(gamepad, GAMEPAD_BUTTONS.DPAD_LEFT)) moveX -= 1;
+  if (isGamepadButtonPressed(gamepad, GAMEPAD_BUTTONS.DPAD_RIGHT)) moveX += 1;
+  if (isGamepadButtonPressed(gamepad, GAMEPAD_BUTTONS.DPAD_UP)) moveZ -= 1;
+  if (isGamepadButtonPressed(gamepad, GAMEPAD_BUTTONS.DPAD_DOWN)) moveZ += 1;
+
+  inputState.gamepadMove.set(moveX, 0, moveZ);
+
+  if (inputState.gamepadMove.lengthSq() > 1) {
+    inputState.gamepadMove.normalize();
+  }
+
+  // DualSense / PlayStation layout:
+  // Cross: shoot, Circle: dash, Square: pass, Triangle: switch defense, Options: restart.
+  handleGamepadButton(gamepad, GAMEPAD_BUTTONS.CROSS, callbacks.onShoot);
+  handleGamepadButton(gamepad, GAMEPAD_BUTTONS.CIRCLE, callbacks.onDash);
+  handleGamepadButton(gamepad, GAMEPAD_BUTTONS.SQUARE, callbacks.onPass);
+  handleGamepadButton(gamepad, GAMEPAD_BUTTONS.TRIANGLE, callbacks.onSwitchDefense);
+  handleGamepadButton(gamepad, GAMEPAD_BUTTONS.OPTIONS, callbacks.onRestart);
 }
 
 // =========================
@@ -371,4 +506,12 @@ export function resetDrag() {
 
 export function getJoystickMoveInput() {
   return inputState.joystickMove.clone();
+}
+
+export function getGamepadMoveInput() {
+  return inputState.gamepadMove.clone();
+}
+
+export function hasGamepadConnected() {
+  return Boolean(getActiveGamepad());
 }
