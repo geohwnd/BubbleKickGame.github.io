@@ -188,34 +188,86 @@ camera.position.set(0, 12, 18);
 camera.lookAt(0, 0, 0);
 
 const DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 10.2, 15.2);
+const SIDE_CAMERA_OFFSET = new THREE.Vector3(0, 7.8, 14.8);
+const REPLAY_CAMERA_P1_POSITION = new THREE.Vector3(8.4, 6.8, -10.8);
+const REPLAY_CAMERA_P2_POSITION = new THREE.Vector3(-8.4, 6.8, 10.8);
 const MOBILE_CAMERA_OFFSET = new THREE.Vector3(0, 10.2, 10.8);
 const cameraLookTarget = new THREE.Vector3(0, 0, 0);
 const desiredCameraPosition = new THREE.Vector3();
+const cameraFocusTarget = new THREE.Vector3();
+let replayScoringTeam = null;
 
 function isMobilePortrait() {
   return window.innerWidth < 700 && window.innerHeight > window.innerWidth;
 }
 
+function updateGoalReplayCamera() {
+  const replayCameraPosition =
+    replayScoringTeam === TEAMS.P2
+      ? REPLAY_CAMERA_P2_POSITION
+      : REPLAY_CAMERA_P1_POSITION;
+
+  desiredCameraPosition.copy(replayCameraPosition);
+  camera.position.lerp(desiredCameraPosition, 0.08);
+
+  cameraFocusTarget.set(
+    THREE.MathUtils.clamp(ballBody.pos.x, -6.2, 6.2),
+    0.32,
+    THREE.MathUtils.clamp(ballBody.pos.z, -3.6, 3.6)
+  );
+
+  cameraLookTarget.lerp(cameraFocusTarget, 0.18);
+  camera.lookAt(cameraLookTarget);
+}
+
 function updateResponsiveCamera() {
-  if (!isMobilePortrait()) {
-    desiredCameraPosition.copy(DEFAULT_CAMERA_POSITION);
-    camera.position.lerp(desiredCameraPosition, 0.045);
-    cameraLookTarget.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+  const replayTargetX = THREE.MathUtils.clamp(ballBody.pos.x, -5.8, 5.8);
+  const replayTargetZ = THREE.MathUtils.clamp(ballBody.pos.z, -2.8, 2.8);
+
+  if (isMobilePortrait()) {
+    if (isGoalReplayActive) {
+      desiredCameraPosition.set(
+        replayTargetX + MOBILE_CAMERA_OFFSET.x,
+        MOBILE_CAMERA_OFFSET.y,
+        replayTargetZ + MOBILE_CAMERA_OFFSET.z
+      );
+
+      camera.position.lerp(desiredCameraPosition, 0.075);
+      cameraFocusTarget.set(replayTargetX, 0, replayTargetZ);
+      cameraLookTarget.lerp(cameraFocusTarget, 0.11);
+      camera.lookAt(cameraLookTarget);
+      return;
+    }
+
+    // Mobile gameplay camera follows the ball.
+    desiredCameraPosition.set(
+      replayTargetX + MOBILE_CAMERA_OFFSET.x,
+      MOBILE_CAMERA_OFFSET.y,
+      replayTargetZ + MOBILE_CAMERA_OFFSET.z
+    );
+
+    camera.position.lerp(desiredCameraPosition, 0.075);
+
+    cameraFocusTarget.set(replayTargetX, 0, replayTargetZ);
+
+    cameraLookTarget.lerp(cameraFocusTarget, 0.11);
     camera.lookAt(cameraLookTarget);
+
     return;
   }
 
-  const targetX = THREE.MathUtils.clamp(ballBody.pos.x, -3.6, 3.6);
-  const targetZ = THREE.MathUtils.clamp(ballBody.pos.z, -3.2, 3.2);
+  if (isGoalReplayActive) {
+    // Replay camera: fixed side/corner angle based on the scoring team,
+    // rotating smoothly to follow the ball.
+    updateGoalReplayCamera();
+    return;
+  }
 
-  desiredCameraPosition.set(
-    targetX + MOBILE_CAMERA_OFFSET.x,
-    MOBILE_CAMERA_OFFSET.y,
-    targetZ + MOBILE_CAMERA_OFFSET.z
-  );
-
-  camera.position.lerp(desiredCameraPosition, 0.075);
-  cameraLookTarget.lerp(new THREE.Vector3(targetX, 0, targetZ), 0.11);
+  // Classic Rush Match camera during normal gameplay.
+  desiredCameraPosition.copy(DEFAULT_CAMERA_POSITION);
+  camera.position.lerp(desiredCameraPosition, 0.045);
+  cameraFocusTarget.set(0, 0, 0);
+  cameraLookTarget.lerp(cameraFocusTarget, 0.08);
   camera.lookAt(cameraLookTarget);
 }
 
@@ -247,7 +299,7 @@ function resize() {
   // composer.setSize(width, height);
   // bloomPass.setSize(width, height);
   camera.aspect = width / height;
-  camera.fov = width < 700 && height > width ? 49 : 42;
+  camera.fov = width < 700 && height > width ? 49 : 46;
   camera.updateProjectionMatrix();
 }
 
@@ -659,10 +711,7 @@ function playGoalSound(volume = 0.82) {
 
   do {
     randomIndex = Math.floor(Math.random() * goalSounds.length);
-  } while (
-    goalSounds.length > 1 &&
-    randomIndex === lastGoalSoundIndex
-  );
+  } while (goalSounds.length > 1 && randomIndex === lastGoalSoundIndex);
 
   lastGoalSoundIndex = randomIndex;
 
@@ -805,9 +854,7 @@ function cloneReplayBodyState(body) {
   return {
     pos: body.pos.clone(),
     vel: body.vel.clone(),
-    facing: body.facing
-      ? body.facing.clone()
-      : new THREE.Vector3(1, 0, 0),
+    facing: body.facing ? body.facing.clone() : new THREE.Vector3(1, 0, 0),
   };
 }
 
@@ -823,10 +870,7 @@ function applyReplayBodyState(body, state) {
 }
 
 function recordReplayFrame() {
-  if (
-    gameState.gamePhase !== GAME_PHASES.PLAYING ||
-    isGoalReplayActive
-  ) {
+  if (gameState.gamePhase !== GAME_PHASES.PLAYING || isGoalReplayActive) {
     return;
   }
 
@@ -878,39 +922,26 @@ function applyReplayFrame(frame) {
 
   applyReplayBodyState(ballBody, frame.ball);
 
-  gameState.controlledPlayerIndex =
-    frame.controlledPlayerIndex;
+  gameState.controlledPlayerIndex = frame.controlledPlayerIndex;
 
-  gameState.aiCarrierIndex =
-    frame.aiCarrierIndex;
+  gameState.aiCarrierIndex = frame.aiCarrierIndex;
 
-  gameState.ballCarrier =
-    frame.ballCarrier;
+  gameState.ballCarrier = frame.ballCarrier;
 }
 
 function updateGoalReplay() {
   if (!isGoalReplayActive) return false;
 
-  const elapsed =
-    performance.now() - replayPlaybackStart;
+  const elapsed = performance.now() - replayPlaybackStart;
 
-  const progress = THREE.MathUtils.clamp(
-    elapsed / REPLAY_PLAYBACK_MS,
-    0,
-    1
-  );
+  const progress = THREE.MathUtils.clamp(elapsed / REPLAY_PLAYBACK_MS, 0, 1);
 
   const frameIndex = Math.min(
     replayPlaybackFrames.length - 1,
-    Math.floor(
-      progress *
-        (replayPlaybackFrames.length - 1)
-    )
+    Math.floor(progress * (replayPlaybackFrames.length - 1))
   );
 
-  applyReplayFrame(
-    replayPlaybackFrames[frameIndex]
-  );
+  applyReplayFrame(replayPlaybackFrames[frameIndex]);
 
   if (progress >= 1) {
     const callback = replayFinishedCallback;
@@ -1415,6 +1446,7 @@ function triggerGoal(scorer) {
   }
 
   enterGoalPhase();
+  replayScoringTeam = scorer;
   pendingPassReceiver = null;
 
   addScore(scorer);
@@ -1429,31 +1461,31 @@ function triggerGoal(scorer) {
   });
 
   refreshFullUI(gameState, uiTeamOptions);
-playGoalSound();
+  playGoalSound();
 
-clearTimeout(goalTimeout);
+  clearTimeout(goalTimeout);
 
-beginGoalReplay(() => {
-  showGoalOverlay({
-    scoringTeam: scorer,
-    scorerText,
-    p1TeamColor,
-    p2TeamColor,
+  beginGoalReplay(() => {
+    showGoalOverlay({
+      scoringTeam: scorer,
+      scorerText,
+      p1TeamColor,
+      p2TeamColor,
+    });
+
+    goalTimeout = setTimeout(() => {
+      hideGoalOverlay();
+      resetPositions();
+      resetAIMemory();
+
+      clearBallCarrier();
+
+      exitGoalPhase();
+
+      refreshFullUI(gameState, uiTeamOptions);
+      updateInstructionText();
+    }, 2200);
   });
-
-  goalTimeout = setTimeout(() => {
-    hideGoalOverlay();
-    resetPositions();
-    resetAIMemory();
-
-    clearBallCarrier();
-
-    exitGoalPhase();
-
-    refreshFullUI(gameState, uiTeamOptions);
-    updateInstructionText();
-  }, 2200);
-});
 }
 
 function endMatch() {
@@ -1466,6 +1498,7 @@ function endMatch() {
 }
 
 function restartGame() {
+  replayScoringTeam = null;
   resetGameState();
   resetPositions();
   pendingPassReceiver = null;
@@ -2071,15 +2104,15 @@ function animate(time) {
   }
 
   if (updateGoalReplay()) {
-  syncMeshes();
-  updateParticles(scene, particles, dt);
-  refreshFullUI(gameState, uiTeamOptions);
-  updateMobileActionButtonsVisibility();
-  updateMobileContextButton();
-  updateResponsiveCamera();
-  renderer.render(scene, camera);
-  return;
-}
+    syncMeshes();
+    updateParticles(scene, particles, dt);
+    refreshFullUI(gameState, uiTeamOptions);
+    updateMobileActionButtonsVisibility();
+    updateMobileContextButton();
+    updateResponsiveCamera();
+    renderer.render(scene, camera);
+    return;
+  }
 
   simulate();
   syncMeshes();
