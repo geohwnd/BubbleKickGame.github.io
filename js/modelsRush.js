@@ -1134,13 +1134,14 @@ export function makeShadow(scene) {
 // CONTROLLED PLAYER INDICATOR
 // =========================
 
-export function createControlledPlayerIndicator(scene) {
+export function createControlledPlayerIndicator(scene, options = {}) {
+  const indicatorColor = options.color ?? 0xffee00;
   const controlledIndicatorGroup = new THREE.Group();
 
   const controlledArrow = new THREE.Mesh(
     new THREE.ConeGeometry(0.18, 0.42, 20),
     new THREE.MeshBasicMaterial({
-      color: 0xffee00,
+      color: indicatorColor,
       transparent: true,
       opacity: 0.98,
       depthTest: false,
@@ -1158,7 +1159,7 @@ export function createControlledPlayerIndicator(scene) {
     const indicatorModel = gltf.scene;
 
     const yellowMat = new THREE.MeshBasicMaterial({
-      color: 0xffee00,
+      color: indicatorColor,
       transparent: true,
       opacity: 0.72,
       depthTest: true,

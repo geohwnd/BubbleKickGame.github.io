@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" href="img/favicon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Kick — Rush Match Local Multiplayer</title>
+
+    <link rel="stylesheet" href="css/styleRush.css" />
+
+    <style>
+      #control-select-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(2, 6, 23, 0.94);
+        color: #fff;
+      }
+
+      #control-select-screen.is-hidden {
+        display: none;
+      }
+
+      .control-select-card {
+        width: min(780px, calc(100vw - 32px));
+        padding: 32px;
+        border-radius: 34px;
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        text-align: center;
+      }
+
+      .control-select-title {
+        font-size: clamp(32px, 6vw, 62px);
+        text-transform: uppercase;
+        margin: 0 0 24px;
+      }
+
+      .control-select-kicker {
+        color: #b9ff22;
+        font-weight: 1000;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .control-select-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .control-select-grid section {
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .control-select-grid button,
+      #start-local-match-btn,
+      #refresh-gamepads-btn {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        min-height: 46px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .control-select-grid button.is-selected,
+      #start-local-match-btn {
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+      }
+
+      .control-select-grid button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #control-select-warning {
+        color: #fca5a5;
+        font-weight: 800;
+      }
+
+      @media (max-width: 720px) {
+        .control-select-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      #rush-loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        background: #ffffff;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity 0.65s ease, visibility 0.65s ease;
+      }
+
+      #rush-loading-screen.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .rush-loading-logo {
+        width: min(430px, 72vw);
+        height: auto;
+        filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.14));
+        animation: rushLoadingLogo 1.15s cubic-bezier(0.2, 0.85, 0.18, 1)
+          infinite alternate;
+      }
+
+      .rush-loading-text {
+        color: #172554;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+
+      @keyframes rushLoadingLogo {
+        from {
+          opacity: 0.82;
+          transform: translateY(8px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      #pause-btn {
+        position: fixed;
+        top: max(18px, env(safe-area-inset-top));
+        right: max(18px, env(safe-area-inset-right));
+        z-index: 80;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.34);
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+      }
+
+      #mobile-switch-defense-btn {
+        position: fixed;
+        right: max(18px, env(safe-area-inset-right));
+        bottom: calc(max(18px, env(safe-area-inset-bottom)) + 178px);
+        z-index: 82;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 74px;
+        height: 74px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 22px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.36);
+        font-family: inherit;
+        font-size: 24px;
+        font-weight: 900;
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+      }
+
+      #mobile-switch-defense-btn span {
+        font-size: 9px;
+        line-height: 1;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
+      #mobile-switch-defense-btn.is-attack {
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        border-color: rgba(255, 255, 255, 0.42);
+      }
+
+      #mobile-switch-defense-btn.is-defense {
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.36);
+      }
+
+      body.force-mobile-controls #mobile-dash-btn,
+      body.force-mobile-controls #mobile-switch-defense-btn,
+      body.force-mobile-controls #mobile-shoot-btn {
+        display: flex !important;
+      }
+
+      #pause-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: radial-gradient(
+            ellipse at 72% 48%,
+            rgba(93, 240, 214, 0.24),
+            transparent 0 34%,
+            transparent 55%
+          ),
+          rgba(0, 0, 0, 0.58);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      #pause-overlay.is-hidden {
+        display: none;
+      }
+
+      .pause-card {
+        width: min(420px, calc(100vw - 38px));
+        padding: 30px;
+        border-radius: 32px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+      }
+
+      .pause-title {
+        color: #ffffff;
+        font-size: clamp(52px, 8vw, 84px);
+        line-height: 0.9;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        text-shadow: 0 7px 24px rgba(0, 0, 0, 0.38);
+      }
+
+      .pause-subtitle {
+        margin: 12px 0 24px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .pause-controls {
+        display: grid;
+        gap: 9px;
+        margin: 0 0 24px;
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .pause-controls-title {
+        margin-bottom: 3px;
+        color: #b9ff22;
+        font-size: 11px;
+        font-weight: 1000;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+      }
+
+      .pause-control-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+      }
+
+      .pause-control-key {
+        flex: 0 0 auto;
+        min-width: 82px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        font-size: 10px;
+        font-weight: 1000;
+        letter-spacing: 1px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .pause-control-action {
+        flex: 1;
+        text-align: left;
+      }
+
+      .pause-actions {
+        display: grid;
+        gap: 12px;
+      }
+
+      .pause-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        border: 0;
+        border-radius: 999px;
+        color: #1730c9;
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #95f4ff 58%,
+          #b9ff22 100%
+        );
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25),
+          0 0 34px rgba(185, 255, 34, 0.22);
+      }
+
+      .pause-action-btn.secondary {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
+      .win-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      #restart-btn:hover,
+      #quick-restart-btn:hover {
+        filter: brightness(1.05);
+        transform: scale(1.03);
+      }
+
+      .win-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 24px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1.3px;
+        text-decoration: none;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      @media (max-width: 680px) {
+        #pause-btn {
+          top: auto;
+          right: max(14px, env(safe-area-inset-right));
+          bottom: max(18px, env(safe-area-inset-bottom));
+          padding: 10px 14px;
+          font-size: 11px;
+        }
+
+        .win-actions {
+          display: grid;
+          width: min(280px, 88vw);
+          margin-inline: auto;
+        }
+
+        .win-menu-btn,
+        #restart-btn {
+          width: 100%;
+        }
+
+        #mobile-switch-defense-btn {
+          display: flex;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="control-select-screen">
+      <div class="control-select-card">
+        <div class="control-select-kicker">Local Multiplayer</div>
+        <h1 class="control-select-title">Choose Controls</h1>
+
+        <div class="control-select-grid">
+          <section>
+            <h3>Player 1</h3>
+            <button data-player="1" data-control="keyboard-p1">
+              Keyboard / Touch
+            </button>
+            <button data-player="1" data-control="gamepad-0">Gamepad 1</button>
+            <button data-player="1" data-control="gamepad-1">Gamepad 2</button>
+          </section>
+
+          <section>
+            <h3>Player 2</h3>
+            <button data-player="2" data-control="keyboard-p2">
+              Keyboard Arrows
+            </button>
+            <button data-player="2" data-control="gamepad-0">Gamepad 1</button>
+            <button data-player="2" data-control="gamepad-1">Gamepad 2</button>
+          </section>
+        </div>
+
+        <p id="control-device-status"></p>
+        <p id="control-select-warning"></p>
+        <button id="refresh-gamepads-btn">Refresh Gamepads</button>
+        <button id="start-local-match-btn">Start Match</button>
+      </div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <div id="rush-loading-screen" aria-label="Loading Rush Match">
+      <img
+        class="rush-loading-logo"
+        src="img/Jobbin_Logo_NV1.png"
+        alt="JOBBIN"
+      />
+      <div class="rush-loading-text">Loading Match...</div>
+    </div>
+
+    <!-- UI -->
+    <div id="ui">
+      <div id="scoreboard">
+        <div class="score-side p1">
+          <div class="player-dot"></div>
+
+          <span class="score-label" id="p1-score-label"> You </span>
+
+          <span class="score-num" id="score-p1"> 0 </span>
+        </div>
+
+        <div class="score-divider"></div>
+
+        <div class="match-clock">
+          <span class="clock-label"> Time </span>
+
+          <span class="clock-num" id="match-clock"> 1:30 </span>
+        </div>
+
+        <div class="score-divider"></div>
+
+        <div class="score-side p2">
+          <span class="score-num" id="score-p2"> 0 </span>
+
+          <span class="score-label" id="p2-score-label"> P2 </span>
+
+          <div class="player-dot"></div>
+        </div>
+      </div>
+
+      <!-- Turn -->
+      <div id="turn-indicator">
+        <div id="turn-dot"></div>
+
+        <span id="turn-text"> RUSH MODE </span>
+      </div>
+
+      <!-- Strength -->
+      <div id="strength-bar-wrap">
+        <span id="strength-label"> Power </span>
+
+        <div id="strength-track">
+          <div id="strength-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal -->
+    <div id="goal-overlay">
+      <div id="goal-text">GOAL!</div>
+
+      <div id="scorer-text"></div>
+    </div>
+
+    <!-- Win -->
+    <div id="win-overlay">
+      <div id="win-trophy">🏆</div>
+
+      <div id="win-title">YOU WIN!</div>
+
+      <div id="win-sub">Match Finished</div>
+
+      <div id="match-stats">
+        <div class="match-stats-title">Match Statistics</div>
+
+        <div id="match-stats-content" class="stats-empty">
+          No Goals Recorded
+        </div>
+
+        <div class="win-actions">
+          <button id="restart-btn">REMATCH</button>
+
+          <a class="win-menu-btn" href="index.html"> EXIT TO MAIN MENU </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+
+    <div id="rush-help">
+      Local Multiplayer · P1: WASD / Gamepad 1 · P2: Arrows / Gamepad 2
+    </div>
+
+    <button id="pause-btn" type="button" aria-label="Pause match">
+      ⏸ Pause
+    </button>
+
+    <div id="replay-overlay" aria-hidden="true">REPLAY</div>
+
+    <div id="pause-overlay" class="is-hidden" aria-hidden="true">
+      <div class="pause-card">
+        <div class="pause-title">Paused</div>
+
+        <div class="pause-subtitle">Local Multiplayer Paused</div>
+
+        <div class="pause-controls">
+          <div class="pause-controls-title">Controls</div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">P1</span>
+            <span class="pause-control-action">WASD / Gamepad 1: Move</span>
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">P2</span>
+            <span class="pause-control-action"
+              >Arrow Keys / Gamepad 2: Move</span
+            >
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">X</span>
+            <span class="pause-control-action"
+              >Shoot on DualSense / PlayStation controller</span
+            >
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">□</span>
+            <span class="pause-control-action"
+              >Pass on DualSense / PlayStation controller</span
+            >
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">○</span>
+            <span class="pause-control-action"
+              >Dash on DualSense / PlayStation controller</span
+            >
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">P1 Keys</span>
+            <span class="pause-control-action"
+              >Space: Shoot · Q: Pass · Shift: Dash · C: Switch defender</span
+            >
+          </div>
+          <div class="pause-control-row">
+            <span class="pause-control-key">Mobile</span>
+            <span class="pause-control-action"
+              >On-screen controls are for Player 1</span
+            >
+          </div>
+        </div>
+
+        <div class="pause-actions">
+          <button id="resume-btn" class="pause-action-btn" type="button">
+            Resume
+          </button>
+
+          <button
+            id="toggle-mobile-controls-btn"
+            class="pause-action-btn secondary"
+            type="button"
+          >
+            Show Mobile Controls
+          </button>
+
+          <a class="pause-action-btn secondary" href="index.html">
+            Exit to Menu
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <button id="mobile-dash-btn" aria-label="Sprint">
+      💨
+      <span>DASH</span>
+    </button>
+
+    <button
+      id="mobile-switch-defense-btn"
+      class="is-defense"
+      aria-label="Switch Defender"
+    >
+      <span id="mobile-context-icon">🔁</span>
+      <span id="mobile-context-label">DEFENDER</span>
+    </button>
+
+    <button id="mobile-shoot-btn" aria-label="Shoot">
+      ⚽
+      <span>SHOOT</span>
+    </button>
+
+    <!--<button id="quick-restart-btn">
+      ↺ RESTART
+    </button> -->
+
+    <!-- IMPORT MAP -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+        }
+      }
+    </script>
+
+    <!-- MAIN -->
+    <script>
+      (() => {
+        const STORAGE_KEY = "rushLocalControls";
+        const screen = document.getElementById("control-select-screen");
+        const warning = document.getElementById("control-select-warning");
+        const status = document.getElementById("control-device-status");
+        const startButton = document.getElementById("start-local-match-btn");
+        const refreshButton = document.getElementById("refresh-gamepads-btn");
+        const optionButtons = [
+          ...document.querySelectorAll("[data-player][data-control]"),
+        ];
+
+        const selection = {
+          1: "keyboard-p1",
+          2: "keyboard-p2",
+        };
+
+        function getGamepads() {
+          return [...(navigator.getGamepads?.() ?? [])].filter(Boolean);
+        }
+
+        function updateStatus() {
+          const gamepads = getGamepads();
+
+          status.textContent = gamepads.length
+            ? `${gamepads.length} mando(s) detectado(s)`
+            : "No hay mandos detectados. Conecta uno y presiona cualquier botón.";
+
+          optionButtons.forEach((button) => {
+            const control = button.dataset.control;
+
+            if (control === "gamepad-0") button.disabled = gamepads.length < 1;
+            if (control === "gamepad-1") button.disabled = gamepads.length < 2;
+          });
+        }
+
+        function updateSelectedButtons() {
+          optionButtons.forEach((button) => {
+            button.classList.toggle(
+              "is-selected",
+              selection[button.dataset.player] === button.dataset.control
+            );
+          });
+        }
+
+        function validateSelection() {
+          warning.textContent = "";
+
+          if (
+            selection[1].startsWith("gamepad") &&
+            selection[1] === selection[2]
+          ) {
+            warning.textContent = "Cada jugador necesita un mando diferente.";
+            return false;
+          }
+
+          if (
+            selection[1] === "keyboard-p1" &&
+            selection[2] === "keyboard-p2"
+          ) {
+            warning.textContent =
+              "Ambos pueden usar teclado, pero se recomienda al menos un mando.";
+          }
+
+          return true;
+        }
+
+        optionButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            if (button.disabled) return;
+
+            selection[button.dataset.player] = button.dataset.control;
+            updateSelectedButtons();
+            validateSelection();
+          });
+        });
+
+        refreshButton.addEventListener("click", () => {
+          updateStatus();
+          validateSelection();
+        });
+
+        startButton.addEventListener("click", () => {
+          if (!validateSelection()) return;
+
+          const config = {
+            p1: selection[1],
+            p2: selection[2],
+          };
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+          window.rushLocalControls = config;
+
+          window.dispatchEvent(
+            new CustomEvent("rushLocalControlsSelected", { detail: config })
+          );
+
+          screen.classList.add("is-hidden");
+        });
+
+        window.addEventListener("gamepadconnected", updateStatus);
+        window.addEventListener("gamepaddisconnected", updateStatus);
+
+        updateSelectedButtons();
+        updateStatus();
+        validateSelection();
+      })();
+    </script>
+    <script type="module" src="./js/mainRush_MultiLocal.js"></script>
+  </body>
+</html>
