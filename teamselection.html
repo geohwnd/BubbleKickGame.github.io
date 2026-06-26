@@ -861,6 +861,7 @@
       const selectedFallbackColors = ["#ffffff", "#2f49ff", "#7ef8e8"];
       const TEAM_SELECTION_MUSIC_PATH = "audio/Rural Ride Loop_Music.mp3";
       const teamSelectionMusic = new Audio(TEAM_SELECTION_MUSIC_PATH);
+      teamSelectionMusic.preload = "auto";
       teamSelectionMusic.loop = true;
       teamSelectionMusic.volume = 0.38;
       let teamSelectionMusicStarted = false;
@@ -873,6 +874,12 @@
           teamSelectionMusicStarted = false;
         });
       }
+
+      teamSelectionMusic.addEventListener("ended", () => {
+        teamSelectionMusic.currentTime = 0;
+        teamSelectionMusicStarted = false;
+        startTeamSelectionMusic();
+      });
 
       function setupTeamSelectionMusicAutoplay() {
         startTeamSelectionMusic();

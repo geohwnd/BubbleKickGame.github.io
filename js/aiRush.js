@@ -54,8 +54,11 @@ export const AI_CONFIG = {
   attackDashDistance: 4.6,
   dashChance: 0.18,
 
-  keeperSpeed: 0.9,
-  keeperSaveChance: 0.72,
+  keeperSpeed: 1.35,
+  keeperReactionSpeed: 4.05,
+  keeperReactionDistanceX: 6.1,
+  keeperAimError: 0.38,
+  keeperSaveChance: 0.7,
   keeperClearForce: 11.5,
 };
 
@@ -691,21 +694,51 @@ export function updateKeeperAI(context) {
   const isPlayerKeeper = teamNumber === TEAMS.P1;
 
   const keeperX = isPlayerKeeper ? -FIELD_W / 2 + 0.85 : FIELD_W / 2 - 0.85;
-
   const maxZ = GOAL_W / 2 - 0.32;
+  const goalSide = isPlayerKeeper ? -1 : 1;
+  const ballIsNearGoal =
+    Math.abs(ballBody.pos.x - keeperX) < AI_CONFIG.keeperReactionDistanceX;
+  const ballMovingAtGoal = ballBody.vel.x * goalSide > 0.7;
+  const shouldReactToBall = ballIsNearGoal || ballMovingAtGoal;
 
   if (body.keeperDirection === undefined) {
     body.keeperDirection = isPlayerKeeper ? 1 : -1;
   }
 
-  body.facing.set(isPlayerKeeper ? 1 : -1, 0, 0);
+  if (
+    body.keeperAimError === undefined ||
+    performance.now() > (body.keeperAimErrorUntil ?? 0) ||
+    Math.sign(ballBody.vel.z || 0) !== body.keeperLastBallZDirection
+  ) {
+    body.keeperAimError = THREE.MathUtils.randFloatSpread(
+      AI_CONFIG.keeperAimError
+    );
+    body.keeperAimErrorUntil =
+      performance.now() + THREE.MathUtils.randInt(380, 720);
+    body.keeperLastBallZDirection = Math.sign(ballBody.vel.z || 0);
+  }
 
-  body.vel.x = THREE.MathUtils.lerp(body.vel.x, 0, 0.22);
-  body.vel.z = THREE.MathUtils.lerp(
-    body.vel.z,
-    body.keeperDirection * AI_CONFIG.keeperSpeed,
-    0.11
+  const leadZ = THREE.MathUtils.clamp(ballBody.vel.z * 0.16, -0.55, 0.55);
+  const reactiveTargetZ = THREE.MathUtils.clamp(
+    ballBody.pos.z + leadZ + body.keeperAimError,
+    -maxZ,
+    maxZ
   );
+
+  let targetZ = reactiveTargetZ;
+
+  if (!shouldReactToBall) {
+    targetZ = body.pos.z + body.keeperDirection;
+  }
+
+  const toTargetZ = targetZ - body.pos.z;
+  const maxSpeed = shouldReactToBall
+    ? AI_CONFIG.keeperReactionSpeed
+    : AI_CONFIG.keeperSpeed;
+
+  body.facing.set(isPlayerKeeper ? 1 : -1, 0, 0);
+  body.vel.x = THREE.MathUtils.lerp(body.vel.x, 0, 0.22);
+  body.vel.z = THREE.MathUtils.clamp(toTargetZ * 2.55, -maxSpeed, maxSpeed);
 
   body.pos.x = THREE.MathUtils.lerp(body.pos.x, keeperX, 0.18);
 
@@ -715,6 +748,8 @@ export function updateKeeperAI(context) {
   } else if (body.pos.z <= -maxZ) {
     body.pos.z = -maxZ;
     body.keeperDirection = 1;
+  } else if (!shouldReactToBall && Math.abs(toTargetZ) < 0.06) {
+    body.keeperDirection *= -1;
   }
 
   keeperClearIfNeeded({

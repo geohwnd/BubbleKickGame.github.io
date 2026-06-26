@@ -499,6 +499,9 @@ const KEEPER_SPEED = 3.15;
 const KEEPER_REACTION_SPEED = 4.25;
 const KEEPER_PATROL_Z_LIMIT = GOAL_W / 2 - 0.42;
 const KEEPER_BALL_REACTION_DISTANCE_X = 6.1;
+const KEEPER_AIM_ERROR = 0.38;
+const KEEPER_SAVE_CHANCE = 0.7;
+const KEEPER_CLEAR_FORCE = 11.5;
 const DT = 1 / 60;
 
 // =========================
@@ -1265,13 +1268,30 @@ function updateKeeperMovement(keeperBody, teamNumber) {
       : FIELD_W / 2 - 0.72;
 
   const distanceFromGoalX = Math.abs(ballBody.pos.x - homeX);
-  const shouldReactToBall = distanceFromGoalX < KEEPER_BALL_REACTION_DISTANCE_X;
+  const goalSide = teamNumber === TEAMS.P1 ? -1 : 1;
+  const ballMovingAtGoal = ballBody.vel.x * goalSide > 0.7;
+  const shouldReactToBall =
+    distanceFromGoalX < KEEPER_BALL_REACTION_DISTANCE_X || ballMovingAtGoal;
 
   let targetZ;
 
   if (shouldReactToBall) {
+    if (
+      keeperBody.keeperAimError === undefined ||
+      performance.now() > (keeperBody.keeperAimErrorUntil ?? 0) ||
+      Math.sign(ballBody.vel.z || 0) !== keeperBody.keeperLastBallZDirection
+    ) {
+      keeperBody.keeperAimError =
+        THREE.MathUtils.randFloatSpread(KEEPER_AIM_ERROR);
+      keeperBody.keeperAimErrorUntil =
+        performance.now() + THREE.MathUtils.randInt(380, 720);
+      keeperBody.keeperLastBallZDirection = Math.sign(ballBody.vel.z || 0);
+    }
+
+    const leadZ = THREE.MathUtils.clamp(ballBody.vel.z * 0.16, -0.55, 0.55);
+
     targetZ = THREE.MathUtils.clamp(
-      ballBody.pos.z,
+      ballBody.pos.z + leadZ + keeperBody.keeperAimError,
       -KEEPER_PATROL_Z_LIMIT,
       KEEPER_PATROL_Z_LIMIT
     );
@@ -1299,6 +1319,52 @@ function updateKeeperMovement(keeperBody, teamNumber) {
   if (Math.abs(toTargetZ) < 0.06 && !shouldReactToBall) {
     keeperBody.keeperDirection *= -1;
   }
+}
+
+function updateKeeperSave(keeperBody, teamNumber) {
+  if (!keeperBody || gameState.gamePhase !== GAME_PHASES.PLAYING) return;
+  if (gameState.ballCarrier) return;
+
+  const saveRange = keeperBody.r + ballBody.r + 0.32;
+
+  if (keeperBody.pos.distanceTo(ballBody.pos) > saveRange) return;
+
+  if (Math.random() > KEEPER_SAVE_CHANCE) {
+    keeperBody.vel.z += THREE.MathUtils.randFloatSpread(1.2);
+    return;
+  }
+
+  setLastTouch(teamNumber, KEEPER_PLAYER_NUMBER);
+  playCatchForBody(keeperBody, "idle");
+
+  const direction = teamNumber === TEAMS.P1 ? 1 : -1;
+  const targetBodies =
+    teamNumber === TEAMS.P1 ? playerOutfieldBodies : aiOutfieldBodies;
+  const targetMate = getClosestBodyTo(ballBody.pos, targetBodies).body;
+  const clearDir = new THREE.Vector3(
+    direction,
+    0,
+    THREE.MathUtils.clamp(
+      (targetMate?.pos.z ?? keeperBody.pos.z) - keeperBody.pos.z,
+      -1.1,
+      1.1
+    )
+  ).normalize();
+
+  if (teamNumber === TEAMS.P1) {
+    gameState.playerPickupBlockedUntil = performance.now() + 520;
+  } else {
+    gameState.aiPickupBlockedUntil = performance.now() + 520;
+  }
+
+  ballBody.pos
+    .copy(keeperBody.pos)
+    .addScaledVector(clearDir, keeperBody.r + ballBody.r + 0.5);
+  ballBody.pos.y = ballBody.r;
+  ballBody.vel.copy(clearDir).multiplyScalar(KEEPER_CLEAR_FORCE);
+  ballBody.vel.y = 0.75;
+
+  playKickSound(0.58);
 }
 
 function moveRushPlayer(body, playerNumber) {
@@ -1944,6 +2010,8 @@ function simulate() {
     if (!gameState.ballCarrier) {
       allPlayerBodies.forEach((body) => collideBodies(body, ballBody));
       allAIBodies.forEach((body) => collideBodies(body, ballBody));
+      updateKeeperSave(p1KeeperBody, TEAMS.P1);
+      updateKeeperSave(p2KeeperBody, TEAMS.P2);
     }
 
     updateBallPossession();
