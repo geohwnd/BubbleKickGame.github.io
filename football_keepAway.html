@@ -816,6 +816,17 @@
         target: new THREE.Vector3(),
       };
 
+      const virtualJoystick = {
+        active: false,
+        pointerId: null,
+        start: new THREE.Vector2(),
+        current: new THREE.Vector2(),
+        move: new THREE.Vector3(),
+      };
+
+      const JOYSTICK_DEADZONE = 6;
+      const JOYSTICK_MAX_RADIUS = 90;
+
       const raycaster = new THREE.Raycaster();
       const pointerNdc = new THREE.Vector2();
       const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -1271,17 +1282,52 @@
         window.addEventListener("resize", resize);
 
         canvas.addEventListener("pointerdown", (event) => {
+          if (!running) return;
+          event.preventDefault();
+
           pointer.active = true;
-          updatePointerTarget(event);
+          virtualJoystick.active = true;
+          virtualJoystick.pointerId = event.pointerId ?? "mouse";
+          virtualJoystick.start.set(event.clientX, event.clientY);
+          virtualJoystick.current.copy(virtualJoystick.start);
+          virtualJoystick.move.set(0, 0, 0);
+
+          const actor = players[selectedIndex];
+          if (actor) {
+            actor.hasPointerTarget = false;
+            actor.vel.multiplyScalar(0.25);
+          }
         });
 
         canvas.addEventListener("pointermove", (event) => {
-          if (!pointer.active) return;
-          updatePointerTarget(event);
+          if (!virtualJoystick.active) return;
+
+          if (
+            virtualJoystick.pointerId !== null &&
+            event.pointerId !== virtualJoystick.pointerId
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+          updateVirtualJoystick(event);
         });
 
-        window.addEventListener("pointerup", () => {
+        window.addEventListener("pointerup", (event) => {
+          if (
+            virtualJoystick.pointerId !== null &&
+            event.pointerId !== virtualJoystick.pointerId
+          ) {
+            return;
+          }
+
           pointer.active = false;
+          resetVirtualJoystick();
+        });
+
+        window.addEventListener("pointercancel", () => {
+          pointer.active = false;
+          resetVirtualJoystick();
         });
 
         mobilePassBtn.addEventListener("pointerdown", (event) => {
@@ -1328,6 +1374,40 @@
         }
       }
 
+      function updateVirtualJoystick(event) {
+        virtualJoystick.current.set(event.clientX, event.clientY);
+
+        const delta = new THREE.Vector2().subVectors(
+          virtualJoystick.current,
+          virtualJoystick.start
+        );
+
+        const distance = delta.length();
+
+        if (distance < JOYSTICK_DEADZONE) {
+          virtualJoystick.move.set(0, 0, 0);
+          return;
+        }
+
+        const clampedDistance = Math.min(distance, JOYSTICK_MAX_RADIUS);
+        const strength = clampedDistance / JOYSTICK_MAX_RADIUS;
+        const direction = delta.normalize();
+
+        virtualJoystick.move.set(
+          direction.x * strength,
+          0,
+          direction.y * strength
+        );
+      }
+
+      function resetVirtualJoystick() {
+        virtualJoystick.active = false;
+        virtualJoystick.pointerId = null;
+        virtualJoystick.start.set(0, 0);
+        virtualJoystick.current.set(0, 0);
+        virtualJoystick.move.set(0, 0, 0);
+      }
+
       function startGame() {
         running = false;
         clearCountdownTimers();
@@ -1338,6 +1418,8 @@
         pendingReceiverIndex = null;
         passCount = 0;
         passBlockedUntil = 0;
+        pointer.active = false;
+        resetVirtualJoystick();
         defender.speed = 2.75;
         defender.pos.set(0, 0, 0.05);
         defender.vel.set(0, 0, 0);
@@ -1399,7 +1481,9 @@
         if (keys.has("a") || keys.has("arrowleft")) move.x -= 1;
         if (keys.has("d") || keys.has("arrowright")) move.x += 1;
 
+        move.add(virtualJoystick.move);
         if (move.lengthSq() > 0.001) move.normalize();
+        
         return move;
       }
 
@@ -1513,21 +1597,9 @@
         if (move.lengthSq() > 0.001) {
           selected.hasPointerTarget = false;
           selected.vel.lerp(
-            move.multiplyScalar(selected.speed),
+            move.clone().multiplyScalar(selected.speed),
             1 - Math.pow(0.002, dt)
           );
-        } else if (selected.hasPointerTarget) {
-          const toTarget = selected.target.clone().sub(selected.pos);
-          toTarget.y = 0;
-
-          if (toTarget.length() > 0.08) {
-            selected.vel.lerp(
-              toTarget.normalize().multiplyScalar(selected.speed),
-              1 - Math.pow(0.002, dt)
-            );
-          } else {
-            selected.vel.multiplyScalar(Math.pow(0.002, dt));
-          }
         } else {
           selected.vel.multiplyScalar(Math.pow(0.001, dt));
         }

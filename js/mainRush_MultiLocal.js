@@ -148,6 +148,27 @@ function beginRushStartSequence() {
   }, 3850);
 }
 
+function waitForLocalControlsThenStart() {
+  const controlSelectScreen = document.getElementById("control-select-screen");
+
+  if (!controlSelectScreen) {
+    beginRushStartSequence();
+    return;
+  }
+
+  isRushStarting = true;
+  showRushLoadingScreen();
+  setRushLoadingText("Choose Controls...");
+
+  window.addEventListener(
+    "rushLocalControlsSelected",
+    () => {
+      beginRushStartSequence();
+    },
+    { once: true }
+  );
+}
+
 const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
@@ -436,7 +457,7 @@ function getRosterName(playerNumber, index = 0) {
 function getTeamDisplayName(playerNumber) {
   const selectedTeam =
     playerNumber === TEAMS.P1 ? selectedTeamP1 : selectedTeamP2;
-  const fallback = playerNumber === TEAMS.P1 ? "JUGADOR 1" : "IA";
+  const fallback = playerNumber === TEAMS.P1 ? "JUGADOR 1" : "JUGADOR 2";
 
   return (selectedTeam?.name || selectedTeam?.code || fallback)
     .toString()
@@ -474,6 +495,13 @@ const RUSH_MAX_KICK_FORCE = 22;
 const RUSH_MIN_KICK_FORCE = 6;
 
 const KEEPER_PLAYER_NUMBER = 3;
+const KEEPER_SPEED = 3.15;
+const KEEPER_REACTION_SPEED = 4.25;
+const KEEPER_PATROL_Z_LIMIT = GOAL_W / 2 - 0.42;
+const KEEPER_BALL_REACTION_DISTANCE_X = 6.1;
+const KEEPER_AIM_ERROR = 0.38;
+const KEEPER_SAVE_CHANCE = 0.7;
+const KEEPER_CLEAR_FORCE = 11.5;
 const DT = 1 / 60;
 
 // =========================
@@ -538,6 +566,8 @@ const allAIBodies = [p2Body, p2Mate1Body, p2Mate2Body, p2KeeperBody];
 
 const playerOutfieldBodies = playerTeamBodies;
 const aiOutfieldBodies = aiTeamBodies;
+
+const isLocalMultiplayer = true;
 
 function initRushBody(body, facingX) {
   body.facing = new THREE.Vector3(facingX, 0, 0);
@@ -637,6 +667,11 @@ const ballMesh = createBallMesh(scene, ballBody);
 
 const { controlledIndicatorGroup, controlledRing, controlledArrow } =
   createControlledPlayerIndicator(scene);
+const {
+  controlledIndicatorGroup: p2ControlledIndicatorGroup,
+  controlledRing: p2ControlledRing,
+  controlledArrow: p2ControlledArrow,
+} = createControlledPlayerIndicator(scene, { color: p2TeamColor });
 
 const { arrowLine, arrowGeo, movArrowGroup } = createRushArrowVisuals(scene);
 
@@ -1028,19 +1063,48 @@ function resetPositions() {
   gameState.goalEventLocked = false;
 }
 
-function ensurePlayerPossessionIfNearBall() {
-  if (gameState.ballCarrier === TEAMS.P1) return true;
-  if (performance.now() < gameState.playerPickupBlockedUntil) return false;
+function getControlledIndexByPlayer(playerNumber) {
+  return playerNumber === TEAMS.P1
+    ? gameState.controlledPlayerIndex
+    : gameState.aiCarrierIndex;
+}
 
-  const controlledBody = getControlledPlayerBody();
+function getOutfieldBodiesByPlayer(playerNumber) {
+  return playerNumber === TEAMS.P1 ? playerOutfieldBodies : aiOutfieldBodies;
+}
+
+function isPickupBlockedForPlayer(playerNumber) {
+  const blockedUntil =
+    playerNumber === TEAMS.P1
+      ? gameState.playerPickupBlockedUntil
+      : gameState.aiPickupBlockedUntil;
+
+  return performance.now() < blockedUntil;
+}
+
+function blockPickupForPlayer(playerNumber, ms) {
+  const blockedUntil = performance.now() + ms;
+
+  if (playerNumber === TEAMS.P1) {
+    gameState.playerPickupBlockedUntil = blockedUntil;
+  } else {
+    gameState.aiPickupBlockedUntil = blockedUntil;
+  }
+}
+
+function ensurePlayerPossessionIfNearBall(playerNumber = TEAMS.P1) {
+  if (gameState.ballCarrier === playerNumber) return true;
+  if (isPickupBlockedForPlayer(playerNumber)) return false;
+
+  const controlledBody = getBodyByPlayer(playerNumber);
 
   const isNear =
     controlledBody.pos.distanceTo(ballBody.pos) <
     controlledBody.r + ballBody.r + RUSH_CONTROL_EXTRA + 0.45;
 
   if (!gameState.ballCarrier && isNear) {
-    setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
-    setBallCarrier(TEAMS.P1);
+    setLastTouch(playerNumber, getControlledIndexByPlayer(playerNumber));
+    setBallCarrier(playerNumber);
 
     ballBody.vel.set(0, 0, 0);
     updateTurnUI(gameState, uiTeamOptions);
@@ -1051,11 +1115,11 @@ function ensurePlayerPossessionIfNearBall() {
   return false;
 }
 
-function shootControlledPlayer() {
+function shootControlledPlayer(playerNumber = TEAMS.P1) {
   if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
-  if (!ensurePlayerPossessionIfNearBall()) return;
+  if (!ensurePlayerPossessionIfNearBall(playerNumber)) return;
 
-  const body = getControlledPlayerBody();
+  const body = getBodyByPlayer(playerNumber);
   const kickDir = body.facing.clone();
 
   kickDir.y = 0;
@@ -1074,12 +1138,12 @@ function shootControlledPlayer() {
 
   playStrikeForBody(body, "run");
 
-  setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+  setLastTouch(playerNumber, getControlledIndexByPlayer(playerNumber));
 
   clearBallCarrier();
   gameState.kickChargingPlayer = null;
   gameState.kickChargeStart = 0;
-  gameState.playerPickupBlockedUntil = performance.now() + 420;
+  blockPickupForPlayer(playerNumber, 420);
 
   hideStrengthBar();
 
@@ -1095,12 +1159,14 @@ function shootControlledPlayer() {
   updateTurnUI(gameState, uiTeamOptions);
 }
 
-function passControlledPlayer() {
+function passControlledPlayer(playerNumber = TEAMS.P1) {
   if (gameState.gamePhase !== GAME_PHASES.PLAYING) return;
-  if (!ensurePlayerPossessionIfNearBall()) return;
+  if (!ensurePlayerPossessionIfNearBall(playerNumber)) return;
 
-  const body = getControlledPlayerBody();
-  const teammates = playerOutfieldBodies.filter((mate) => mate !== body);
+  const body = getBodyByPlayer(playerNumber);
+  const teammates = getOutfieldBodiesByPlayer(playerNumber).filter(
+    (mate) => mate !== body
+  );
 
   if (!teammates.length) return;
 
@@ -1136,13 +1202,16 @@ function passControlledPlayer() {
   passDir.normalize();
 
   playStrikeForBody(body, "run");
-  setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
+  setLastTouch(playerNumber, getControlledIndexByPlayer(playerNumber));
   clearBallCarrier();
-  pendingPassReceiver = bestMate;
+  pendingPassReceiver = {
+    body: bestMate,
+    teamNumber: playerNumber,
+  };
 
   gameState.kickChargingPlayer = null;
   gameState.kickChargeStart = 0;
-  gameState.playerPickupBlockedUntil = performance.now() + 360;
+  blockPickupForPlayer(playerNumber, 360);
 
   hideStrengthBar();
 
@@ -1190,6 +1259,114 @@ function tryDash(body, preferredDirection = null) {
   body.vel.z = dashDir.z * RUSH_DASH_SPEED;
 }
 
+function updateKeeperMovement(keeperBody, teamNumber) {
+  if (!keeperBody || gameState.gamePhase !== GAME_PHASES.PLAYING) return;
+
+  const homeX =
+    teamNumber === TEAMS.P1
+      ? -FIELD_W / 2 + 0.72
+      : FIELD_W / 2 - 0.72;
+
+  const distanceFromGoalX = Math.abs(ballBody.pos.x - homeX);
+  const goalSide = teamNumber === TEAMS.P1 ? -1 : 1;
+  const ballMovingAtGoal = ballBody.vel.x * goalSide > 0.7;
+  const shouldReactToBall =
+    distanceFromGoalX < KEEPER_BALL_REACTION_DISTANCE_X || ballMovingAtGoal;
+
+  let targetZ;
+
+  if (shouldReactToBall) {
+    if (
+      keeperBody.keeperAimError === undefined ||
+      performance.now() > (keeperBody.keeperAimErrorUntil ?? 0) ||
+      Math.sign(ballBody.vel.z || 0) !== keeperBody.keeperLastBallZDirection
+    ) {
+      keeperBody.keeperAimError =
+        THREE.MathUtils.randFloatSpread(KEEPER_AIM_ERROR);
+      keeperBody.keeperAimErrorUntil =
+        performance.now() + THREE.MathUtils.randInt(380, 720);
+      keeperBody.keeperLastBallZDirection = Math.sign(ballBody.vel.z || 0);
+    }
+
+    const leadZ = THREE.MathUtils.clamp(ballBody.vel.z * 0.16, -0.55, 0.55);
+
+    targetZ = THREE.MathUtils.clamp(
+      ballBody.pos.z + leadZ + keeperBody.keeperAimError,
+      -KEEPER_PATROL_Z_LIMIT,
+      KEEPER_PATROL_Z_LIMIT
+    );
+  } else {
+    if (!keeperBody.keeperDirection) {
+      keeperBody.keeperDirection = 1;
+    }
+
+    if (keeperBody.pos.z > KEEPER_PATROL_Z_LIMIT) {
+      keeperBody.keeperDirection = -1;
+    } else if (keeperBody.pos.z < -KEEPER_PATROL_Z_LIMIT) {
+      keeperBody.keeperDirection = 1;
+    }
+
+    targetZ = keeperBody.pos.z + keeperBody.keeperDirection;
+  }
+
+  const toTargetZ = targetZ - keeperBody.pos.z;
+  const maxSpeed = shouldReactToBall ? KEEPER_REACTION_SPEED : KEEPER_SPEED;
+
+  keeperBody.pos.x = homeX;
+  keeperBody.vel.x = 0;
+  keeperBody.vel.z = THREE.MathUtils.clamp(toTargetZ * 2.4, -maxSpeed, maxSpeed);
+
+  if (Math.abs(toTargetZ) < 0.06 && !shouldReactToBall) {
+    keeperBody.keeperDirection *= -1;
+  }
+}
+
+function updateKeeperSave(keeperBody, teamNumber) {
+  if (!keeperBody || gameState.gamePhase !== GAME_PHASES.PLAYING) return;
+  if (gameState.ballCarrier) return;
+
+  const saveRange = keeperBody.r + ballBody.r + 0.32;
+
+  if (keeperBody.pos.distanceTo(ballBody.pos) > saveRange) return;
+
+  if (Math.random() > KEEPER_SAVE_CHANCE) {
+    keeperBody.vel.z += THREE.MathUtils.randFloatSpread(1.2);
+    return;
+  }
+
+  setLastTouch(teamNumber, KEEPER_PLAYER_NUMBER);
+  playCatchForBody(keeperBody, "idle");
+
+  const direction = teamNumber === TEAMS.P1 ? 1 : -1;
+  const targetBodies =
+    teamNumber === TEAMS.P1 ? playerOutfieldBodies : aiOutfieldBodies;
+  const targetMate = getClosestBodyTo(ballBody.pos, targetBodies).body;
+  const clearDir = new THREE.Vector3(
+    direction,
+    0,
+    THREE.MathUtils.clamp(
+      (targetMate?.pos.z ?? keeperBody.pos.z) - keeperBody.pos.z,
+      -1.1,
+      1.1
+    )
+  ).normalize();
+
+  if (teamNumber === TEAMS.P1) {
+    gameState.playerPickupBlockedUntil = performance.now() + 520;
+  } else {
+    gameState.aiPickupBlockedUntil = performance.now() + 520;
+  }
+
+  ballBody.pos
+    .copy(keeperBody.pos)
+    .addScaledVector(clearDir, keeperBody.r + ballBody.r + 0.5);
+  ballBody.pos.y = ballBody.r;
+  ballBody.vel.copy(clearDir).multiplyScalar(KEEPER_CLEAR_FORCE);
+  ballBody.vel.y = 0.75;
+
+  playKickSound(0.58);
+}
+
 function moveRushPlayer(body, playerNumber) {
   if (body === p1KeeperBody || body === p2KeeperBody) return;
 
@@ -1205,6 +1382,19 @@ function moveRushPlayer(body, playerNumber) {
       playerTeamBodies,
       getControlledPlayerBody,
       getAIControlledBody,
+      tryDash,
+    });
+    return;
+  }
+
+  if (playerNumber === TEAMS.P2 && body !== getAIControlledBody()) {
+    updatePlayerTeammateAI({
+      body,
+      gameState,
+      ballBody,
+      playerTeamBodies: aiTeamBodies,
+      getControlledPlayerBody: getAIControlledBody,
+      getAIControlledBody: getControlledPlayerBody,
       tryDash,
     });
     return;
@@ -1258,22 +1448,28 @@ function updateBallPossession() {
   const closestAI = getClosestBodyTo(ballBody.pos, aiTeamBodies);
   const now = performance.now();
   if (pendingPassReceiver) {
-    const receiveDistance = pendingPassReceiver.pos.distanceTo(ballBody.pos);
+    const receiverBody = pendingPassReceiver.body ?? pendingPassReceiver;
+    const receiverTeam = pendingPassReceiver.teamNumber ?? TEAMS.P1;
+    const receiverBodies =
+      receiverTeam === TEAMS.P1 ? playerTeamBodies : aiTeamBodies;
+    const receiveDistance = receiverBody.pos.distanceTo(ballBody.pos);
 
     if (receiveDistance < 0.9) {
-      gameState.controlledPlayerIndex =
-        playerTeamBodies.indexOf(pendingPassReceiver);
+      const receiverIndex = receiverBodies.indexOf(receiverBody);
 
-      setLastTouch(TEAMS.P1, gameState.controlledPlayerIndex);
-      setBallCarrier(TEAMS.P1);
+      if (receiverTeam === TEAMS.P1) {
+        gameState.controlledPlayerIndex = receiverIndex;
+      } else {
+        gameState.aiCarrierIndex = receiverIndex;
+      }
+
+      setLastTouch(receiverTeam, receiverIndex);
+      setBallCarrier(receiverTeam);
 
       ballBody.vel.set(0, 0, 0);
       pendingPassReceiver = null;
 
-      playCatchForBody(
-        playerTeamBodies[gameState.controlledPlayerIndex],
-        "run"
-      );
+      playCatchForBody(receiverBody, "run");
       updateTurnUI(gameState, uiTeamOptions);
       return;
     }
@@ -1753,25 +1949,31 @@ function simulate() {
 
   for (let i = 0; i < 3; i++) {
     playerTeamBodies.forEach((body) => moveRushPlayer(body, TEAMS.P1));
+    updateKeeperMovement(p1KeeperBody, TEAMS.P1);
+    updateKeeperMovement(p2KeeperBody, TEAMS.P2);
 
-    updateRushAI({
-      gameState,
-      ballBody,
-      playerTeamBodies,
-      aiTeamBodies,
-      playerOutfieldBodies,
-      aiOutfieldBodies,
-      p1KeeperBody,
-      p2KeeperBody,
-      getControlledPlayerBody,
-      getAIControlledBody,
-      setAIControlledBodyIndex,
-      setLastTouch,
-      setBallCarrier,
-      tryDash,
-      playKickSound,
-      playCatchForBody,
-    });
+    if (isLocalMultiplayer) {
+      aiTeamBodies.forEach((body) => moveRushPlayer(body, TEAMS.P2));
+    } else {
+      updateRushAI({
+        gameState,
+        ballBody,
+        playerTeamBodies,
+        aiTeamBodies,
+        playerOutfieldBodies,
+        aiOutfieldBodies,
+        p1KeeperBody,
+        p2KeeperBody,
+        getControlledPlayerBody,
+        getAIControlledBody,
+        setAIControlledBodyIndex,
+        setLastTouch,
+        setBallCarrier,
+        tryDash,
+        playKickSound,
+        playCatchForBody,
+      });
+    }
 
     allPlayerBodies.forEach((body) => body.update(DT / 3));
     allAIBodies.forEach((body) => body.update(DT / 3));
@@ -1808,6 +2010,8 @@ function simulate() {
     if (!gameState.ballCarrier) {
       allPlayerBodies.forEach((body) => collideBodies(body, ballBody));
       allAIBodies.forEach((body) => collideBodies(body, ballBody));
+      updateKeeperSave(p1KeeperBody, TEAMS.P1);
+      updateKeeperSave(p2KeeperBody, TEAMS.P2);
     }
 
     updateBallPossession();
@@ -1821,6 +2025,44 @@ function simulate() {
 // =========================
 // VISUAL SYNC
 // =========================
+
+function syncControlledIndicator({
+  body,
+  indicatorGroup,
+  indicatorRing,
+  indicatorArrow,
+}) {
+  indicatorGroup.visible = gameState.gamePhase !== GAME_PHASES.WIN && !!body;
+
+  if (!body) return;
+
+  const arrowBob = Math.sin(Date.now() * 0.008) * 0.08;
+
+  const movementDir = body.vel ? body.vel.clone() : new THREE.Vector3();
+  movementDir.y = 0;
+
+  const facingDir =
+    movementDir.lengthSq() > 0.08
+      ? movementDir
+      : body.facing
+      ? body.facing.clone()
+      : new THREE.Vector3(1, 0, 0);
+
+  facingDir.y = 0;
+
+  if (facingDir.lengthSq() < 0.001) {
+    facingDir.set(1, 0, 0);
+  }
+
+  facingDir.normalize();
+
+  indicatorGroup.position.set(body.pos.x, 0, body.pos.z);
+  indicatorArrow.position.y = body.pos.y + 1.08 + arrowBob;
+  indicatorRing.rotation.y += 0.018;
+
+  const markerAngle = Math.atan2(facingDir.x, facingDir.z) + Math.PI;
+  indicatorGroup.rotation.y = markerAngle;
+}
 
 function syncMeshes() {
   p1Mesh.position.copy(p1Body.pos);
@@ -1935,46 +2177,19 @@ function syncMeshes() {
     p2KeeperBody.pos.z
   );
 
-  const controlledBody = getControlledPlayerBody();
+  syncControlledIndicator({
+    body: getControlledPlayerBody(),
+    indicatorGroup: controlledIndicatorGroup,
+    indicatorRing: controlledRing,
+    indicatorArrow: controlledArrow,
+  });
 
-  controlledIndicatorGroup.visible =
-    gameState.gamePhase !== GAME_PHASES.WIN && !!controlledBody;
-
-  if (controlledBody) {
-    const arrowBob = Math.sin(Date.now() * 0.008) * 0.08;
-
-    const movementDir = controlledBody.vel
-      ? controlledBody.vel.clone()
-      : new THREE.Vector3();
-    movementDir.y = 0;
-
-    const facingDir =
-      movementDir.lengthSq() > 0.08
-        ? movementDir
-        : controlledBody.facing
-        ? controlledBody.facing.clone()
-        : new THREE.Vector3(1, 0, 0);
-
-    facingDir.y = 0;
-
-    if (facingDir.lengthSq() < 0.001) {
-      facingDir.set(1, 0, 0);
-    }
-
-    facingDir.normalize();
-
-    controlledIndicatorGroup.position.set(
-      controlledBody.pos.x,
-      0,
-      controlledBody.pos.z
-    );
-
-    controlledArrow.position.y = controlledBody.pos.y + 1.08 + arrowBob;
-    controlledRing.rotation.y += 0.018;
-
-    const markerAngle = Math.atan2(facingDir.x, facingDir.z) + Math.PI;
-    controlledIndicatorGroup.rotation.y = markerAngle;
-  }
+  syncControlledIndicator({
+    body: getAIControlledBody(),
+    indicatorGroup: p2ControlledIndicatorGroup,
+    indicatorRing: p2ControlledRing,
+    indicatorArrow: p2ControlledArrow,
+  });
 
   if (ballBody.vel.lengthSq() > 0.0001) {
     const rollAxis = new THREE.Vector3(
@@ -2115,7 +2330,22 @@ function animate(time) {
     return;
   }
 
-  updateGamepadInput();
+  updateGamepadInput({
+    [TEAMS.P1]: {
+      onDash: () => tryDash(getControlledPlayerBody()),
+      onShoot: () => shootControlledPlayer(TEAMS.P1),
+      onPass: () => passControlledPlayer(TEAMS.P1),
+      onSwitchDefense: () => switchControlledDefender(),
+      onRestart: () => restartGame(),
+    },
+    [TEAMS.P2]: {
+      onDash: () => tryDash(getAIControlledBody()),
+      onShoot: () => shootControlledPlayer(TEAMS.P2),
+      onPass: () => passControlledPlayer(TEAMS.P2),
+      onSwitchDefense: () => {},
+      onRestart: () => restartGame(),
+    },
+  });
   simulate();
   syncMeshes();
   updateParticles(scene, particles, dt);
@@ -2136,5 +2366,5 @@ resetPositions();
 refreshFullUI(gameState, uiTeamOptions);
 renderMatchStats(gameState, uiTeamOptions);
 addBackgroundStars(scene);
-beginRushStartSequence();
+waitForLocalControlsThenStart();
 requestAnimationFrame(animate);

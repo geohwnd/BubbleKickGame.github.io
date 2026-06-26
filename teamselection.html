@@ -844,12 +844,12 @@
       ];
 
       const TEAM_COLOR_PALETTES = {
-        MEX: ["#1f9d55", "#ffffff", "#d62828"], RSA: ["#007a4d", "#f7c948", "#0033a0"], KOR: ["#ffffff", "#e63946", "#2563eb"], CZE: ["#ffffff", "#d62828", "#2563eb"],
-        CAN: ["#d62828", "#ffffff", "#d62828"], BIH: ["#1f5fbf", "#f7c948", "#ffffff"], QAT: ["#8a1538", "#ffffff", "#8a1538"], SUI: ["#e63946", "#ffffff", "#e63946"],
+        MEX: ["#1f9d55", "#ffffff", "#d62828"], RSA: ["#007a4d", "#f7c948", "#0033a0"], KOR: ["#ff674f", "#e63946", "#2563eb"], CZE: ["#ffffff", "#d62828", "#2563eb"],
+        CAN: ["#d62828", "#d62828", "#d62828"], BIH: ["#1f5fbf", "#f7c948", "#ffffff"], QAT: ["#8a1538", "#ffffff", "#8a1538"], SUI: ["#e63946", "#ffffff", "#e63946"],
         BRA: ["#f2c94c", "#1f9d55", "#2563eb"], MAR: ["#c1121f", "#1f9d55", "#ffffff"], HAI: ["#1d4ed8", "#d62828", "#ffffff"], SCO: ["#2563eb", "#ffffff", "#2563eb"],
-        USA: ["#2563eb", "#ffffff", "#d62828"], PAR: ["#d62828", "#ffffff", "#2563eb"], AUS: ["#f7c948", "#1f9d55", "#ffffff"], TUR: ["#e63946", "#ffffff", "#e63946"],
+        USA: ["#ffffff", "#ffffff", "#d62828"], PAR: ["#d62828", "#2563eb", "#2563eb"], AUS: ["#f7c948", "#1f9d55", "#ffffff"], TUR: ["#e63946", "#ffffff", "#e63946"],
         GER: ["#111827", "#e63946", "#f2c94c"], CUW: ["#2f80ed", "#f7c948", "#ffffff"], CIV: ["#f2994a", "#ffffff", "#2f9e44"], ECU: ["#f2c94c", "#2563eb", "#d62828"],
-        NED: ["#f2994a", "#ffffff", "#2563eb"], JPN: ["#ffffff", "#d62828", "#ffffff"], SWE: ["#2563eb", "#f2c94c", "#2563eb"], TUN: ["#e63946", "#ffffff", "#e63946"],
+        NED: ["#f36c21", "#f36c21", "#f36c21"], JPN: ["#000555", "#000555", "#ffffff"], SWE: ["#2563eb", "#f2c94c", "#2563eb"], TUN: ["#e63946", "#ffffff", "#e63946"],
         BEL: ["#111827", "#f2c94c", "#e63946"], EGY: ["#d62828", "#ffffff", "#111827"], IRN: ["#2f9e44", "#ffffff", "#d62828"], NZL: ["#111827", "#ffffff", "#d62828"],
         ESP: ["#e63946", "#f2c94c", "#e63946"], CPV: ["#2f80ed", "#ffffff", "#f2c94c"], KSA: ["#2f9e44", "#ffffff", "#2f9e44"], URU: ["#60a5fa", "#ffffff", "#111827"],
         FRA: ["#2563eb", "#ffffff", "#e63946"], SEN: ["#2f9e44", "#f2c94c", "#d62828"], IRQ: ["#d62828", "#ffffff", "#111827"], NOR: ["#d62828", "#ffffff", "#2563eb"],
@@ -861,6 +861,7 @@
       const selectedFallbackColors = ["#ffffff", "#2f49ff", "#7ef8e8"];
       const TEAM_SELECTION_MUSIC_PATH = "audio/Rural Ride Loop_Music.mp3";
       const teamSelectionMusic = new Audio(TEAM_SELECTION_MUSIC_PATH);
+      teamSelectionMusic.preload = "auto";
       teamSelectionMusic.loop = true;
       teamSelectionMusic.volume = 0.38;
       let teamSelectionMusicStarted = false;
@@ -873,6 +874,12 @@
           teamSelectionMusicStarted = false;
         });
       }
+
+      teamSelectionMusic.addEventListener("ended", () => {
+        teamSelectionMusic.currentTime = 0;
+        teamSelectionMusicStarted = false;
+        startTeamSelectionMusic();
+      });
 
       function setupTeamSelectionMusicAutoplay() {
         startTeamSelectionMusic();
